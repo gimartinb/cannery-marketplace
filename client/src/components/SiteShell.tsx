@@ -17,8 +17,9 @@ function NavigationLink({ href, label, currentPath, close }: { href: string; lab
 }
 
 function GiftingMenu({ currentPath, close, mobile = false }: { currentPath: string; close?: () => void; mobile?: boolean }) {
+  const [menuOpen, setMenuOpen] = useState(false);
   const active = currentPath === "/gifts" || currentPath === "/request-a-quote";
-  return <div className={mobile ? "mobile-gifting" : "nav-gifting"}><span className={`nav-link nav-gifting-trigger ${active ? "active" : ""}`}>Gifting <ChevronDown size={14} /></span><div className={mobile ? "mobile-gifting-links" : "nav-gifting-menu"}>{giftingLinks.map((item) => <Link key={item.href} href={item.href} className={`gifting-menu-link ${currentPath === item.href ? "active" : ""}`} onClick={close}><strong>{item.label}</strong><small>{item.description}</small></Link>)}</div></div>;
+  return <div className={`${mobile ? "mobile-gifting" : "nav-gifting"} ${menuOpen ? "menu-open" : ""}`}><button type="button" className={`nav-link nav-gifting-trigger ${active ? "active" : ""}`} aria-expanded={menuOpen} onClick={() => setMenuOpen((value) => !value)}>Gifting <ChevronDown size={14} /></button><div className={mobile ? "mobile-gifting-links" : "nav-gifting-menu"}>{giftingLinks.map((item) => <Link key={item.href} href={item.href} className={`gifting-menu-link ${currentPath === item.href ? "active" : ""}`} onClick={() => { setMenuOpen(false); close?.(); }}><strong>{item.label}</strong><small>{item.description}</small></Link>)}</div></div>;
 }
 
 export function Header() {
