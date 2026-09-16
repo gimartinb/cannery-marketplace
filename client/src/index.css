@@ -779,3 +779,16 @@
 
 /* Keep the dropdown trigger identical to the neighboring primary links. */
 .nav-gifting-trigger { font-family: inherit; font-size: .69rem; font-weight: 800; letter-spacing: .12em; line-height: normal; text-transform: uppercase; color: var(--ink); padding-block: .55rem; }
+
+.portal-preview-photo { position: relative; overflow: hidden; cursor: pointer; }
+.portal-preview-photo input { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; }
+.portal-preview-photo img { width: 100%; height: 100%; min-height: 210px; object-fit: cover; }
+
+.deleted-vendors-panel { display: grid; grid-template-columns: .8fr 1.2fr; gap: 2rem; margin-top: 1.5rem; padding: 1.25rem; border: 1px solid rgba(174,73,45,.25); background: #fffaf4; }
+.deleted-vendors-panel h3 { margin: .4rem 0; color: var(--moss); font-family: "Playfair Display", Georgia, serif; font-size: 1.35rem; }
+.deleted-vendors-panel p:not(.eyebrow) { margin: 0; color: #777d72; font-size: .75rem; line-height: 1.55; }
+.deleted-vendors-list > div { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: .7rem 0; border-bottom: 1px solid var(--line); }
+.deleted-vendors-list strong, .deleted-vendors-list small { display: block; }
+.deleted-vendors-list strong { color: var(--moss); font-size: .78rem; }
+.deleted-vendors-list small { margin-top: .2rem; color: #858b80; font-size: .65rem; }
+@media (max-width: 820px) { .deleted-vendors-panel { grid-template-columns: 1fr; } }
