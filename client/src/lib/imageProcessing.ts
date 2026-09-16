@@ -1,7 +1,7 @@
 export function resizeImageForPreview(file: File, maxDimension = 1600): Promise<string> {
   return new Promise((resolve, reject) => {
     if (!file.type.startsWith("image/")) { reject(new Error("Please choose an image file.")); return; }
-    if (file.size > 15 * 1024 * 1024) { reject(new Error("Images must be smaller than 15 MB.")); return; }
+    if (file.size > 5 * 1024 * 1024) { reject(new Error("Images must be smaller than 5 MB.")); return; }
     const objectUrl = URL.createObjectURL(file);
     const image = new Image();
     image.onload = () => {

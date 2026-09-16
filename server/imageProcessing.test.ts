@@ -7,6 +7,6 @@ describe("image upload processing", () => {
   });
 
   it("rejects files larger than the preview limit", async () => {
-    await expect(resizeImageForPreview({ type: "image/jpeg", size: 16 * 1024 * 1024 } as File)).rejects.toThrow("15 MB");
+    await expect(resizeImageForPreview({ type: "image/jpeg", size: 6 * 1024 * 1024 } as File)).rejects.toThrow("5 MB");
   });
 });
