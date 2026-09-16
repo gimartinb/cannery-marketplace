@@ -756,3 +756,26 @@
 .portal-history-item small { margin-top: .2rem; color: #858b80; font-size: .62rem; }
 .portal-history > .button-plain { margin-top: .8rem; }
 @media (max-width: 820px) { .maker-portal-header-grid, .maker-portal-grid { grid-template-columns: 1fr; gap: 2rem; }.maker-portal-header { padding-bottom: 3.5rem; } }
+
+.nav-gifting-trigger { font-family: inherit; font-size: inherit; font-weight: inherit; letter-spacing: inherit; line-height: inherit; text-transform: inherit; color: inherit; }
+
+.review-queue-card { padding: 1.5rem; border: 1px solid var(--line); background: var(--paper); }
+.review-queue-status { display: inline-flex; align-items: center; gap: .5rem; padding: .45rem .65rem; color: var(--moss); background: var(--cream); font-size: .65rem; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
+.review-queue-grid { display: grid; grid-template-columns: 1.1fr .9fr; gap: 3rem; margin-top: 1.8rem; }
+.review-queue-grid h3 { margin: .5rem 0 .3rem; color: var(--moss); font-family: "Playfair Display", Georgia, serif; font-size: 2rem; }
+.review-queue-grid > div:first-child > p:not(.eyebrow), .review-bio p:last-child { color: #70766b; font-size: .82rem; line-height: 1.65; }
+.review-category { margin: 0; color: var(--gold) !important; font-size: .7rem !important; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; }
+.review-bio { margin-top: 1.3rem; padding-top: 1rem; border-top: 1px solid var(--line); }
+.review-publish-checklist { padding: 1.25rem; background: #fbf8f1; }
+.review-publish-checklist > div:not(.review-actions) { display: flex; gap: .5rem; padding: .65rem 0; border-bottom: 1px solid var(--line); color: #70766b; font-size: .75rem; }
+.review-publish-checklist > div svg { color: var(--gold); flex: 0 0 auto; }
+.review-actions { display: flex; flex-wrap: wrap; gap: .6rem; margin-top: 1.2rem; }
+.review-result { display: flex; align-items: center; gap: .45rem; margin: 1.4rem 0 0; padding-top: 1rem; border-top: 1px solid var(--line); color: var(--moss); font-size: .78rem; }
+.review-empty { min-height: 310px; }
+.review-empty .button-primary { margin-top: 1rem; }
+.danger-button { border: 1px solid rgba(174, 73, 45, .35); color: #ae4b32; }
+.danger-button:hover { color: var(--paper); background: #ae4b32; }
+@media (max-width: 820px) { .review-queue-grid { grid-template-columns: 1fr; gap: 1.5rem; } }
+
+/* Keep the dropdown trigger identical to the neighboring primary links. */
+.nav-gifting-trigger { font-family: inherit; font-size: .69rem; font-weight: 800; letter-spacing: .12em; line-height: normal; text-transform: uppercase; color: var(--ink); padding-block: .55rem; }
