@@ -10,14 +10,16 @@ export type Vendor = {
   photoUrl?: string;
   active: boolean;
   featured?: boolean;
+  spotlight?: "editorial" | "popular";
+  displayOrder?: number;
 };
 
 export const defaultVendors: Vendor[] = [
-  { slug: "juniper-clay-studio", name: "Juniper Clay Studio", category: "Ceramics", bio: "Hand-thrown pottery made in small batches, with soft desert colors and everyday shapes designed to be used.", socialLabel: "@juniperclaystudio", socialUrl: "https://instagram.com/", initials: "JC", tone: "clay", active: true, featured: true },
-  { slug: "golden-hour-goods", name: "Golden Hour Goods", category: "Home & Gifts", bio: "Thoughtful home goods and small gifts inspired by California light, slow mornings, and the little rituals that make a house a home.", socialLabel: "@goldenhourgoods", socialUrl: "https://instagram.com/", initials: "GH", tone: "sun", active: true, featured: true },
+  { slug: "juniper-clay-studio", name: "Juniper Clay Studio", category: "Ceramics", bio: "Hand-thrown pottery made in small batches, with soft desert colors and everyday shapes designed to be used.", socialLabel: "@juniperclaystudio", socialUrl: "https://instagram.com/", initials: "JC", tone: "clay", active: true, featured: true, spotlight: "editorial", displayOrder: 1 },
+  { slug: "golden-hour-goods", name: "Golden Hour Goods", category: "Home & Gifts", bio: "Thoughtful home goods and small gifts inspired by California light, slow mornings, and the little rituals that make a house a home.", socialLabel: "@goldenhourgoods", socialUrl: "https://instagram.com/", initials: "GH", tone: "sun", active: true, featured: true, spotlight: "editorial", displayOrder: 2 },
   { slug: "wildflower-paper-co", name: "Wildflower Paper Co.", category: "Paper & Art", bio: "Illustrated cards, prints, and paper goods that celebrate local landscapes, seasonal details, and sending a thoughtful note.", socialLabel: "@wildflowerpaperco", socialUrl: "https://instagram.com/", initials: "WP", tone: "sage", active: true },
   { slug: "moss-and-marrow", name: "Moss & Marrow", category: "Wearables", bio: "Small-run accessories with natural textures, tactile materials, and a quietly considered point of view.", socialLabel: "@mossandmarrow", socialUrl: "https://instagram.com/", initials: "MM", tone: "moss", active: true },
-  { slug: "vivra-cafe", name: "VIVRA CAFÉ", category: "Coffee & Bakery", bio: "Café para vivir. A Mexican-inspired mobile coffee cart serving artisan espresso drinks, matcha lattes, and handcrafted Mexican pastries, with everything made from scratch. Recent public posts highlight hot matcha lattes, marranitos, and community pop-ups.", socialLabel: "@vivracafe", socialUrl: "https://www.instagram.com/vivracafe/", initials: "VC", tone: "cafe", active: true, featured: true },
+  { slug: "vivra-cafe", name: "VIVRA CAFÉ", category: "Coffee & Bakery", bio: "Café para vivir. A Mexican-inspired mobile coffee cart serving artisan espresso drinks, matcha lattes, and handcrafted Mexican pastries, with everything made from scratch. Recent public posts highlight hot matcha lattes, marranitos, and community pop-ups.", socialLabel: "@vivracafe", socialUrl: "https://www.instagram.com/vivracafe/", initials: "VC", tone: "cafe", active: true, featured: true, spotlight: "popular", displayOrder: 3 },
 ];
 
 export const vendorsStorageKey = "cannery-preview-vendors";
