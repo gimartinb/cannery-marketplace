@@ -22,4 +22,10 @@ describe("preview vendor directory", () => {
     expect(spotlighted[0]?.spotlight).toBe("editorial");
     expect(spotlighted[2]?.spotlight).toBe("popular");
   });
+
+  it("supports an owner bio and work gallery for the profile template", () => {
+    const gilbert = defaultVendors.find((vendor) => vendor.slug === "gilberts-woodworking");
+    expect(gilbert?.ownerBio).toContain("placeholder copy");
+    expect(gilbert?.workSamples).toHaveLength(3);
+  });
 });

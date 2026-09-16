@@ -1,4 +1,4 @@
-import { ArrowLeft, ExternalLink, Instagram } from "lucide-react";
+import { ArrowLeft, ArrowRight, ExternalLink, Instagram, Sparkles } from "lucide-react";
 import { Link, useParams } from "wouter";
 import PageMeta from "@/components/PageMeta";
 import SiteShell from "@/components/SiteShell";
@@ -7,31 +7,11 @@ import { getVendor } from "@/lib/vendors";
 export default function VendorProfile() {
   const params = useParams<{ slug: string }>();
   const vendor = getVendor(params.slug);
-
-  if (!vendor) {
-    return <SiteShell><main><section className="page-hero"><div className="site-container page-hero-content"><p className="eyebrow">Maker not found</p><h1 className="display">That profile has moved.</h1><Link className="button-primary" href="/vendors">Back to the directory <ArrowLeft size={15} /></Link></div></section></main></SiteShell>;
-  }
-
-  return (
-    <SiteShell>
-      <PageMeta title={vendor.name} description={`${vendor.name} — ${vendor.category} maker at The Cannery Marketplace in Gilroy, California.`} />
-      <main>
-        <section className="vendor-profile-hero">
-          <div className="site-container vendor-profile-grid">
-            <div className={`vendor-profile-placeholder vendor-tone-${vendor.tone}`}>{vendor.photoUrl && <img className="vendor-photo" src={vendor.photoUrl} alt={`${vendor.name} preview`} />}<span className="placeholder-stamp">Preview image</span><span className="vendor-initials">{vendor.initials}</span><span className="placeholder-note">Photo placeholder</span></div>
-            <div className="vendor-profile-copy">
-              <Link className="back-link" href="/vendors"><ArrowLeft size={15} /> All makers</Link>
-              <p className="eyebrow">{vendor.category}</p>
-              <h1 className="display">{vendor.name}</h1>
-              <p className="body-large">{vendor.bio}</p>
-              <a className="button-plain" href={vendor.socialUrl} target="_blank" rel="noreferrer"><Instagram size={15} /> {vendor.socialLabel} <ExternalLink size={13} /></a>
-            </div>
-          </div>
-        </section>
-        <section className="vendor-profile-bottom">
-          <div className="site-container vendor-profile-bottom-grid"><div><p className="eyebrow">Keep exploring</p><h2 className="display">There is more to <em>find.</em></h2></div><Link className="button-primary" href="/vendors">Browse all makers <ArrowLeft size={15} className="rotate-180" /></Link></div>
-        </section>
-      </main>
-    </SiteShell>
-  );
+  if (!vendor) return <SiteShell><main><section className="page-hero"><div className="site-container page-hero-content"><p className="eyebrow">Maker not found</p><h1 className="display">That profile has moved.</h1><Link className="button-primary" href="/vendors">Back to the directory <ArrowLeft size={15} /></Link></div></section></main></SiteShell>;
+  const hasStory = Boolean(vendor.ownerBio || vendor.makerStory || vendor.workSamples?.length);
+  return <SiteShell><PageMeta title={`${vendor.name} | Local maker`} description={`${vendor.name} — ${vendor.category} maker at The Cannery Marketplace in Gilroy, California. Learn the maker story and explore their work.`} /><main>
+    <section className="vendor-profile-hero"><div className="site-container vendor-profile-grid"><div className={`vendor-profile-placeholder vendor-tone-${vendor.tone}`}><span className="profile-mock-label">{vendor.slug === "gilberts-woodworking" ? "Profile mockup" : "Maker profile"}</span>{vendor.photoUrl && <img className="vendor-photo" src={vendor.photoUrl} alt={`${vendor.name} profile`} />}<span className="placeholder-stamp">{vendor.photoUrl ? "Maker photo" : "Photo needed"}</span><span className="vendor-initials">{vendor.initials}</span><span className="placeholder-note">{vendor.photoUrl ? "" : "Approved photo placeholder"}</span></div><div className="vendor-profile-copy"><Link className="back-link" href="/vendors"><ArrowLeft size={15} /> All makers</Link><p className="eyebrow">{vendor.category}</p><h1 className="display">{vendor.name}</h1><p className="body-large">{vendor.bio}</p><a className="button-plain" href={vendor.socialUrl} target="_blank" rel="noreferrer"><Instagram size={15} /> {vendor.socialLabel} <ExternalLink size={13} /></a></div></div></section>
+    {hasStory && <><section className="maker-story-section"><div className="site-container maker-story-grid"><div><p className="eyebrow">Meet the maker</p><h2 className="display">The person behind the <em>work.</em></h2></div><div><p className="body-large">{vendor.ownerBio}</p><span className="mock-content-note"><Sparkles size={13} /> Mockup copy — replace with the owner-approved bio</span></div></div></section><section className="maker-work-section"><div className="site-container"><div className="maker-work-heading"><div><p className="eyebrow">A closer look</p><h2 className="display">Made by <em>{vendor.name}.</em></h2></div><p>{vendor.makerStory}</p></div><div className="maker-work-grid">{vendor.workSamples?.map((sample) => <article className={`maker-work-card maker-work-${sample.tone}`} key={sample.title}><div className="maker-work-image"><span>{sample.title}</span><small>Authorized work photo placeholder</small></div><div><h3>{sample.title}</h3><p>{sample.description}</p></div></article>)}</div></div></section></>}
+    <section className="vendor-profile-bottom"><div className="site-container vendor-profile-bottom-grid"><div><p className="eyebrow">Keep exploring</p><h2 className="display">There is more to <em>find.</em></h2></div><Link className="button-primary" href="/vendors">Browse all makers <ArrowRight size={15} /></Link></div></section>
+  </main></SiteShell>;
 }

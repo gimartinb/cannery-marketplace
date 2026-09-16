@@ -1,15 +1,22 @@
 import { ArrowRight, Search, Sparkles, X } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link } from "wouter";
 import PageMeta from "@/components/PageMeta";
 import SiteShell from "@/components/SiteShell";
-import { getCategories, readVendors, type Vendor } from "@/lib/vendors";
+import { readVendors, type Vendor } from "@/lib/vendors";
 
 export default function Vendors() {
   const [category, setCategory] = useState("All makers");
   const [search, setSearch] = useState("");
   const [vendors, setVendors] = useState<Vendor[]>(readVendors);
-  const categories = getCategories();
+  const categories = useMemo(() => ["All makers", ...Array.from(new Set(vendors.filter((vendor) => vendor.active).map((vendor) => vendor.category))).sort()], [vendors]);
+  useEffect(() => { if (!categories.includes(category)) setCategory("All makers"); }, [categories, category]);
+  useEffect(() => {
+    const refresh = () => setVendors(readVendors());
+    window.addEventListener("storage", refresh);
+    window.addEventListener("cannery-vendors-updated", refresh);
+    return () => { window.removeEventListener("storage", refresh); window.removeEventListener("cannery-vendors-updated", refresh); };
+  }, []);
   const visibleVendors = useMemo(() => {
     const normalizedSearch = search.trim().toLowerCase();
     return vendors.filter((vendor) => {
@@ -37,9 +44,7 @@ export default function Vendors() {
               <div><p className="eyebrow">Browse the shelves</p><h2 className="display">Find a maker</h2></div>
               <div className="directory-controls">
                 <label className="directory-search"><Search size={15} /><span className="sr-only">Search makers</span><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search makers" /></label>
-                <div className="category-filter" aria-label="Filter vendors by category">
-                  {categories.map((item) => <button key={item} type="button" className={category === item ? "active" : ""} onClick={() => setCategory(item)}>{item}</button>)}
-                </div>
+                <label className="category-select"><span>Category</span><select value={category} onChange={(event) => setCategory(event.target.value)} aria-label="Filter makers by category">{categories.map((item) => <option key={item} value={item}>{item}</option>)}</select></label>
               </div>
             </div>
 
