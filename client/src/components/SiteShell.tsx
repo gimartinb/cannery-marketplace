@@ -7,6 +7,7 @@ const logo = "/manus-storage/cannery-marketplace-logo_659f3936.png";
 const navigation = [
   { href: "/", label: "Home" },
   { href: "/about", label: "About" },
+  { href: "/vendors", label: "Makers" },
   { href: "/contact", label: "Contact" },
   { href: "/become-a-vendor", label: "Become a vendor" },
 ];
@@ -60,6 +61,7 @@ export function Footer() {
           <ul className="footer-list">
             <li><Link href="/">Home</Link></li>
             <li><Link href="/about">About the marketplace</Link></li>
+            <li><Link href="/vendors">Meet the makers</Link></li>
             <li><Link href="/become-a-vendor">Become a vendor</Link></li>
             <li><Link href="/contact">Contact us</Link></li>
           </ul>

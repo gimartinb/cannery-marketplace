@@ -15,7 +15,7 @@ export default function Home() {
               <h1 className="display" id="home-title">Made here. <em>Found by you.</em></h1>
               <p>Discover the thoughtful, handcrafted work of the local makers who make our community one of a kind.</p>
               <div className="hero-actions">
-                <Link href="/become-a-vendor" className="button-primary">Become a vendor <ArrowRight size={15} /></Link>
+                <Link href="/vendors" className="button-primary">Meet the makers <ArrowRight size={15} /></Link>
                 <a href="#visit" className="button-secondary">Plan your visit</a>
               </div>
             </div>
@@ -35,7 +35,7 @@ export default function Home() {
             </div>
             <div className="intro-copy">
               <p className="body-large">The Cannery Marketplace in Gilroy is a dedicated space where local makers and artisans can showcase and sell their handcrafted products. We are built for the pleasure of discovering something distinctive, made close to home.</p>
-              <Link className="text-link" href="/about">Learn about the marketplace <ArrowRight size={15} /></Link>
+              <Link className="text-link" href="/vendors">Meet the local makers <ArrowRight size={15} /></Link>
             </div>
           </div>
         </section>

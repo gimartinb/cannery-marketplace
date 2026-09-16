@@ -8,6 +8,8 @@ import BecomeVendor from "./pages/BecomeVendor";
 import Contact from "./pages/Contact";
 import Home from "./pages/Home";
 import NotFound from "./pages/NotFound";
+import VendorProfile from "./pages/VendorProfile";
+import Vendors from "./pages/Vendors";
 
 function Router() {
   return (
@@ -16,6 +18,8 @@ function Router() {
       <Route path="/about" component={About} />
       <Route path="/contact" component={Contact} />
       <Route path="/become-a-vendor" component={BecomeVendor} />
+      <Route path="/vendors/:slug" component={VendorProfile} />
+      <Route path="/vendors" component={Vendors} />
       <Route path="/404" component={NotFound} />
       <Route component={NotFound} />
     </Switch>
