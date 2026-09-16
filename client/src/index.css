@@ -580,3 +580,21 @@
 .map-actions p strong { color: var(--ink); font-family: "Playfair Display", Georgia, serif; font-size: 1.05rem; font-weight: 600; }
 .map-actions .button-primary { flex: 0 0 auto; }
 @media (max-width: 560px) { .map-actions { align-items: stretch; flex-direction: column; }.map-actions .button-primary { justify-content: center; } }
+
+.bulk-image-uploader { margin: 1.25rem 2rem 0; padding: 1rem 1.15rem; border: 1px solid var(--line); background: #fbf8f1; }
+.bulk-image-heading { display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
+.bulk-image-heading .eyebrow { display: flex; align-items: center; gap: .4rem; }
+.bulk-image-heading h3 { margin: .3rem 0 .45rem; color: var(--moss); font-family: "Playfair Display", Georgia, serif; font-size: 1.25rem; }
+.bulk-image-heading p:not(.eyebrow) { max-width: 58ch; margin: 0; color: #747a6f; font-size: .72rem; line-height: 1.55; }
+.bulk-image-heading code { padding: .12rem .25rem; background: var(--sand); color: var(--ink); font-size: .68rem; }
+.bulk-image-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .55rem; margin-top: 1rem; }
+.bulk-image-item { display: flex; align-items: center; gap: .6rem; padding: .45rem; background: var(--paper); border: 1px solid var(--line); }
+.bulk-image-item img { width: 42px; height: 42px; object-fit: cover; }
+.bulk-image-item span { min-width: 0; flex: 1; }
+.bulk-image-item strong, .bulk-image-item small { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.bulk-image-item strong { color: var(--moss); font-size: .72rem; }
+.bulk-image-item small { margin-top: .18rem; color: #858b80; font-size: .64rem; }
+.bulk-unmatched { margin: .8rem 0 0; color: #a24e37; font-size: .7rem; line-height: 1.5; }
+.bulk-image-actions { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin-top: 1rem; }
+.bulk-image-actions > span { display: inline-flex; align-items: center; gap: .35rem; color: #6d8b5d; font-size: .7rem; }
+@media (max-width: 760px) { .bulk-image-uploader { margin: 1rem; }.bulk-image-heading, .bulk-image-actions { align-items: stretch; flex-direction: column; }.bulk-image-heading .upload-button, .bulk-image-actions .button-primary { justify-content: center; }.bulk-image-list { grid-template-columns: 1fr; } }
