@@ -712,3 +712,47 @@
 .nav-gifting-trigger { border: 0; background: transparent; font: inherit; }
 .nav-gifting.menu-open .nav-gifting-menu { opacity: 1; pointer-events: auto; transform: translate(-50%, 0); }
 .nav-gifting-menu::before { content: ""; position: absolute; top: -1rem; left: 0; right: 0; height: 1rem; }
+
+.maker-portal { min-height: 100vh; background: #f7f2e9; }
+.maker-portal-header { padding: 3.5rem 0 4.5rem; background: var(--moss); color: var(--paper); }
+.portal-breadcrumb { display: flex; gap: .5rem; margin-bottom: 3.2rem; color: rgba(255,253,248,.65); font-size: .65rem; text-transform: uppercase; letter-spacing: .1em; }
+.portal-breadcrumb a { color: var(--gold-soft); text-decoration: none; }
+.maker-portal-header-grid { display: grid; grid-template-columns: 1fr 320px; gap: 4rem; align-items: end; }
+.maker-portal-header h1 { max-width: 11ch; margin: .75rem 0 1rem; color: var(--paper); }
+.maker-portal-header p:not(.eyebrow) { max-width: 48ch; color: rgba(255,253,248,.75); line-height: 1.7; }
+.portal-status { display: grid; gap: .35rem; padding: 1.35rem; border: 1px solid rgba(255,255,255,.2); background: rgba(255,255,255,.06); }
+.portal-status .status-dot { margin-bottom: .4rem; }
+.portal-status small { color: var(--gold-soft); font-size: .62rem; text-transform: uppercase; letter-spacing: .12em; }
+.portal-status strong { font-family: "Playfair Display", Georgia, serif; font-size: 1.4rem; }
+.portal-status span:last-child { color: rgba(255,253,248,.65); font-size: .72rem; line-height: 1.5; }
+.maker-portal-body { padding: 4.5rem 0 7rem; }
+.maker-portal-grid { display: grid; grid-template-columns: 1.05fr .95fr; gap: 2rem; align-items: start; }
+.maker-editor-card, .portal-preview-card, .portal-history { padding: 1.6rem; border: 1px solid var(--line); background: var(--paper); }
+.portal-card-heading { display: flex; align-items: start; justify-content: space-between; gap: 1rem; margin-bottom: 1.5rem; }
+.portal-card-heading h2 { margin: .45rem 0 0; color: var(--moss); font-family: "Playfair Display", Georgia, serif; font-size: 1.65rem; }
+.portal-card-heading > svg { color: var(--gold); }
+.portal-owner-badge { display: inline-flex; align-items: center; gap: .35rem; padding: .4rem .55rem; color: var(--moss); background: var(--cream); font-size: .6rem; font-weight: 800; text-transform: uppercase; letter-spacing: .07em; }
+.maker-editor-card label { display: grid; gap: .45rem; margin-bottom: 1rem; color: var(--moss); font-size: .7rem; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; }
+.maker-editor-card input, .maker-editor-card textarea { width: 100%; padding: .8rem; border: 1px solid var(--line); background: #fffdfa; color: var(--ink); font: inherit; font-size: .82rem; font-weight: 400; letter-spacing: 0; text-transform: none; resize: vertical; }
+.maker-editor-card input:focus, .maker-editor-card textarea:focus { outline: 2px solid var(--gold-soft); outline-offset: 2px; }
+.maker-editor-card label small { color: #777d72; font-size: .65rem; font-weight: 400; letter-spacing: 0; text-transform: none; }
+.portal-editor-actions { display: flex; flex-wrap: wrap; gap: .65rem; padding-top: .7rem; }
+.portal-review-note { display: flex; align-items: center; gap: .4rem; margin: 1.2rem 0 0; padding-top: 1rem; border-top: 1px solid var(--line); color: #777d72; font-size: .68rem; }
+.portal-review-note svg { color: var(--gold); }
+.maker-portal-side { display: grid; gap: 1rem; }
+.portal-preview-photo { display: grid; place-items: center; min-height: 210px; margin-bottom: 1.25rem; color: rgba(255,253,248,.8); background: linear-gradient(135deg, #8f6d4e, #596052); text-align: center; }
+.portal-preview-photo span, .portal-preview-photo small { display: block; }
+.portal-preview-photo span { font-family: "Playfair Display", Georgia, serif; font-size: 1.35rem; }
+.portal-preview-photo small { margin-top: .35rem; font-size: .62rem; text-transform: uppercase; letter-spacing: .08em; }
+.portal-preview-card h3 { margin: .55rem 0 .7rem; color: var(--moss); font-family: "Playfair Display", Georgia, serif; font-size: 1.7rem; }
+.portal-preview-card > p:not(.eyebrow) { color: #6e7569; font-size: .76rem; line-height: 1.65; }
+.portal-preview-rule { margin: 1.4rem 0 1rem; border-top: 1px solid var(--line); }
+.portal-preview-label { color: var(--gold) !important; font-size: .62rem !important; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; }
+.portal-history { background: #fbf8f1; }
+.portal-history-item { display: flex; gap: .6rem; padding: .7rem 0; border-top: 1px solid var(--line); }
+.portal-history-item > span { display: grid; place-items: center; width: 1.15rem; height: 1.15rem; border-radius: 50%; background: var(--gold); color: var(--moss); }
+.portal-history-item strong, .portal-history-item small { display: block; }
+.portal-history-item strong { color: var(--moss); font-size: .72rem; }
+.portal-history-item small { margin-top: .2rem; color: #858b80; font-size: .62rem; }
+.portal-history > .button-plain { margin-top: .8rem; }
+@media (max-width: 820px) { .maker-portal-header-grid, .maker-portal-grid { grid-template-columns: 1fr; gap: 2rem; }.maker-portal-header { padding-bottom: 3.5rem; } }

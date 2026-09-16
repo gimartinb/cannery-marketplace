@@ -10,6 +10,7 @@ import BecomeVendor from "./pages/BecomeVendor";
 import Contact from "./pages/Contact";
 import Gifts from "./pages/Gifts";
 import Home from "./pages/Home";
+import MakerPortal from "./pages/MakerPortal";
 import NotFound from "./pages/NotFound";
 import RequestQuote from "./pages/RequestQuote";
 import VendorProfile from "./pages/VendorProfile";
@@ -31,6 +32,7 @@ function Router() {
       <Route path="/gifts" component={Gifts} />
       <Route path="/request-a-quote" component={RequestQuote} />
       <Route path="/admin" component={Admin} />
+      <Route path="/maker-portal" component={MakerPortal} />
       <Route path="/vendors/:slug" component={VendorProfile} />
       <Route path="/vendors" component={Vendors} />
       <Route path="/404" component={NotFound} />
