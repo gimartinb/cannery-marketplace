@@ -1,53 +1,23 @@
-import { ArrowRight, ExternalLink } from "lucide-react";
+import { ArrowRight, Check, ClipboardList, ExternalLink, MessageCircle, Sparkles, Store } from "lucide-react";
 import PageMeta from "@/components/PageMeta";
 import SiteShell from "@/components/SiteShell";
 
 const applicationUrl = "https://docs.google.com/forms/d/e/1FAIpQLSdyAfXeN1Y_vIga_U-fQWoe_Yj4eSp8pzTu4JsTkFW1exue7Q/viewform";
 
+const onboardingSteps = [
+  { number: "01", icon: ClipboardList, title: "Tell us about your work", body: "Complete the short application with your maker story, product category, social links, and the kind of display space you are looking for." },
+  { number: "02", icon: MessageCircle, title: "We review and connect", body: "The marketplace team reviews your application and follows up with questions, availability, and next steps. There is no pressure to commit before you have the details." },
+  { number: "03", icon: Store, title: "Choose your space", body: "If it feels like a fit, we will discuss shelf or display-space options, timing, presentation, and the practical details of bringing your products in." },
+  { number: "04", icon: Sparkles, title: "Set up and be discovered", body: "Bring your finished products and display materials. We will help you understand the rhythm of the marketplace and how shoppers can find your work." },
+];
+
 export default function BecomeVendor() {
-  return (
-    <SiteShell>
-      <PageMeta title="Become a vendor" description="Apply to share handcrafted products at The Cannery Marketplace in Gilroy, California." />
-      <main>
-        <section className="page-hero">
-          <div className="site-container page-hero-content">
-            <p className="eyebrow">For local makers</p>
-            <h1 className="display">Make room for your <em>work.</em></h1>
-            <p>The Cannery Marketplace gives local makers and artisans a place to showcase and sell their handcrafted products in Gilroy.</p>
-          </div>
-        </section>
-
-        <section className="vendor-intro">
-          <div className="site-container vendor-intro-grid">
-            <div>
-              <p className="eyebrow">Showcase your craft</p>
-              <h2 className="display">Your work belongs in a place built for <em>discovery.</em></h2>
-              <p className="body-large">Our marketplace was designed to foster community and creativity. Makers can rent small or large shelves or spaces to display the crafts they make.</p>
-            </div>
-            <aside className="vendor-panel">
-              <p className="eyebrow">Ready to apply?</p>
-              <h3>Start with the vendor application.</h3>
-              <p>The current application opens in a separate form and will guide you through the information the marketplace needs to review your request.</p>
-              <a className="button-primary" href={applicationUrl} target="_blank" rel="noreferrer">Open application <ExternalLink size={14} /></a>
-            </aside>
-          </div>
-        </section>
-
-        <section className="vendor-notes">
-          <div className="site-container vendor-notes-grid">
-            <article className="vendor-note"><p className="eyebrow">01</p><h3>Handcrafted products</h3><p>The marketplace is dedicated to local makers and artisans sharing handcrafted work.</p></article>
-            <article className="vendor-note"><p className="eyebrow">02</p><h3>Flexible display space</h3><p>Small and large shelves or spaces are available for displaying crafts.</p></article>
-            <article className="vendor-note"><p className="eyebrow">03</p><h3>Questions first?</h3><p>If you would like to connect before applying, the marketplace is happy to hear from you.</p><a className="text-link" href="/contact">Contact the marketplace <ArrowRight size={15} /></a></article>
-          </div>
-        </section>
-
-        <section className="cta-band">
-          <div className="site-container cta-band-grid">
-            <div><p className="eyebrow">Made something meaningful?</p><h2 className="display">Let the community find it.</h2></div>
-            <a href={applicationUrl} target="_blank" rel="noreferrer" className="button-secondary">Become a vendor <ExternalLink size={14} /></a>
-          </div>
-        </section>
-      </main>
-    </SiteShell>
-  );
+  return <SiteShell><PageMeta title="Become a vendor in Gilroy" description="Learn how to become a vendor at The Cannery Marketplace in Gilroy. Follow the simple maker onboarding process and apply to showcase handcrafted products." /><main>
+    <section className="page-hero vendor-onboarding-hero"><div className="site-container page-hero-content"><p className="eyebrow">For local makers and artisans</p><h1 className="display">Make room for your <em>work.</em></h1><p>You make the meaningful things. We make it easier for the Gilroy community to discover them.</p><div className="hero-actions"><a className="button-primary" href={applicationUrl} target="_blank" rel="noreferrer">Start the application <ExternalLink size={14} /></a><a className="button-plain" href="#how-it-works">See how it works <ArrowRight size={15} /></a></div></div></section>
+    <section className="vendor-intro"><div className="site-container vendor-intro-grid"><div><p className="eyebrow">A welcoming first step</p><h2 className="display">A simple path from <em>maker</em> to marketplace.</h2><p className="body-large">The Cannery Marketplace gives local makers and artisans a place to showcase and sell their handcrafted products in Gilroy. You do not need to have every detail figured out before you reach out.</p></div><aside className="vendor-panel"><p className="eyebrow">Ready when you are</p><h3>Start with the vendor application.</h3><p>Share the basics, tell us what you make, and the marketplace team will help you understand the next step.</p><a className="button-primary" href={applicationUrl} target="_blank" rel="noreferrer">Open application <ExternalLink size={14} /></a><small>Opens the marketplace application form in a new tab.</small></aside></div></section>
+    <section className="vendor-process" id="how-it-works"><div className="site-container"><div className="vendor-process-heading"><div><p className="eyebrow">How it works</p><h2 className="display">From first hello to <em>your shelf.</em></h2></div><p>We designed the process to be clear, human, and easy to start.</p></div><div className="vendor-process-grid">{onboardingSteps.map((step) => { const Icon = step.icon; return <article className="vendor-process-card" key={step.number}><div className="vendor-process-top"><span>{step.number}</span><Icon size={20} /></div><h3>{step.title}</h3><p>{step.body}</p></article>; })}</div></div></section>
+    <section className="vendor-prep"><div className="site-container vendor-prep-grid"><div><p className="eyebrow">Before you apply</p><h2 className="display">A few things to <em>bring to the conversation.</em></h2><p className="body-large">You can apply before everything is perfect. These details simply help the team understand how to support your work.</p></div><div className="vendor-checklist"><p>Helpful to have ready:</p><div><Check size={15} /><span>Your maker or brand name</span></div><div><Check size={15} /><span>What you make and your product category</span></div><div><Check size={15} /><span>A few product or display photos</span></div><div><Check size={15} /><span>Your Instagram, TikTok, or Facebook link</span></div><div><Check size={15} /><span>Approximate quantity and display-space needs</span></div></div></div></section>
+    <section className="vendor-faq"><div className="site-container vendor-faq-grid"><div><p className="eyebrow">Questions before applying?</p><h2 className="display">Let’s make the first step <em>comfortable.</em></h2></div><div><p><strong>Do I need professional photos?</strong><br />No. Clear phone photos are a helpful starting point.</p><p><strong>What if I do not know which space I need?</strong><br />That is part of the conversation. The team can help you think through what fits your products.</p><p><strong>Can I ask questions first?</strong><br />Yes. <a className="text-link" href="/contact">Contact the marketplace <ArrowRight size={15} /></a></p></div></div></section>
+    <section className="cta-band"><div className="site-container cta-band-grid"><div><p className="eyebrow">Made something meaningful?</p><h2 className="display">Let the community find it.</h2></div><a href={applicationUrl} target="_blank" rel="noreferrer" className="button-secondary">Become a vendor <ExternalLink size={14} /></a></div></section>
+  </main></SiteShell>;
 }

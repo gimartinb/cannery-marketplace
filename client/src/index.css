@@ -633,3 +633,34 @@
 .bulk-audit-row small { margin-top: .2rem; color: #8a9084; font-size: .64rem; }
 @media (max-width: 900px) { .bulk-vendor-editor { margin: 1rem; }.bulk-vendor-heading { align-items: stretch; flex-direction: column; }.bulk-vendor-row { grid-template-columns: 1fr 1fr; }.bulk-vendor-row input:nth-child(3) { grid-column: 1 / -1; } }
 @media (max-width: 560px) { .bulk-vendor-row { grid-template-columns: 1fr; }.bulk-vendor-row input:nth-child(3) { grid-column: auto; }.bulk-audit-row { align-items: stretch; flex-direction: column; }.bulk-audit-row .button-plain { align-self: flex-start; } }
+
+.vendor-onboarding-hero .hero-actions { margin-top: 1.8rem; }
+.vendor-onboarding-hero .button-plain { color: var(--moss); }
+.vendor-panel small { display: block; margin-top: .7rem; color: #858b80; font-size: .65rem; line-height: 1.45; }
+.vendor-process { padding: 6.5rem 0; background: var(--cream); }
+.vendor-process-heading { display: flex; align-items: end; justify-content: space-between; gap: 2rem; margin-bottom: 2.6rem; }
+.vendor-process-heading h2 { max-width: 11ch; margin-top: .75rem; }
+.vendor-process-heading > p { max-width: 25rem; color: #71766b; font-size: .85rem; line-height: 1.65; }
+.vendor-process-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1px; border: 1px solid var(--line); background: var(--line); }
+.vendor-process-card { min-height: 245px; padding: 1.45rem; background: var(--paper); }
+.vendor-process-top { display: flex; align-items: center; justify-content: space-between; color: var(--gold); }
+.vendor-process-top span { font-size: .65rem; font-weight: 800; letter-spacing: .15em; }
+.vendor-process-card h3 { margin: 2.7rem 0 .75rem; color: var(--moss); font-family: "Playfair Display", Georgia, serif; font-size: 1.3rem; }
+.vendor-process-card p { margin: 0; color: #71766b; font-size: .78rem; line-height: 1.65; }
+.vendor-prep { padding: 6.5rem 0; }
+.vendor-prep-grid { display: grid; grid-template-columns: 1.05fr .95fr; gap: 5rem; align-items: center; }
+.vendor-prep-grid h2 { max-width: 12ch; margin-top: .75rem; }
+.vendor-checklist { padding: 1.5rem; border-top: 2px solid var(--gold); background: #fbf8f1; }
+.vendor-checklist > p { margin: 0 0 1rem; color: var(--moss); font-family: "Playfair Display", Georgia, serif; font-size: 1.2rem; }
+.vendor-checklist > div { display: flex; align-items: center; gap: .65rem; padding: .75rem 0; border-top: 1px solid var(--line); color: #6f756a; font-size: .78rem; }
+.vendor-checklist svg { flex: 0 0 auto; color: var(--gold); }
+.vendor-faq { padding: 5.5rem 0; background: var(--moss); color: var(--paper); }
+.vendor-faq-grid { display: grid; grid-template-columns: .9fr 1.1fr; gap: 5rem; }
+.vendor-faq h2 { max-width: 10ch; margin-top: .75rem; color: var(--paper); }
+.vendor-faq > .site-container > div:last-child { max-width: 38rem; }
+.vendor-faq p { margin: 0; padding: 0 0 1.15rem; color: rgba(255,253,248,.78); font-size: .83rem; line-height: 1.65; }
+.vendor-faq p + p { padding-top: 1.15rem; border-top: 1px solid rgba(255,253,248,.18); }
+.vendor-faq strong { color: var(--paper); }
+.vendor-faq .text-link { color: var(--gold-soft); }
+@media (max-width: 900px) { .vendor-process-grid { grid-template-columns: repeat(2, 1fr); }.vendor-prep-grid, .vendor-faq-grid { grid-template-columns: 1fr; gap: 2.5rem; } }
+@media (max-width: 560px) { .vendor-process-heading { display: block; }.vendor-process-heading > p { margin-top: 1rem; }.vendor-process-grid { grid-template-columns: 1fr; }.vendor-process-card { min-height: auto; }.vendor-prep, .vendor-process { padding: 4.5rem 0; } }
