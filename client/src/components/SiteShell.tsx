@@ -1,14 +1,14 @@
 import { Facebook, Instagram, Menu, X } from "lucide-react";
 import { ReactNode, useState } from "react";
 import { Link, useLocation } from "wouter";
-
-const logo = "/manus-storage/cannery-marketplace-logo_659f3936.png";
+import { readSiteImages } from "@/lib/siteImages";
 
 const navigation = [
   { href: "/", label: "Home" },
   { href: "/about", label: "About" },
   { href: "/vendors", label: "Makers" },
   { href: "/gifts", label: "Gifts" },
+  { href: "/request-a-quote", label: "Corporate gifting" },
   { href: "/contact", label: "Contact" },
   { href: "/become-a-vendor", label: "Become a vendor" },
 ];
@@ -23,6 +23,8 @@ function NavigationLink({ href, label, currentPath, close }: { href: string; lab
 
 export function Header() {
   const [open, setOpen] = useState(false);
+  const [images] = useState(readSiteImages);
+  const logo = images.find((image) => image.id === "logo")?.url || "/manus-storage/cannery-marketplace-logo_659f3936.png";
   const [location] = useLocation();
   const close = () => setOpen(false);
 
@@ -50,6 +52,8 @@ export function Header() {
 }
 
 export function Footer() {
+  const [images] = useState(readSiteImages);
+  const logo = images.find((image) => image.id === "logo")?.url || "/manus-storage/cannery-marketplace-logo_659f3936.png";
   return (
     <footer className="site-footer">
       <div className="site-container footer-main">
@@ -64,6 +68,7 @@ export function Footer() {
             <li><Link href="/about">About the marketplace</Link></li>
             <li><Link href="/vendors">Meet the makers</Link></li>
             <li><Link href="/gifts">Gift boxes</Link></li>
+            <li><Link href="/request-a-quote">Corporate gifting</Link></li>
             <li><Link href="/become-a-vendor">Become a vendor</Link></li>
             <li><Link href="/contact">Contact us</Link></li>
           </ul>

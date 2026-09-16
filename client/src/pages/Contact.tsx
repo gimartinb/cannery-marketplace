@@ -1,50 +1,16 @@
 import { ArrowRight } from "lucide-react";
+import { Link } from "wouter";
 import PageMeta from "@/components/PageMeta";
 import SiteShell from "@/components/SiteShell";
 
 export default function Contact() {
   return (
     <SiteShell>
-      <PageMeta title="Contact" description="Contact The Cannery Marketplace in Gilroy, California, by phone, email, or the online contact form." />
+      <PageMeta title="Contact The Cannery Marketplace in Gilroy" description="Visit The Cannery Marketplace at 7488 Monterey Road in Gilroy, California. Call, email, view the embedded map, or request a corporate gift-box quote." />
       <main>
-        <section className="page-hero">
-          <div className="site-container page-hero-content">
-            <p className="eyebrow">Contact</p>
-            <h1 className="display">Looking for something <em>special?</em></h1>
-            <p>Have a question or want to connect with the marketplace? Send a note and we will get back to you soon.</p>
-          </div>
-        </section>
-
-        <section className="contact-section">
-          <div className="site-container contact-grid">
-            <div className="contact-intro">
-              <p className="eyebrow">Get in touch</p>
-              <h2 className="display">We would love to <em>hear from you.</em></h2>
-              <p className="body-large">Reach us directly, or use the form for general marketplace questions.</p>
-              <div className="contact-list">
-                <div className="contact-item"><span>Visit</span><p>7488 Monterey Road<br />Gilroy, California 95020</p></div>
-                <div className="contact-item"><span>Call</span><a href="tel:+14083371620">(408) 337-1620</a></div>
-                <div className="contact-item"><span>Email</span><a href="mailto:thecannerymarketplace@gmail.com">thecannerymarketplace@gmail.com</a></div>
-              </div>
-            </div>
-
-            <form className="contact-form" action="https://formsubmit.co/thecannerymarketplace@gmail.com" method="POST">
-              <input type="hidden" name="_subject" value="New Cannery Marketplace website inquiry" />
-              <input type="hidden" name="_template" value="table" />
-              <input type="text" name="_honey" style={{ display: "none" }} tabIndex={-1} autoComplete="off" aria-hidden="true" />
-              <h2>Send a message</h2>
-              <p>Fields marked with an asterisk are required.</p>
-              <div className="form-grid">
-                <div className="form-field"><label htmlFor="name">Name *</label><input id="name" name="name" required autoComplete="name" /></div>
-                <div className="form-field"><label htmlFor="email">Email *</label><input id="email" name="email" type="email" required autoComplete="email" /></div>
-                <div className="form-field full"><label htmlFor="phone">Phone</label><input id="phone" name="phone" type="tel" autoComplete="tel" /></div>
-                <div className="form-field full"><label htmlFor="message">How can we help? *</label><textarea id="message" name="message" required /></div>
-              </div>
-              <button className="button-primary" type="submit">Send inquiry <ArrowRight size={15} /></button>
-              <p className="form-note">This form delivers inquiries to the marketplace email address. Please do not include sensitive personal or payment information.</p>
-            </form>
-          </div>
-        </section>
+        <section className="page-hero"><div className="site-container page-hero-content"><p className="eyebrow">Contact The Cannery Marketplace</p><h1 className="display">Looking for something <em>special?</em></h1><p>Find local makers, visit our Gilroy marketplace, or start a conversation about gifts for your team, clients, or event.</p></div></section>
+        <section className="contact-section"><div className="site-container contact-grid"><div className="contact-intro"><p className="eyebrow">Visit us in Gilroy</p><h2 className="display">We would love to <em>hear from you.</em></h2><p className="body-large">Reach us directly, use the form for general questions, or request a custom corporate gifting quote.</p><div className="contact-list"><div className="contact-item"><span>Address</span><p>7488 Monterey Road<br />Gilroy, California 95020</p></div><div className="contact-item"><span>Call</span><a href="tel:+14083371620">(408) 337-1620</a></div><div className="contact-item"><span>Email</span><a href="mailto:thecannerymarketplace@gmail.com">thecannerymarketplace@gmail.com</a></div></div><Link className="button-plain" href="/request-a-quote">Corporate gifting & bulk orders <ArrowRight size={15} /></Link></div><form className="contact-form" action="https://formsubmit.co/thecannerymarketplace@gmail.com" method="POST"><input type="hidden" name="_subject" value="New Cannery Marketplace website inquiry" /><input type="hidden" name="_template" value="table" /><input type="text" name="_honey" style={{ display: "none" }} tabIndex={-1} autoComplete="off" aria-hidden="true" /><h2>Send a message</h2><p>Fields marked with an asterisk are required.</p><div className="form-grid"><div className="form-field"><label htmlFor="name">Name *</label><input id="name" name="name" required autoComplete="name" /></div><div className="form-field"><label htmlFor="email">Email *</label><input id="email" name="email" type="email" required autoComplete="email" /></div><div className="form-field full"><label htmlFor="phone">Phone</label><input id="phone" name="phone" type="tel" autoComplete="tel" /></div><div className="form-field full"><label htmlFor="message">How can we help? *</label><textarea id="message" name="message" required /></div></div><button className="button-primary" type="submit">Send inquiry <ArrowRight size={15} /></button><p className="form-note">This form delivers inquiries to the marketplace email address. Please do not include sensitive personal or payment information.</p></form></div></section>
+        <section className="map-section" aria-labelledby="map-title"><div className="site-container"><div className="map-heading"><div><p className="eyebrow">Find the marketplace</p><h2 className="display" id="map-title">Visit us on <em>Monterey Road.</em></h2></div><p>Stay on this site to see where The Cannery Marketplace is located in Gilroy.</p></div><div className="map-frame"><iframe title="Map showing The Cannery Marketplace at 7488 Monterey Road, Gilroy" src="https://www.google.com/maps?q=7488+Monterey+Road+Gilroy+CA+95020&output=embed" loading="lazy" referrerPolicy="no-referrer-when-downgrade" /></div></div></section>
       </main>
     </SiteShell>
   );

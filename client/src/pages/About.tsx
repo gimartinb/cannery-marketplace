@@ -2,8 +2,12 @@ import { ArrowRight } from "lucide-react";
 import { Link } from "wouter";
 import PageMeta from "@/components/PageMeta";
 import SiteShell from "@/components/SiteShell";
+import { useState } from "react";
+import { readSiteImages, type SiteImage } from "@/lib/siteImages";
 
 export default function About() {
+  const [images] = useState<SiteImage[]>(readSiteImages);
+  const aboutImage = images.find((image) => image.id === "about-display");
   return (
     <SiteShell>
       <PageMeta title="About" description="Learn about The Cannery Marketplace, a Gilroy space for local makers and handcrafted goods." />
@@ -25,7 +29,7 @@ export default function About() {
               <blockquote className="quote-block">“A dedicated space where local makers and artisans can showcase and sell their handcrafted products.”</blockquote>
             </div>
           </div>
-          <div className="site-container about-image"><img src="/manus-storage/cannery-gilroy-products_9830a398.jpg" alt="A display of locally made Gilroy keepsakes and art" /></div>
+          <div className="site-container about-image"><img src={aboutImage?.url} alt={aboutImage?.alt} /></div>
         </section>
 
         <section className="cta-band">
