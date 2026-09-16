@@ -3,11 +3,13 @@ import { useMemo, useState } from "react";
 import { Link } from "wouter";
 import PageMeta from "@/components/PageMeta";
 import SiteShell from "@/components/SiteShell";
-import { categories, vendors } from "@/lib/vendors";
+import { getCategories, readVendors, type Vendor } from "@/lib/vendors";
 
 export default function Vendors() {
   const [category, setCategory] = useState("All makers");
-  const visibleVendors = useMemo(() => category === "All makers" ? vendors : vendors.filter((vendor) => vendor.category === category), [category]);
+  const [vendors, setVendors] = useState<Vendor[]>(readVendors);
+  const categories = getCategories();
+  const visibleVendors = useMemo(() => category === "All makers" ? vendors.filter((vendor) => vendor.active) : vendors.filter((vendor) => vendor.active && vendor.category === category), [category, vendors]);
 
   return (
     <SiteShell>
@@ -34,6 +36,7 @@ export default function Vendors() {
               {visibleVendors.map((vendor, index) => (
                 <article className={`vendor-card ${index === 0 ? "vendor-card-featured" : ""}`} key={vendor.slug}>
                   <Link href={`/vendors/${vendor.slug}`} className={`vendor-placeholder vendor-tone-${vendor.tone}`} aria-label={`View ${vendor.name} profile`}>
+                    {vendor.photoUrl && <img className="vendor-photo" src={vendor.photoUrl} alt="" />}
                     <span className="placeholder-stamp">Preview image</span>
                     <span className="vendor-initials">{vendor.initials}</span>
                     <span className="placeholder-note">Photo placeholder</span>
@@ -48,7 +51,7 @@ export default function Vendors() {
               ))}
             </div>
 
-            <div className="directory-preview-note"><span><Sparkles size={15} /> Stage 2 preview</span><p>These four profiles use temporary placeholder content so you can review the directory layout. They will be replaced with real vendor information after the Airtable connection is approved.</p></div>
+            <div className="directory-preview-note"><span><Sparkles size={15} /> Preview directory</span><p>Five mock profiles are loaded for review. Viva Café uses public profile details and a branded placeholder until the owner supplies or authorizes a photo.</p></div>
           </div>
         </section>
       </main>

@@ -18,7 +18,7 @@ export default function VendorProfile() {
       <main>
         <section className="vendor-profile-hero">
           <div className="site-container vendor-profile-grid">
-            <div className={`vendor-profile-placeholder vendor-tone-${vendor.tone}`}><span className="placeholder-stamp">Preview image</span><span className="vendor-initials">{vendor.initials}</span><span className="placeholder-note">Photo placeholder</span></div>
+            <div className={`vendor-profile-placeholder vendor-tone-${vendor.tone}`}>{vendor.photoUrl && <img className="vendor-photo" src={vendor.photoUrl} alt={`${vendor.name} preview`} />}<span className="placeholder-stamp">Preview image</span><span className="vendor-initials">{vendor.initials}</span><span className="placeholder-note">Photo placeholder</span></div>
             <div className="vendor-profile-copy">
               <Link className="back-link" href="/vendors"><ArrowLeft size={15} /> All makers</Link>
               <p className="eyebrow">{vendor.category}</p>
