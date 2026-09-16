@@ -598,3 +598,12 @@
 .bulk-image-actions { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin-top: 1rem; }
 .bulk-image-actions > span { display: inline-flex; align-items: center; gap: .35rem; color: #6d8b5d; font-size: .7rem; }
 @media (max-width: 760px) { .bulk-image-uploader { margin: 1rem; }.bulk-image-heading, .bulk-image-actions { align-items: stretch; flex-direction: column; }.bulk-image-heading .upload-button, .bulk-image-actions .button-primary { justify-content: center; }.bulk-image-list { grid-template-columns: 1fr; } }
+
+.bulk-dropzone { min-width: 190px; justify-content: center; border: 1px dashed var(--gold); background: var(--paper); cursor: pointer; }
+.bulk-dropzone.dragging { background: #f4ead2; border-color: var(--moss); transform: scale(1.01); }
+.bulk-options { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin-top: .8rem; color: #747a6f; font-size: .68rem; }
+.bulk-options label { display: inline-flex; align-items: center; gap: .4rem; color: var(--moss); font-weight: 700; }
+.bulk-options input { accent-color: var(--gold); }
+.bulk-invalid { margin: .8rem 0 0; color: #9b4e38; font-size: .7rem; line-height: 1.5; }
+.bulk-storage-note { margin: .85rem 0 0; color: #8b9086; font-size: .65rem; line-height: 1.5; }
+@media (max-width: 760px) { .bulk-options { align-items: stretch; flex-direction: column; } }
