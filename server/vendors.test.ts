@@ -9,4 +9,10 @@ describe("preview vendor directory", () => {
     expect(vivra?.socialUrl).toContain("instagram.com/vivracafe");
     expect(vivra?.bio).toContain("Mexican-inspired");
   });
+
+  it("keeps searchable content broad enough for name, category, and bio", () => {
+    const vivra = defaultVendors.find((vendor) => vendor.slug === "vivra-cafe");
+    expect([vivra?.name, vivra?.category, vivra?.bio].join(" ").toLowerCase()).toContain("coffee");
+    expect(vivra?.bio.toLowerCase()).toContain("marranitos");
+  });
 });

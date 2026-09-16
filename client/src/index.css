@@ -162,10 +162,17 @@
 .directory-section { padding: 6.5rem 0 8rem; }
 .directory-toolbar { display: flex; justify-content: space-between; align-items: end; gap: 2rem; margin-bottom: 3.25rem; }
 .directory-toolbar h2 { margin: .8rem 0 0; font-size: clamp(2.65rem, 4vw, 4rem); }
+.directory-controls { display: grid; justify-items: end; gap: .8rem; }
+.directory-search { display: flex; align-items: center; gap: .55rem; min-width: 250px; padding: .55rem .8rem; border-bottom: 1px solid var(--moss); color: var(--gold); }
+.directory-search input { width: 100%; border: 0; outline: 0; background: transparent; color: var(--ink); font: inherit; font-size: .75rem; }
+.directory-search input::placeholder { color: #888b80; }
 .category-filter { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: .5rem; }
 .category-filter button { padding: .65rem .9rem; border: 1px solid var(--line); border-radius: 999px; background: transparent; color: var(--ink); font-size: .67rem; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; transition: color .16s ease, background .16s ease, border .16s ease; }
 .category-filter button:hover, .category-filter button.active { border-color: var(--moss); background: var(--moss); color: var(--paper); }
 .vendor-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 3.6rem 1.7rem; }
+.directory-empty { display: grid; justify-items: center; padding: 4.5rem 1.5rem; border: 1px solid var(--line); background: #fbf8f1; text-align: center; color: var(--gold); }
+.directory-empty h3 { margin: 1rem 0 .35rem; color: var(--ink); font-family: "Playfair Display", Georgia, serif; font-size: 1.6rem; }
+.directory-empty p { margin: 0 0 1.2rem; color: #74796d; font-size: .82rem; }
 .vendor-card-featured { grid-column: span 2; display: grid; grid-template-columns: minmax(220px, .95fr) 1.05fr; gap: 1.7rem; align-items: center; }
 .vendor-card-featured .vendor-card-copy { padding-right: 1rem; }
 .vendor-placeholder, .vendor-profile-placeholder { position: relative; display: flex; align-items: center; justify-content: center; overflow: hidden; min-height: 280px; color: var(--paper); text-decoration: none; isolation: isolate; }
@@ -334,7 +341,9 @@
   .intro-section, .about-story { padding: 5.5rem 0; }
   .directory-section { padding: 5.5rem 0; }
   .directory-toolbar { display: block; margin-bottom: 2.4rem; }
-  .category-filter { justify-content: flex-start; margin-top: 1.6rem; }
+  .directory-controls { justify-items: start; margin-top: 1.6rem; }
+  .directory-search { width: min(100%, 320px); }
+  .category-filter { justify-content: flex-start; }
   .vendor-grid { grid-template-columns: 1fr 1fr; gap: 2.4rem 1rem; }
   .vendor-card-featured { grid-column: 1 / -1; display: block; }
   .vendor-card-featured .vendor-card-copy { padding-right: 0; }
