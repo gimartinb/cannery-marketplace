@@ -203,6 +203,53 @@
 .vendor-profile-bottom h2 { margin: .8rem 0 0; font-size: clamp(2.8rem, 4.5vw, 4.7rem); }
 .rotate-180 { transform: rotate(180deg); }
 
+.gift-hero { padding-bottom: 6.8rem; }
+.gift-section { padding: 6.5rem 0 7.5rem; }
+.gift-section-heading { display: flex; align-items: end; justify-content: space-between; gap: 2rem; margin-bottom: 3rem; }
+.gift-section-heading h2 { margin: .8rem 0 0; font-size: clamp(2.65rem, 4vw, 4.15rem); }
+.sample-badge { display: inline-flex; padding: .65rem .85rem; border: 1px solid var(--gold-soft); border-radius: 999px; color: var(--gold); font-size: .64rem; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; }
+.gift-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.35rem; }
+.gift-card { background: #f4ecdf; border-top: 2px solid var(--gold); }
+.gift-placeholder { position: relative; display: flex; align-items: center; justify-content: center; flex-direction: column; min-height: 310px; gap: .55rem; color: rgba(255,253,248,.86); overflow: hidden; }
+.gift-placeholder::before { content: ""; position: absolute; inset: 0; background: radial-gradient(circle at 26% 23%, rgba(255,255,255,.27), transparent 24%), radial-gradient(circle at 74% 78%, rgba(0,0,0,.2), transparent 34%); }
+.gift-tone-clay { background: linear-gradient(145deg, #b95f43, #6c352b); }
+.gift-tone-sun { background: linear-gradient(145deg, #c29b45, #73552a); }
+.gift-tone-sage { background: linear-gradient(145deg, #8d9a78, #405340); }
+.gift-initials { position: relative; font-family: "Playfair Display", Georgia, serif; font-size: 5.5rem; font-style: italic; letter-spacing: -.09em; }
+.gift-placeholder > span:last-child { position: relative; font-size: .6rem; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; }
+.gift-card-copy { padding: 1.45rem 1.45rem 1.6rem; }
+.gift-card-top { display: flex; align-items: start; justify-content: space-between; gap: 1rem; }
+.gift-card h3 { margin: 0; font-family: "Playfair Display", Georgia, serif; font-size: 1.65rem; letter-spacing: -.035em; }
+.gift-card strong { color: var(--gold); font-family: "Playfair Display", Georgia, serif; font-size: 1.25rem; }
+.gift-card p { margin: .7rem 0 .8rem; color: #61675b; font-size: .9rem; line-height: 1.6; }
+.gift-details { color: var(--moss); font-size: .64rem; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; }
+.gift-button { width: 100%; margin-top: 1.4rem; }
+.gift-button:disabled { cursor: not-allowed; opacity: .65; box-shadow: none; }
+.checkout-note { display: flex; gap: 1rem; align-items: flex-start; margin-top: 3.5rem; padding: 1.45rem 1.6rem; border: 1px solid var(--line); background: var(--paper); }
+.checkout-note-icon { display: inline-flex; align-items: center; justify-content: center; width: 2.3rem; height: 2.3rem; flex: 0 0 auto; border-radius: 50%; background: var(--moss); color: var(--gold-soft); }
+.checkout-note strong { color: var(--ink); font-family: "Playfair Display", Georgia, serif; font-size: 1.1rem; }
+.checkout-note p { margin: .35rem 0 0; color: #62685b; font-size: .86rem; line-height: 1.6; }
+.gift-how-it-works { padding: 6.5rem 0; background: var(--cream); }
+.gift-how-grid { display: grid; grid-template-columns: 1fr .75fr; gap: 5rem; align-items: start; }
+.gift-how-grid h2 { margin: .8rem 0 1.2rem; font-size: clamp(2.9rem, 4.8vw, 4.8rem); }
+.gift-how-grid .body-large { max-width: 45ch; }
+.gift-how-grid .button-plain { margin-top: .8rem; }
+.gift-steps { padding: 1.8rem 0 0 2rem; border-left: 1px solid var(--line); }
+.gift-steps div { display: flex; align-items: center; gap: .75rem; padding: 1rem 0; border-bottom: 1px solid var(--line); color: var(--moss); font-size: .9rem; }
+.gift-steps div:first-child { border-top: 1px solid var(--line); }
+
+.quote-hero { padding-bottom: 6.8rem; }
+.quote-section { padding: 7rem 0 8rem; }
+.quote-grid { display: grid; grid-template-columns: .83fr 1.17fr; gap: clamp(3rem, 8vw, 8.5rem); align-items: start; }
+.quote-icon { display: inline-flex; align-items: center; justify-content: center; width: 3rem; height: 3rem; margin-bottom: 1.35rem; border-radius: 50%; background: var(--moss); color: var(--gold-soft); }
+.quote-intro h2 { margin: .8rem 0 1.2rem; font-size: clamp(3rem, 4.7vw, 4.8rem); }
+.quote-intro .body-large { margin: 0; max-width: 38ch; }
+.quote-points { margin-top: 2.5rem; padding-top: 1.35rem; border-top: 1px solid var(--line); }
+.quote-points p { margin: 0 0 .7rem; color: var(--gold); font-size: .64rem; font-weight: 800; letter-spacing: .13em; text-transform: uppercase; }
+.quote-points ul { padding: 0; margin: 0; list-style: none; color: #60675a; font-size: .94rem; line-height: 1.9; }
+.quote-points li::before { content: "—"; margin-right: .6rem; color: var(--gold); }
+.quote-form { border-top-color: var(--clay); }
+
 .about-story { padding: 8rem 0; }
 .about-story-grid { display: grid; grid-template-columns: .74fr 1.26fr; gap: clamp(3rem, 8vw, 8.7rem); }
 .about-story h2 { margin: .85rem 0 0; font-size: clamp(3rem, 4.6vw, 4.7rem); }
@@ -293,6 +340,15 @@
   .vendor-profile-placeholder { min-height: 360px; }
   .vendor-profile-copy .back-link { margin-bottom: 2.3rem; }
   .vendor-profile-bottom-grid { align-items: flex-start; flex-direction: column; }
+  .gift-section, .quote-section { padding: 5.5rem 0; }
+  .gift-section-heading { display: block; }
+  .sample-badge { margin-top: 1.4rem; }
+  .gift-grid { grid-template-columns: 1fr 1fr; }
+  .gift-placeholder { min-height: 230px; }
+  .gift-how-it-works { padding: 5rem 0; }
+  .gift-how-grid, .quote-grid { grid-template-columns: 1fr; gap: 2.8rem; }
+  .gift-steps { padding: 0; border-left: 0; }
+  .quote-intro h2 { max-width: 12ch; }
   .intro-grid, .about-story-grid, .contact-grid, .vendor-intro-grid, .image-story-grid { grid-template-columns: 1fr; gap: 2.75rem; }
   .features-section { padding-bottom: 5.5rem; }
   .feature-grid { grid-template-columns: 1fr; }
@@ -331,6 +387,10 @@
   .vendor-placeholder { min-height: 330px; }
   .directory-preview-note { display: block; }
   .directory-preview-note p { margin-top: .75rem; }
+  .gift-grid { grid-template-columns: 1fr; }
+  .gift-placeholder { min-height: 290px; }
+  .checkout-note { display: block; }
+  .checkout-note-icon { margin-bottom: .8rem; }
   .footer-main { grid-template-columns: 1fr; }
   .footer-brand { grid-column: auto; }
   .footer-base { flex-direction: column; }
