@@ -15,7 +15,17 @@ export type Vendor = {
   ownerBio?: string;
   makerStory?: string;
   workSamples?: { title: string; description: string; tone: string }[];
+  websiteUrl?: string;
+  instagramUrl?: string;
+  facebookUrl?: string;
+  tiktokUrl?: string;
+  galleryImageUrls?: string[];
 };
+
+export function publishedVendorToView(vendor: { slug: string; name: string; category: string; shortBio: string; ownerBio?: string | null; websiteUrl?: string | null; instagramUrl?: string | null; facebookUrl?: string | null; tiktokUrl?: string | null; coverImageUrl?: string | null; galleryImageUrls?: string[]; featured: boolean; displayOrder: number; active: boolean }): Vendor {
+  const socialUrl = vendor.instagramUrl || vendor.websiteUrl || vendor.facebookUrl || vendor.tiktokUrl || "";
+  return { slug: vendor.slug, name: vendor.name, category: vendor.category, bio: vendor.shortBio, ownerBio: vendor.ownerBio || undefined, makerStory: vendor.ownerBio || undefined, socialLabel: vendor.instagramUrl ? "Instagram" : vendor.websiteUrl ? "Website" : vendor.facebookUrl ? "Facebook" : vendor.tiktokUrl ? "TikTok" : "", socialUrl, initials: vendor.name.split(/\s+/).map((word) => word[0]).join("").slice(0, 2).toUpperCase(), tone: "moss", photoUrl: vendor.coverImageUrl || undefined, active: vendor.active, featured: vendor.featured, displayOrder: vendor.displayOrder, websiteUrl: vendor.websiteUrl || undefined, instagramUrl: vendor.instagramUrl || undefined, facebookUrl: vendor.facebookUrl || undefined, tiktokUrl: vendor.tiktokUrl || undefined, galleryImageUrls: vendor.galleryImageUrls || [] };
+}
 
 export const defaultVendors: Vendor[] = [
   { slug: "juniper-clay-studio", name: "Juniper Clay Studio", category: "Ceramics", bio: "Hand-thrown pottery made in small batches, with soft desert colors and everyday shapes designed to be used.", socialLabel: "@juniperclaystudio", socialUrl: "https://instagram.com/", initials: "JC", tone: "clay", active: true, featured: true, spotlight: "editorial", displayOrder: 1 },
@@ -51,6 +61,9 @@ export function resetPreviewData() {
 
 export function getVendor(slug: string) {
   return readVendors().find((vendor) => vendor.slug === slug && vendor.active);
+}
+export function getDefaultVendor(slug: string) {
+  return defaultVendors.find((vendor) => vendor.slug === slug && vendor.active);
 }
 
 export function getCategories() {

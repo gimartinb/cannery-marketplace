@@ -5,7 +5,7 @@ import { Route, Switch, useLocation } from "wouter";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import About from "./pages/About";
-import Admin from "./pages/Admin";
+import SecureAdmin from "./pages/SecureAdmin";
 import BecomeVendor from "./pages/BecomeVendor";
 import Contact from "./pages/Contact";
 import Gifts from "./pages/Gifts";
@@ -31,7 +31,7 @@ function Router() {
       <Route path="/become-a-vendor" component={BecomeVendor} />
       <Route path="/gifts" component={Gifts} />
       <Route path="/request-a-quote" component={RequestQuote} />
-      <Route path="/admin" component={Admin} />
+      <Route path="/admin" component={SecureAdmin} />
       <Route path="/maker-portal" component={MakerPortal} />
       <Route path="/vendors/:slug" component={VendorProfile} />
       <Route path="/vendors" component={Vendors} />

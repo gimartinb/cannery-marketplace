@@ -3,28 +3,25 @@ import { useEffect, useMemo, useState } from "react";
 import { Link } from "wouter";
 import PageMeta from "@/components/PageMeta";
 import SiteShell from "@/components/SiteShell";
-import { readVendors, type Vendor } from "@/lib/vendors";
+import { defaultVendors, publishedVendorToView } from "@/lib/vendors";
+import { trpc } from "@/lib/trpc";
 
 export default function Vendors() {
   const [category, setCategory] = useState("All makers");
   const [search, setSearch] = useState("");
-  const [vendors, setVendors] = useState<Vendor[]>(readVendors);
-  const categories = useMemo(() => ["All makers", ...Array.from(new Set(vendors.filter((vendor) => vendor.active).map((vendor) => vendor.category))).sort()], [vendors]);
+  const vendors = defaultVendors;
+  const directory = trpc.directory.list.useQuery();
+  const allVendors = useMemo(() => { const approved = (directory.data || []).map(publishedVendorToView); const slugs = new Set(approved.map((vendor) => vendor.slug)); return [...approved, ...vendors.filter((vendor) => !slugs.has(vendor.slug))]; }, [directory.data, vendors]);
+  const categories = useMemo(() => ["All makers", ...Array.from(new Set(allVendors.filter((vendor) => vendor.active).map((vendor) => vendor.category))).sort()], [allVendors]);
   useEffect(() => { if (!categories.includes(category)) setCategory("All makers"); }, [categories, category]);
-  useEffect(() => {
-    const refresh = () => setVendors(readVendors());
-    window.addEventListener("storage", refresh);
-    window.addEventListener("cannery-vendors-updated", refresh);
-    return () => { window.removeEventListener("storage", refresh); window.removeEventListener("cannery-vendors-updated", refresh); };
-  }, []);
   const visibleVendors = useMemo(() => {
     const normalizedSearch = search.trim().toLowerCase();
-    return vendors.filter((vendor) => {
+    return allVendors.filter((vendor) => {
       if (!vendor.active || (category !== "All makers" && vendor.category !== category)) return false;
       if (!normalizedSearch) return true;
       return [vendor.name, vendor.category, vendor.bio, vendor.socialLabel].some((value) => value.toLowerCase().includes(normalizedSearch));
     });
-  }, [category, search, vendors]);
+  }, [category, search, allVendors]);
 
   return (
     <SiteShell>
