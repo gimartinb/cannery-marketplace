@@ -22,10 +22,12 @@ export default function Vendors() {
       return [vendor.name, vendor.category, vendor.bio, vendor.socialLabel].some((value) => value.toLowerCase().includes(normalizedSearch));
     });
   }, [category, search, allVendors]);
+  const directoryStructuredData = { "@context": "https://schema.org", "@type": "CollectionPage", name: "Local makers at The Cannery Marketplace", url: "https://cannerymarket.com/vendors", mainEntity: { "@type": "ItemList", itemListElement: allVendors.filter((vendor) => vendor.active).map((vendor, index) => ({ "@type": "ListItem", position: index + 1, url: `https://cannerymarket.com/vendors/${vendor.slug}`, item: { "@type": "Organization", name: vendor.name, description: vendor.bio, knowsAbout: vendor.category } })) } };
 
   return (
     <SiteShell>
-      <PageMeta title="Local makers" description="Meet the local makers and artisans represented at The Cannery Marketplace in Gilroy, California." />
+      <PageMeta canonicalPath="/vendors" title="Local maker directory in Gilroy" description="Meet local makers and artisans at The Cannery Marketplace in Gilroy. Search maker profiles, discover their products, and read the stories behind the work." />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(directoryStructuredData) }} />
       <main>
         <section className="page-hero directory-hero">
           <div className="site-container page-hero-content">
@@ -49,7 +51,7 @@ export default function Vendors() {
               {visibleVendors.map((vendor, index) => (
                 <article className={`vendor-card ${index === 0 ? "vendor-card-featured" : ""}`} key={vendor.slug}>
                   <Link href={`/vendors/${vendor.slug}`} className={`vendor-placeholder vendor-tone-${vendor.tone}`} aria-label={`View ${vendor.name} profile`}>
-                    {vendor.photoUrl && <img className="vendor-photo" src={vendor.photoUrl} alt="" />}
+                    {vendor.photoUrl && <img className="vendor-photo" src={vendor.photoUrl} alt={`${vendor.name}, a ${vendor.category} maker at The Cannery Marketplace`} width="800" height="800" loading="lazy" decoding="async" />}
                     <span className="placeholder-stamp">Preview image</span>
                     <span className="vendor-initials">{vendor.initials}</span>
                     <span className="placeholder-note">Photo placeholder</span>

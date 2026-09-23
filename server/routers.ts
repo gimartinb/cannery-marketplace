@@ -52,7 +52,7 @@ export const appRouter = router({
     me: publicProcedure.query(async ({ ctx }) => { const session = await readCredentialSession(ctx.req); return session ? { authenticated: true as const, accountType: session.accountType, accountId: session.accountId } : { authenticated: false as const }; }),
     logout: publicProcedure.mutation(async ({ ctx }) => { await clearCredentialSession(ctx.req, ctx.res); return { success: true }; }),
   }),
-  settings: router({ public: publicProcedure.query(async () => ({ giftBoxesEnabled: (await getSiteSetting("gift_boxes_enabled", "true")) === "true" })) }),
+  settings: router({ public: publicProcedure.query(async () => ({ giftBoxesEnabled: (await getSiteSetting("gift_boxes_enabled", "false")) === "true" })) }),
   directory: router({
     list: publicProcedure.query(listPublicVendorProfiles),
     bySlug: publicProcedure.input(z.object({ slug: z.string().trim().min(1).max(160) })).query(({ input }) => getPublicVendorProfile(input.slug)),
@@ -63,7 +63,7 @@ export const appRouter = router({
     uploadImage: publicProcedure.input(z.object({ fileName: z.string().trim().min(1).max(180), mimeType: z.enum(["image/jpeg", "image/png", "image/webp"]), dataBase64: z.string().max(8_000_000) })).mutation(async ({ ctx, input }) => { const session = await requireCredential(ctx.req, "vendor"); const bytes = Buffer.from(input.dataBase64, "base64"); if (bytes.length > 5 * 1024 * 1024) throw new TRPCError({ code: "PAYLOAD_TOO_LARGE", message: "Image exceeds 5 MB." }); const safe = input.fileName.replace(/[^a-z0-9._-]+/gi, "-"); return storagePut(`vendor-${session.accountId}/${safe}`, bytes, input.mimeType); }),
   }),
   adminPortal: router({
-    dashboard: publicProcedure.query(async ({ ctx }) => { await requireCredential(ctx.req, "admin"); return { submissions: await listVendorSubmissions(), vendors: await listAllVendorProfiles(), giftBoxesEnabled: (await getSiteSetting("gift_boxes_enabled", "true")) === "true" }; }),
+    dashboard: publicProcedure.query(async ({ ctx }) => { await requireCredential(ctx.req, "admin"); return { submissions: await listVendorSubmissions(), vendors: await listAllVendorProfiles(), giftBoxesEnabled: (await getSiteSetting("gift_boxes_enabled", "false")) === "true" }; }),
     review: publicProcedure.input(reviewDecisionSchema).mutation(async ({ ctx, input }) => { const session = await requireCredential(ctx.req, "admin"); await reviewVendorSubmission(input.submissionId, input.decision, input.note, session.accountId); return { success: true }; }),
     setGiftBoxesEnabled: publicProcedure.input(z.object({ enabled: z.boolean() })).mutation(async ({ ctx, input }) => { await requireCredential(ctx.req, "admin"); await setSiteSetting("gift_boxes_enabled", String(input.enabled)); return { success: true }; }),
     setVendorActive: publicProcedure.input(z.object({ id: z.number().int().positive(), active: z.boolean() })).mutation(async ({ ctx, input }) => { await requireCredential(ctx.req, "admin"); await setVendorActive(input.id, input.active); return { success: true }; }),

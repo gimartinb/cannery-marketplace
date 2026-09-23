@@ -9,10 +9,10 @@ import { trpc } from "@/lib/trpc";
 export default function Gifts() {
   const [giftBoxes] = useState<GiftBox[]>(readGiftBoxes);
   const { data: settings } = trpc.settings.public.useQuery();
-  if (settings?.giftBoxesEnabled === false) return <SiteShell><PageMeta title="Corporate gifting" description="Request custom local gifts from The Cannery Marketplace in Gilroy." /><main><section className="page-hero gift-hero"><div className="site-container page-hero-content"><p className="eyebrow">Gifting at The Cannery</p><h1 className="display">Gift boxes are <em>restocking.</em></h1><p>Ready-to-order boxes are temporarily unavailable. Corporate and bulk gifting requests are still welcome.</p><Link className="button-primary" href="/request-a-quote">Request a custom quote <ArrowRight size={15} /></Link></div></section></main></SiteShell>;
+  if (settings?.giftBoxesEnabled === false) return <SiteShell><PageMeta canonicalPath="/gifts" noIndex title="Gift boxes unavailable" description="The Cannery Marketplace gift-box catalog is currently unavailable." /><main><section className="page-hero gift-hero"><div className="site-container page-hero-content"><p className="eyebrow">Gifting at The Cannery</p><h1 className="display">Gift boxes are <em>restocking.</em></h1><p>The catalog is currently unavailable. Please explore the local maker directory while this feature is paused.</p><Link className="button-primary" href="/vendors">Explore local makers <ArrowRight size={15} /></Link></div></section></main></SiteShell>;
   return (
     <SiteShell>
-      <PageMeta title="Gift boxes" description="Shop sample gift boxes featuring handcrafted goods from The Cannery Marketplace in Gilroy, California." />
+      <PageMeta canonicalPath="/gifts" title="Gift boxes from local Gilroy makers" description="Shop gift boxes featuring handcrafted goods from makers at The Cannery Marketplace in Gilroy, California." />
       <main>
         <section className="page-hero gift-hero">
           <div className="site-container page-hero-content">

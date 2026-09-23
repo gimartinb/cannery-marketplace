@@ -1,0 +1,6 @@
+User-agent: *
+Allow: /
+Disallow: /admin
+Disallow: /maker-portal
+
+Sitemap: https://cannerymarket.com/sitemap.xml

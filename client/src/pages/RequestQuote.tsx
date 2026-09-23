@@ -5,7 +5,7 @@ import SiteShell from "@/components/SiteShell";
 export default function RequestQuote() {
   return (
     <SiteShell>
-      <PageMeta title="Request a quote" description="Request custom pricing for corporate and bulk gift-box orders from The Cannery Marketplace." />
+      <PageMeta canonicalPath="/request-a-quote" noIndex title="Request a corporate order quote" description="Request custom pricing for corporate and bulk orders from The Cannery Marketplace." />
       <main>
         <section className="page-hero quote-hero"><div className="site-container page-hero-content"><p className="eyebrow">Corporate & bulk gifting</p><h1 className="display">A thoughtful gift, <em>at scale.</em></h1><p>Tell us what you are planning and we will work with you on quantities, packaging, timing, and custom pricing.</p></div></section>
         <section className="quote-section"><div className="site-container quote-grid"><div className="quote-intro"><div className="quote-icon"><Building2 size={22} /></div><p className="eyebrow">Let’s plan it together</p><h2 className="display">Made local. <em>Made personal.</em></h2><p className="body-large">This form is for corporate gifts, client thank-yous, event orders, and other requests that need custom pricing or invoicing. We will reply by email to discuss the details.</p><div className="quote-points"><p>Useful details to include:</p><ul><li>Estimated quantity</li><li>Preferred delivery date</li><li>Gift-box or product preferences</li><li>Shipping destinations</li></ul></div></div>

@@ -10,7 +10,7 @@ export default function About() {
   const aboutImage = images.find((image) => image.id === "about-display");
   return (
     <SiteShell>
-      <PageMeta title="About" description="Learn about The Cannery Marketplace, a Gilroy space for local makers and handcrafted goods." />
+      <PageMeta canonicalPath="/about" title="About our Gilroy artisan marketplace" description="Learn how The Cannery Marketplace gives Gilroy makers and artisans a welcoming place to share handcrafted work with the community." />
       <main>
         <section className="page-hero">
           <div className="site-container page-hero-content">
@@ -29,7 +29,7 @@ export default function About() {
               <blockquote className="quote-block">“A dedicated space where local makers and artisans can showcase and sell their handcrafted products.”</blockquote>
             </div>
           </div>
-          <div className="site-container about-image"><img src={aboutImage?.url} alt={aboutImage?.alt} /></div>
+          <div className="site-container about-image"><img src={aboutImage?.url} alt={aboutImage?.alt} width="348" height="348" loading="lazy" decoding="async" /></div>
         </section>
 
         <section className="cta-band">
