@@ -101,3 +101,11 @@ export type InsertUser = typeof users.$inferInsert;
 export type VendorAccount = typeof vendorAccounts.$inferSelect;
 export type VendorProfile = typeof vendorProfiles.$inferSelect;
 export type VendorSubmission = typeof vendorSubmissions.$inferSelect;
+
+export const adminGoogleAccounts = mysqlTable("admin_google_accounts", {
+  id: int("id").autoincrement().primaryKey(),
+  googleSub: varchar("googleSub", { length: 64 }).notNull(),
+  email: varchar("email", { length: 320 }).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  lastSignedIn: timestamp("lastSignedIn"),
+}, (table) => [uniqueIndex("admin_google_accounts_sub_unique").on(table.googleSub)]);

@@ -1,7 +1,7 @@
 import { and, desc, eq, gt, inArray, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
 import {
-  adminCredentials, credentialSessions, InsertUser, siteSettings, users,
+  adminCredentials, adminGoogleAccounts, credentialSessions, InsertUser, siteSettings, users,
   vendorAccounts, vendorProfiles, vendorSubmissions,
 } from "../drizzle/schema";
 import type { VendorProfileInput } from "../shared/vendorProfile";
@@ -75,3 +75,19 @@ export async function bulkImportVendorProfiles(inputs: VendorProfileInput[]) {
 
 export async function getSiteSetting(key: string, fallback: string) { const db = await requireDb(); return (await db.select().from(siteSettings).where(eq(siteSettings.key, key)).limit(1))[0]?.value ?? fallback; }
 export async function setSiteSetting(key: string, value: string) { const db = await requireDb(); await db.insert(siteSettings).values({ key, value }).onDuplicateKeyUpdate({ set: { value } }); }
+
+export async function getAdminGoogleAccountBySub(googleSub: string) {
+  const db = await requireDb();
+  return (await db.select().from(adminGoogleAccounts).where(eq(adminGoogleAccounts.googleSub, googleSub)).limit(1))[0];
+}
+
+export async function upsertAdminGoogleAccount(googleSub: string, email: string) {
+  const db = await requireDb();
+  const existing = await getAdminGoogleAccountBySub(googleSub);
+  if (existing) {
+    await db.update(adminGoogleAccounts).set({ email, lastSignedIn: new Date() }).where(eq(adminGoogleAccounts.id, existing.id));
+    return { id: existing.id };
+  }
+  const result = await db.insert(adminGoogleAccounts).values({ googleSub, email, lastSignedIn: new Date() });
+  return { id: Number(result[0].insertId) };
+}
