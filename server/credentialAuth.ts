@@ -5,7 +5,7 @@ import { deleteCredentialSession, getCredentialSessionByHash, insertCredentialSe
 
 export const CREDENTIAL_COOKIE = "cannery_credentials";
 const SESSION_MS = 7 * 24 * 60 * 60 * 1000;
-const SETUP_TOKEN_HASH = process.env.ADMIN_SETUP_TOKEN_HASH || "47ccee2907b659b1b50a8e5ba6a49fa663cb7dd80e66dba4c88f144165b8df60";
+const SETUP_TOKEN_HASH = process.env.ADMIN_SETUP_TOKEN_HASH;
 
 function sha256(value: string) { return createHash("sha256").update(value).digest("hex"); }
 function secureRequest(req: Request) { const forwarded = req.headers["x-forwarded-proto"]; return req.protocol === "https" || (typeof forwarded === "string" && forwarded.split(",").some((item) => item.trim() === "https")); }
@@ -25,6 +25,7 @@ export function verifyPassword(password: string, encoded: string) {
 }
 
 export function verifySetupToken(token: string) {
+  if (!SETUP_TOKEN_HASH) return false;
   const actual = Buffer.from(sha256(token));
   const expected = Buffer.from(SETUP_TOKEN_HASH);
   return actual.length === expected.length && timingSafeEqual(actual, expected);
