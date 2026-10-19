@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { defaultSiteImages } from "@/lib/siteImages";
+import { useSiteImage } from "@/lib/siteImages";
 
 const SITE_URL = "https://cannerymarket.com";
 
@@ -17,11 +17,12 @@ function absoluteUrl(value: string) {
 }
 
 export default function PageMeta({ title, description, canonicalPath, image, noIndex = false }: PageMetaProps) {
+  const defaultSocialImage = useSiteImage("social-sharing").url;
   useEffect(() => {
     const fullTitle = title.includes("The Cannery Marketplace") ? title : `${title} | The Cannery Marketplace`;
     const path = canonicalPath ?? window.location.pathname;
     const canonicalUrl = `${SITE_URL}${path === "/" ? "/" : path.replace(/\/$/, "")}`;
-    const socialImage = absoluteUrl(image || defaultSiteImages.find((item) => item.id === "social-sharing")?.url || "/manus-storage/cannery-interior_1da69d7b.jpg");
+    const socialImage = absoluteUrl(image || defaultSocialImage);
 
     document.title = fullTitle;
 
@@ -55,7 +56,7 @@ export default function PageMeta({ title, description, canonicalPath, image, noI
     setMeta('meta[name="twitter:title"]', "name", "twitter:title", fullTitle);
     setMeta('meta[name="twitter:description"]', "name", "twitter:description", description);
     setMeta('meta[name="twitter:image"]', "name", "twitter:image", socialImage);
-  }, [canonicalPath, description, image, noIndex, title]);
+  }, [canonicalPath, defaultSocialImage, description, image, noIndex, title]);
 
   return null;
 }

@@ -62,6 +62,15 @@ export const siteSettings = sqliteTable("site_settings", {
   updatedAt: updatedAt(),
 });
 
+// Owner replacements for the site's named image spots (logo, hero, ...).
+// No row means the built-in default image is shown.
+export const siteImages = sqliteTable("site_images", {
+  id: text("id").primaryKey(),
+  url: text("url").notNull(),
+  alt: text("alt"),
+  updatedAt: updatedAt(),
+});
+
 export type VendorAccount = typeof vendorAccounts.$inferSelect;
 export type VendorProfile = typeof vendorProfiles.$inferSelect;
 export type VendorSubmission = typeof vendorSubmissions.$inferSelect;

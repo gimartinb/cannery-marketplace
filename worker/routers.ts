@@ -1,7 +1,10 @@
 import { reviewDecisionSchema, vendorProfileSchema } from "../shared/vendorProfile";
 import { z } from "zod";
+import { SITE_IMAGE_SLOT_IDS } from "../shared/siteImageSlots";
+import { TRPCError } from "@trpc/server";
+import { deleteSiteImageObject } from "./media";
 import {
-  bulkImportVendorProfiles, createVendorSubmission, getLatestVendorSubmission, getPublicVendorProfile,
+  bulkImportVendorProfiles, deleteSiteImage, getSiteImage, listSiteImages, setSiteImageAlt, createVendorSubmission, getLatestVendorSubmission, getPublicVendorProfile,
   getSiteSetting, listAllVendorProfiles, listPublicVendorProfiles, listVendorSubmissions,
   reviewVendorSubmission, setSiteSetting, setVendorActive,
 } from "./db";
@@ -12,6 +15,8 @@ const giftBoxesEnabled = async (db: Parameters<typeof getSiteSetting>[0]) => (aw
 // Mounted at /api/trpc. Open to everyone.
 export const publicRouter = router({
   settings: router({ public: publicProcedure.query(async ({ ctx }) => ({ giftBoxesEnabled: await giftBoxesEnabled(ctx.db) })) }),
+  // Owner replacements for the named image spots. Spots with no entry use the built-in default.
+  siteImages: router({ list: publicProcedure.query(({ ctx }) => listSiteImages(ctx.db)) }),
   directory: router({
     list: publicProcedure.query(({ ctx }) => listPublicVendorProfiles(ctx.db)),
     bySlug: publicProcedure.input(z.object({ slug: z.string().trim().min(1).max(160) })).query(({ ctx, input }) => getPublicVendorProfile(ctx.db, input.slug)),
@@ -36,6 +41,17 @@ export const adminRouter = router({
     review: adminProcedure.input(reviewDecisionSchema).mutation(async ({ ctx, input }) => { await reviewVendorSubmission(ctx.db, input.submissionId, input.decision, input.note); return { success: true }; }),
     setGiftBoxesEnabled: adminProcedure.input(z.object({ enabled: z.boolean() })).mutation(async ({ ctx, input }) => { await setSiteSetting(ctx.db, "gift_boxes_enabled", String(input.enabled)); return { success: true }; }),
     setVendorActive: adminProcedure.input(z.object({ id: z.number().int().positive(), active: z.boolean() })).mutation(async ({ ctx, input }) => { await setVendorActive(ctx.db, input.id, input.active); return { success: true }; }),
+    // Uploads use POST /api/admin/upload?slot=... (raw bytes, see media.ts). These edit or undo them.
+    setSiteImageAlt: adminProcedure.input(z.object({ id: z.enum(SITE_IMAGE_SLOT_IDS), alt: z.string().trim().max(300) })).mutation(async ({ ctx, input }) => {
+      if (!(await setSiteImageAlt(ctx.db, input.id, input.alt))) throw new TRPCError({ code: "NOT_FOUND", message: "Upload a replacement image before editing its description." });
+      return { success: true };
+    }),
+    resetSiteImage: adminProcedure.input(z.object({ id: z.enum(SITE_IMAGE_SLOT_IDS) })).mutation(async ({ ctx, input }) => {
+      const current = await getSiteImage(ctx.db, input.id);
+      await deleteSiteImage(ctx.db, input.id);
+      await deleteSiteImageObject(ctx.env, current?.url);
+      return { success: true };
+    }),
     bulkImport: adminProcedure.input(z.object({ vendors: z.array(vendorProfileSchema).min(1).max(500) })).mutation(async ({ ctx, input }) => ({ imported: await bulkImportVendorProfiles(ctx.db, input.vendors) })),
   }),
 });

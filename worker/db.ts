@@ -1,7 +1,7 @@
 import { desc, eq, inArray, and } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { TRPCError } from "@trpc/server";
-import { siteSettings, vendorAccounts, vendorProfiles, vendorSubmissions } from "../drizzle/schema";
+import { siteImages, siteSettings, vendorAccounts, vendorProfiles, vendorSubmissions } from "../drizzle/schema";
 import type { VendorProfileInput } from "../shared/vendorProfile";
 
 export type Database = ReturnType<typeof createDb>;
@@ -105,4 +105,26 @@ export async function getSiteSetting(db: Database, key: string, fallback: string
 
 export async function setSiteSetting(db: Database, key: string, value: string) {
   await db.insert(siteSettings).values({ key, value }).onConflictDoUpdate({ target: siteSettings.key, set: { value } });
+}
+
+// Site images: owner replacements for the named image spots.
+export async function listSiteImages(db: Database) {
+  return db.select({ id: siteImages.id, url: siteImages.url, alt: siteImages.alt }).from(siteImages);
+}
+
+export async function getSiteImage(db: Database, id: string) {
+  return (await db.select().from(siteImages).where(eq(siteImages.id, id)).limit(1))[0] ?? null;
+}
+
+export async function setSiteImageUrl(db: Database, id: string, url: string) {
+  await db.insert(siteImages).values({ id, url }).onConflictDoUpdate({ target: siteImages.id, set: { url } });
+}
+
+export async function setSiteImageAlt(db: Database, id: string, alt: string) {
+  const result = await db.update(siteImages).set({ alt: alt || null }).where(eq(siteImages.id, id)).returning({ id: siteImages.id });
+  return result.length > 0;
+}
+
+export async function deleteSiteImage(db: Database, id: string) {
+  await db.delete(siteImages).where(eq(siteImages.id, id));
 }

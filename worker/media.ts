@@ -1,5 +1,6 @@
-import { getAccessIdentity } from "./access";
-import { createDb, getOrCreateVendorAccount } from "./db";
+import { isSiteImageSlot } from "../shared/siteImageSlots";
+import { getAccessIdentity, isAdminEmail } from "./access";
+import { createDb, getOrCreateVendorAccount, getSiteImage, setSiteImageUrl } from "./db";
 import type { Env } from "./env";
 
 const MAX_UPLOAD_BYTES = 5 * 1024 * 1024;
@@ -14,11 +15,9 @@ function json(body: unknown, status = 200) {
  * Body: the raw image bytes. Streamed straight into R2, so it costs almost no
  * Worker CPU (base64 inside JSON would not fit the free tier's CPU budget).
  */
-export async function handleVendorUpload(request: Request, env: Env): Promise<Response> {
+/** Checks method, type, and size. Returns the image type and extension, or an error response. */
+function validateImageUpload(request: Request): { contentType: string; extension: string; body: ReadableStream } | Response {
   if (request.method !== "POST") return json({ error: "Method not allowed" }, 405);
-  const identity = await getAccessIdentity(request, env);
-  if (!identity) return json({ error: "Please sign in to the maker portal." }, 401);
-
   const contentType = (request.headers.get("Content-Type") || "").split(";")[0].trim().toLowerCase();
   const extension = EXTENSIONS[contentType];
   if (!extension) return json({ error: "Use a JPEG, PNG, or WebP image." }, 415);
@@ -26,15 +25,53 @@ export async function handleVendorUpload(request: Request, env: Env): Promise<Re
   if (!length) return json({ error: "Missing image." }, 411);
   if (length > MAX_UPLOAD_BYTES) return json({ error: "Image exceeds 5 MB." }, 413);
   if (!request.body) return json({ error: "Missing image." }, 400);
+  return { contentType, extension, body: request.body };
+}
+
+const randomSuffix = () => crypto.randomUUID().replace(/-/g, "").slice(0, 8);
+
+/** Deletes an owner-uploaded site image from R2. Never touches vendor photos or built-in defaults. */
+export async function deleteSiteImageObject(env: Env, url: string | null | undefined) {
+  if (url && url.startsWith("/media/site/")) await env.MEDIA.delete(url.slice("/media/".length));
+}
+
+export async function handleVendorUpload(request: Request, env: Env): Promise<Response> {
+  const identity = await getAccessIdentity(request, env);
+  if (!identity) return json({ error: "Please sign in to the maker portal." }, 401);
+  const upload = validateImageUpload(request);
+  if (upload instanceof Response) return upload;
+  const { contentType, extension } = upload;
 
   const account = await getOrCreateVendorAccount(createDb(env.DB), identity.email);
   const rawName = new URL(request.url).searchParams.get("name") || "image";
   const base = rawName.replace(/\.[^.]+$/, "").replace(/[^a-z0-9._-]+/gi, "-").replace(/^-+|-+$/g, "").slice(0, 120) || "image";
-  const suffix = crypto.randomUUID().replace(/-/g, "").slice(0, 8);
-  const key = `vendor-${account.id}/${base}_${suffix}.${extension}`;
+  const key = `vendor-${account.id}/${base}_${randomSuffix()}.${extension}`;
 
-  await env.MEDIA.put(key, request.body, { httpMetadata: { contentType } });
+  await env.MEDIA.put(key, upload.body, { httpMetadata: { contentType } });
   return json({ key, url: `/media/${key}` });
+}
+
+/**
+ * POST /api/admin/upload?slot=<site image spot>  (owners only)
+ * Body: the raw image bytes. Replaces that spot's image and removes the previous upload.
+ */
+export async function handleSiteImageUpload(request: Request, env: Env): Promise<Response> {
+  const identity = await getAccessIdentity(request, env);
+  if (!identity) return json({ error: "Please sign in as an administrator." }, 401);
+  if (!isAdminEmail(env, identity.email)) return json({ error: "This email is not on the approved owner list." }, 403);
+  const slot = new URL(request.url).searchParams.get("slot") || "";
+  if (!isSiteImageSlot(slot)) return json({ error: "Unknown image spot." }, 400);
+  const upload = validateImageUpload(request);
+  if (upload instanceof Response) return upload;
+
+  const db = createDb(env.DB);
+  const previous = await getSiteImage(db, slot);
+  const key = `site/${slot}_${randomSuffix()}.${upload.extension}`;
+  await env.MEDIA.put(key, upload.body, { httpMetadata: { contentType: upload.contentType } });
+  const url = `/media/${key}`;
+  await setSiteImageUrl(db, slot, url);
+  await deleteSiteImageObject(env, previous?.url);
+  return json({ key, url });
 }
 
 /**

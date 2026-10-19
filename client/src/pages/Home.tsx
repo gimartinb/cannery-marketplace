@@ -3,7 +3,7 @@ import { useMemo } from "react";
 import { Link } from "wouter";
 import PageMeta from "@/components/PageMeta";
 import SiteShell from "@/components/SiteShell";
-import { defaultSiteImages } from "@/lib/siteImages";
+import { useSiteImage } from "@/lib/siteImages";
 import { defaultVendors, publishedVendorToView, type Vendor } from "@/lib/vendors";
 import { trpc } from "@/lib/trpc";
 
@@ -26,8 +26,8 @@ export default function Home() {
     const approvedSlugs = new Set(approved.map((vendor) => vendor.slug));
     return [...approved, ...defaultVendors.filter((vendor) => !approvedSlugs.has(vendor.slug))];
   }, [directory.data]);
-  const heroImage = defaultSiteImages.find((image) => image.id === "home-hero")!;
-  const interiorImage = defaultSiteImages.find((image) => image.id === "marketplace-interior")!;
+  const heroImage = useSiteImage("home-hero");
+  const interiorImage = useSiteImage("marketplace-interior");
   const featuredVendors = useMemo(() => vendors.filter((vendor) => vendor.active && vendor.featured).sort((a, b) => (a.displayOrder ?? 99) - (b.displayOrder ?? 99)).slice(0, 3), [vendors]);
 
   const structuredData = {
@@ -38,7 +38,7 @@ export default function Home() {
         "@id": "https://cannerymarket.com/#marketplace",
         name: "The Cannery Marketplace",
         description: "A Gilroy marketplace where shoppers discover local makers, artisan products, and the stories behind the work.",
-        image: "https://cannerymarket.com/manus-storage/cannery-interior_1da69d7b.jpg",
+        image: "https://cannerymarket.com/images/cannery-interior.jpg",
         url: "https://cannerymarket.com/",
         telephone: "+1-408-337-1620",
         address: { "@type": "PostalAddress", streetAddress: "7488 Monterey Road", addressLocality: "Gilroy", addressRegion: "CA", postalCode: "95020", addressCountry: "US" },

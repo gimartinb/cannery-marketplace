@@ -2,12 +2,10 @@ import { ArrowRight } from "lucide-react";
 import { Link } from "wouter";
 import PageMeta from "@/components/PageMeta";
 import SiteShell from "@/components/SiteShell";
-import { useState } from "react";
-import { readSiteImages, type SiteImage } from "@/lib/siteImages";
+import { useSiteImage } from "@/lib/siteImages";
 
 export default function About() {
-  const [images] = useState<SiteImage[]>(readSiteImages);
-  const aboutImage = images.find((image) => image.id === "about-display");
+  const aboutImage = useSiteImage("about-display");
   return (
     <SiteShell>
       <PageMeta canonicalPath="/about" title="About our Gilroy artisan marketplace" description="Learn how The Cannery Marketplace gives Gilroy makers and artisans a welcoming place to share handcrafted work with the community." />

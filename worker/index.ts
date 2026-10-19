@@ -1,7 +1,7 @@
 import { fetchRequestHandler } from "@trpc/server/adapters/fetch";
 import type { AnyTRPCRouter } from "@trpc/server";
 import type { Env } from "./env";
-import { handleMedia, handleVendorUpload } from "./media";
+import { handleMedia, handleSiteImageUpload, handleVendorUpload } from "./media";
 import { adminRouter, publicRouter, vendorRouter } from "./routers";
 import { createContext } from "./trpc";
 
@@ -41,6 +41,7 @@ export default {
     }
 
     if (pathname === "/api/vendor/upload") return withSecurityHeaders(await handleVendorUpload(request, env));
+    if (pathname === "/api/admin/upload") return withSecurityHeaders(await handleSiteImageUpload(request, env));
     if (pathname.startsWith("/media/")) return handleMedia(request, env, decodeURIComponent(pathname.slice("/media/".length)));
     if (pathname.startsWith("/manus-storage/")) return handleMedia(request, env, decodeURIComponent(pathname.slice("/manus-storage/".length)));
     if (pathname.startsWith("/api/")) return withSecurityHeaders(Response.json({ error: "Not found" }, { status: 404 }));
