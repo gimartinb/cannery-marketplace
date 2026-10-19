@@ -4,7 +4,7 @@
 
 | Version | Date | Author | Change |
 |---|---|---|---|
-| 3.1 | 2026-10-18 | Gilbert Martin (with Claude) | Staging setup progress: D1 database created, Workers Builds connected to GitHub (production branch `cloudflare` until the PR merges), deploy token `cannery-marketplace-builds` created with D1 edit. Email verification on the Cloudflare account is still pending, which blocks member invites and Zero Trust. |
+| 3.1 | 2026-10-18 | Gilbert Martin (with Claude) | Staging setup progress: D1 database and private R2 bucket created (R2 is not created automatically; added as setup step 2b), Workers Builds connected to GitHub (production branch `cloudflare` until the PR merges), deploy token `cannery-marketplace-builds` created with D1 edit. Email verification on the Cloudflare account is still pending, which blocks member invites and Zero Trust. |
 | 3.0 | 2026-10-18 | Gilbert Martin (with Claude) | Moved the app to Cloudflare Workers, D1, and R2. Sign in for owners and vendors now uses Cloudflare Access email codes, with no passwords. Added GitOps deploys through Workers Builds and the DNS cutover plan. Replaces the Pages and Decap CMS plan in 2.0. |
 | 2.1 | 2026-10-18 | Gilbert Martin | Added Google sign in for the owner panel (PR #1). Superseded by 3.0 before it was configured. |
 | 2.0 | Earlier | Original build | Cloudflare Pages and Decap CMS proposal, browser only admin preview. |
@@ -44,6 +44,7 @@ Staging runs at the free `cannery-marketplace.<account>.workers.dev` address. Th
 
 1. **Account access.** In the Cloudflare account owned by thecannerymarketplace@gmail.com, add gilbert.martin@gmail.com under Manage Account, then Members, as Super Administrator.
 2. **Create the database.** Storage and Databases, then D1, then Create database. Name it `cannery-marketplace`. Copy its Database ID into `database_id` in `wrangler.jsonc` and commit.
+2b. **Create the image bucket.** Storage and Databases, then R2 Object Storage. Enable R2 if asked (free tier, a card may be required). Create a bucket named exactly `cannery-marketplace-media`, location Automatic, storage class Standard. Leave public access off.
 3. **Deploy token with database access.** The token Workers Builds creates by default cannot run D1 migrations. Create an API token from the "Edit Cloudflare Workers" template and add the permission Account, D1, Edit. Select that token in the Worker's build settings. Whoever creates the token pastes it directly into Cloudflare, never into chat or code.
 4. **Connect GitHub (GitOps).** Workers and Pages, then Create, then Import a repository, then `gimartinb/cannery-marketplace`.
    * Production branch: `main`

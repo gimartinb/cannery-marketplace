@@ -27,7 +27,7 @@
   "r2_buckets": [
     {
       "binding": "MEDIA",
-      // Created automatically on the first deploy if it does not exist yet.
+      // Created once in the dashboard (R2 Object Storage). Private: images are served through the Worker.
       "bucket_name": "cannery-marketplace-media"
     }
   ],
