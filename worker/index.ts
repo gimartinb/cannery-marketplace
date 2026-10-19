@@ -4,6 +4,7 @@ import type { Env } from "./env";
 import { handleMedia, handleSiteImageUpload, handleVendorUpload } from "./media";
 import { adminRouter, publicRouter, vendorRouter } from "./routers";
 import { createContext } from "./trpc";
+import { handlePage, robotsTxt, sitemapXml } from "./seo";
 
 // Route map. Cloudflare Access protects /api/admin/* and /api/vendor/* (plus the
 // /admin and /maker-portal pages) before requests ever reach this Worker.
@@ -46,7 +47,10 @@ export default {
     if (pathname.startsWith("/manus-storage/")) return handleMedia(request, env, decodeURIComponent(pathname.slice("/manus-storage/".length)), ctx);
     if (pathname.startsWith("/api/")) return withSecurityHeaders(Response.json({ error: "Not found" }, { status: 404 }));
 
-    // Everything else is the React app (static assets with single page app fallback).
-    return env.ASSETS.fetch(request);
+    if (pathname === "/robots.txt") return robotsTxt(request);
+    if (pathname === "/sitemap.xml") return sitemapXml(env);
+
+    // Everything else is the React app. Pages get their own search and sharing tags.
+    return withSecurityHeaders(await handlePage(request, env));
   },
 } satisfies ExportedHandler<Env>;

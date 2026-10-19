@@ -32,12 +32,10 @@ export default function Vendors() {
   const visibleVendors = useMemo(() => (directory.data?.pages || []).flatMap((page) => page.items).map(publishedVendorToView), [directory.data]);
   const total = directory.data?.pages[0]?.total ?? 0;
   const remaining = Math.max(0, total - visibleVendors.length);
-  const directoryStructuredData = { "@context": "https://schema.org", "@type": "CollectionPage", name: "Local makers at The Cannery Marketplace", url: "https://cannerymarket.com/vendors", mainEntity: { "@type": "ItemList", itemListElement: visibleVendors.map((vendor, index) => ({ "@type": "ListItem", position: index + 1, url: `https://cannerymarket.com/vendors/${vendor.slug}`, name: vendor.name })) } };
 
   return (
     <SiteShell>
       <PageMeta canonicalPath="/vendors" title="Local maker directory in Gilroy" description="Meet local makers and artisans at The Cannery Marketplace in Gilroy. Search maker profiles, discover their products, and read the stories behind the work." />
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(directoryStructuredData) }} />
       <main>
         <section className="page-hero directory-hero">
           <div className="site-container page-hero-content">

@@ -4,6 +4,7 @@
 
 | Version | Date | Author | Change |
 |---|---|---|---|
+| 4.1 | 2026-10-19 | Gilbert Martin (with Claude) | AI description helper removed for now (table dropped in migration 0006). SEO: the Worker now writes each page's title, description, canonical link, social preview tags, and structured data (LocalBusiness, WebSite, maker ProfilePage, breadcrumbs) into the HTML; unknown pages and makers return a real 404; trailing slashes redirect; robots.txt and sitemap.xml are generated from the database; staging (workers.dev) is marked noindex so only cannerymarket.com is indexed. Added favicon, app icons, and web manifest. Mobile: owner dashboard fits phones, larger tap targets, 12 px minimum text and 16 px form fields on phones, darker gray text for contrast, no layout shift while pages load. Lighthouse (mobile, local): accessibility 100 on all tested pages, performance 93 to 97, layout shift 0. |
 | 4.0 | 2026-10-19 | Gilbert Martin (with Claude) | Photos: every maker photo frame on the site is now 4:3 (work photos square), and after choosing a photo people frame it in that exact shape with drag and zoom, with "show the whole image" for logos. Minimums lowered to 800 x 600 (cover) and 800 x 800 (work). Listings gain a required owner name (shown as "Meet" and the name; optional owner_name import column); the maker portal shows the login email read only. Makers can choose Other and type their own category, which the owner keeps or switches when approving. "Help me improve this" on the short description uses Cloudflare Workers AI (free 10,000 neurons a day, about 800 suggestions; 15 per maker per day; table `ai_usage`, migration 0005). |
 | 3.9 | 2026-10-19 | Gilbert Martin (with Claude) | Bulk update in Published vendors: tick several listings (or select all matching a search) and assign one login email, remove the login email, show or hide, or feature or unfeature them in one step. Moving a listing away from another email asks for confirmation first. |
 | 3.8 | 2026-10-19 | Gilbert Martin (with Claude) | Listings tied to maker login emails (`vendor_profiles.loginEmail`, migration 0004): owners connect listings in Maker access, in the listing editor, or with the optional `login_email` import column, and one email can own several listings. Owners can edit any listing directly. Maker portal lists every listing for the signed in email, uses a category list, requires every field except the website plus at least one social link, and states the 72 hour review time. Review queue adds "Email the maker". Home highlights can promote a maker or be custom, with start and end dates (the 3 newest live cards show). Every image upload shows its required pixel size first (300 DPI nice to have) and rejects smaller images. Confirmation and error pop ups across the dashboard and portal, with links to see the result. |
@@ -45,7 +46,7 @@ If the Access settings are blank or wrong, the Worker denies every owner and ven
 
 ### Cost
 
-$0 a month on the free plans at this site's traffic. Workers AI (the description helper) is free up to 10,000 neurons a day; past that, requests fail for the rest of the day and nothing is billed. The only realistic upgrade is the $5 a month Workers Paid plan, if traffic ever outgrows the free tier.
+$0 a month on the free plans at this site's traffic.  The only realistic upgrade is the $5 a month Workers Paid plan, if traffic ever outgrows the free tier.
 
 ## One time setup (staging)
 
@@ -91,6 +92,7 @@ Do this only after staging has been tested end to end.
    * Vendors: paths `/maker-portal` and `/api/vendor`, policy allowing everyone with email verification.
 5. Add both AUD tags to `ACCESS_AUD` (comma separated, alongside the staging tag), commit, and let it redeploy.
 6. Test owner and vendor sign in on the real domain, then retire the old host.
+7. Search: in Google Search Console (free), add the domain property cannerymarket.com, verify it with the DNS record it gives you (add it in Cloudflare DNS), and submit https://cannerymarket.com/sitemap.xml. Do the same in Bing Webmaster Tools (it can import from Google). Claim or update the Google Business Profile for 7488 Monterey Road and set its website to https://cannerymarket.com.
 
 ## Local development
 

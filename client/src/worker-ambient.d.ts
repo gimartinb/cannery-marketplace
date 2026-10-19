@@ -6,5 +6,4 @@ type D1Database = any;
 type R2Bucket = any;
 type Fetcher = any;
 type ExecutionContext = any;
-type Ai = any;
 interface CacheStorage { readonly default: Cache }

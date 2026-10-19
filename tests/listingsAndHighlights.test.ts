@@ -4,15 +4,6 @@ import { checkImageSize } from "../shared/imageRequirements";
 import { describeIssues } from "../shared/friendlyErrors";
 import { ownerVendorSchema } from "../shared/vendorProfile";
 import { pickLiveHighlights } from "../worker/db";
-import { cleanSuggestion } from "../worker/aiWriting";
-
-describe("AI description helper", () => {
-  it("strips labels and quotes from the model reply", () => {
-    expect(cleanSuggestion('Here is the improved description: "Hand built walnut boards made one at a time in Gilroy."')).toBe("Hand built walnut boards made one at a time in Gilroy.");
-    expect(cleanSuggestion("ok")).toBeNull();
-    expect(cleanSuggestion(undefined)).toBeNull();
-  });
-});
 
 const complete = {
   name: "The 45 Workshop", ownerName: "Gilbert Martin", category: "Woodworking", shortBio: "Hand built boards and boxes from local walnut.",
@@ -77,5 +68,28 @@ describe("home highlight rotation", () => {
   it("orders the shown cards by position", () => {
     const rows = [row(1, 3, { displayOrder: 3 }), row(2, 2, { displayOrder: 1 }), row(3, 1, { displayOrder: 2 })];
     expect(pickLiveHighlights(rows, now).map((item) => item.id)).toEqual([2, 3, 1]);
+  });
+});
+
+import { headTags, isProductionHost, STATIC_ROUTES } from "../worker/seo";
+
+describe("search tags", () => {
+  const meta = { status: 200, title: "Local maker directory in Gilroy", description: "Meet local makers & artisans.", canonical: "https://cannerymarket.com/vendors", image: "/images/cannery-interior.jpg", imageAlt: "Inside", index: true, type: "website" as const, jsonLd: [{ "@type": "BreadcrumbList", name: "</script><b>" }] };
+  it("indexes only the real domain", () => {
+    expect(isProductionHost("cannerymarket.com")).toBe(true);
+    expect(isProductionHost("cannery-marketplace.thecannerymarketplace.workers.dev")).toBe(false);
+    expect(headTags(meta, true)).toContain('content="index, follow');
+    expect(headTags(meta, false)).toContain('content="noindex, nofollow"');
+  });
+  it("writes a full title, escaped text, absolute image, and safe structured data", () => {
+    const html = headTags(meta, true);
+    expect(html).toContain("<title>Local maker directory in Gilroy | The Cannery Marketplace</title>");
+    expect(html).toContain("Meet local makers &amp; artisans.");
+    expect(html).toContain('content="https://cannerymarket.com/images/cannery-interior.jpg"');
+    expect(html).not.toContain("</script><b>");
+  });
+  it("keeps private pages out of search", () => {
+    expect(STATIC_ROUTES["/admin"].index).toBe(false);
+    expect(STATIC_ROUTES["/maker-portal"].index).toBe(false);
   });
 });

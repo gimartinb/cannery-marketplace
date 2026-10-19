@@ -23,49 +23,9 @@ export default function Home() {
   const heroImage = useSiteImage("home-hero");
   const interiorImage = useSiteImage("marketplace-interior");
 
-  const structuredData = {
-    "@context": "https://schema.org",
-    "@graph": [
-      {
-        "@type": "LocalBusiness",
-        "@id": "https://cannerymarket.com/#marketplace",
-        name: "The Cannery Marketplace",
-        description: "A Gilroy marketplace where shoppers discover local makers, artisan products, and the stories behind the work.",
-        image: "https://cannerymarket.com/images/cannery-interior.jpg",
-        url: "https://cannerymarket.com/",
-        telephone: "+1-408-337-1620",
-        address: { "@type": "PostalAddress", streetAddress: "7488 Monterey Road", addressLocality: "Gilroy", addressRegion: "CA", postalCode: "95020", addressCountry: "US" },
-        geo: { "@type": "GeoCoordinates", latitude: 37.0079724, longitude: -121.568909 },
-        openingHoursSpecification: [
-          { "@type": "OpeningHoursSpecification", dayOfWeek: "https://schema.org/Wednesday", opens: "11:00", closes: "18:00" },
-          { "@type": "OpeningHoursSpecification", dayOfWeek: ["https://schema.org/Thursday", "https://schema.org/Friday", "https://schema.org/Saturday"], opens: "11:00", closes: "19:00" },
-          { "@type": "OpeningHoursSpecification", dayOfWeek: "https://schema.org/Sunday", opens: "11:00", closes: "18:00" },
-        ],
-      },
-      {
-        "@type": "ItemList",
-        name: "Featured makers at The Cannery Marketplace",
-        itemListElement: featuredVendors.map((vendor, index) => ({
-          "@type": "ListItem",
-          position: index + 1,
-          url: `https://cannerymarket.com/vendors/${vendor.slug}`,
-          item: { "@type": "Organization", name: vendor.name, description: vendor.bio, knowsAbout: vendor.category },
-        })),
-      },
-      ...productHighlights.map((product) => ({
-        "@type": "Product",
-        name: product.title,
-        description: product.description,
-        category: product.category,
-        ...(product.makerName ? { brand: { "@type": "Brand", name: product.makerName } } : {}),
-        ...(product.makerSlug ? { url: `https://cannerymarket.com/vendors/${product.makerSlug}` } : {}),
-      })),
-    ],
-  };
-
+  // Structured data (LocalBusiness, WebSite) is written into the HTML by the Worker (worker/seo.ts).
   return <SiteShell>
     <PageMeta canonicalPath="/" title="Local makers and artisan goods in Gilroy" description="Discover local makers, artisan products, and the stories behind the work at The Cannery Marketplace in downtown Gilroy, California." image={heroImage.url} />
-    <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }} />
     <main>
       <section className="hero" aria-labelledby="home-title">
         <img className="hero-media" src={heroImage.url} alt={heroImage.alt} width="1600" height="900" fetchPriority="high" decoding="async" />
