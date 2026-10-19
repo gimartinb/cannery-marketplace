@@ -4,6 +4,7 @@
 
 | Version | Date | Author | Change |
 |---|---|---|---|
+| 3.7 | 2026-10-19 | Gilbert Martin (with Claude) | One button system across the site: gold for main actions, dark green for other actions, red for remove or delete, all with white text; outlined white buttons over photos unchanged. Fixes unreadable upload buttons in the dashboard. |
 | 3.6 | 2026-10-19 | Gilbert Martin (with Claude) | Owner managed Home highlights (up to 3 cards with optional photo and maker link) and an About page "Inside the Cannery" gallery (up to 12 photos with captions and ordering). Tables `product_highlights` and `gallery_photos` (migration 0003). The 6 sample makers are provided as an import spreadsheet for the test site only. |
 | 3.5 | 2026-10-19 | Gilbert Martin (with Claude) | Maker login button added to the header. Contact form validates full name, email, and an optional US phone number (area code and 7 digit number), and sends through FormSubmit's AJAX endpoint with a pop up confirmation instead of leaving the site. |
 | 3.4 | 2026-10-18 | Gilbert Martin (with Claude) | Maker portal guest list: owners invite makers by email from the new Maker access tab (table `maker_invites`, migration 0002), so no Cloudflare dashboard work is needed per maker. The Makers Access app allows everyone to request a code; the Worker only lets invited emails (and owners) in. |
