@@ -4,7 +4,7 @@ import * as XLSX from "xlsx";
 import { trpc } from "@/lib/trpc";
 import { vendorProfileSchema, type VendorProfileInput } from "@shared/vendorProfile";
 
-const TEMPLATE_URL = "/manus-storage/Vendor-Bulk-Import-Template_05308056.xlsx";
+const TEMPLATE_URL = "/downloads/Vendor-Bulk-Import-Template.xlsx";
 const EXPECTED = ["name*","slug","category*","short_bio*","owner_bio","contact_email*","website_url","instagram_url","facebook_url","tiktok_url","cover_image_url","gallery_image_urls","featured","display_order","active"];
 export type ImportPreviewRow = { row: number; vendor: VendorProfileInput | null; errors: string[] };
 const asText = (value: unknown) => String(value ?? "").trim();
