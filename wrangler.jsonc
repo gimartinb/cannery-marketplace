@@ -34,9 +34,9 @@
 
   // Not secrets: the Access team domain and audience tags are public identifiers.
   "vars": {
-    // Filled in after Zero Trust is set up (HOSTING-AND-ADMIN-PLAN.md, setup steps 5 to 7). Until then every
-    // admin and vendor request is denied, which is the safe default.
-    "ACCESS_TEAM_DOMAIN": "",
+    // ACCESS_AUD is filled in once the Access application exists (HOSTING-AND-ADMIN-PLAN.md, setup steps 6 and 7).
+    // While it is empty every admin and vendor request is denied, which is the safe default.
+    "ACCESS_TEAM_DOMAIN": "https://cannery.cloudflareaccess.com",
     "ACCESS_AUD": "",
     "ADMIN_EMAILS": "gilbert.martin@gmail.com,thecannerymarketplace@gmail.com"
   },
