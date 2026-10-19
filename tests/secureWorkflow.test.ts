@@ -49,7 +49,7 @@ describe("profile validation and import", () => {
   });
   it("previews valid spreadsheet rows and blocks duplicate slugs", () => {
     const rows = parseVendorWorkbook(workbookBuffer([["Example Maker","example-maker","Ceramics","A sufficiently detailed maker bio for import.","","maker@example.com","","https://instagram.com/examplemaker","","","","","No",10,"Yes"]]), ["example-maker"]);
-    expect(rows).toHaveLength(1); expect(rows[0].errors.join(" ")).toContain("already exists");
+    expect(rows).toHaveLength(1); expect(rows[0].errors.join(" ")).toContain("already on the site");
   });
 });
 
@@ -105,7 +105,7 @@ describe("endpoint separation", () => {
 
   it("rejects admin and vendor calls without an Access token", async () => {
     await expect(adminRouter.createCaller(ctx()).adminPortal.dashboard()).rejects.toMatchObject({ code: "UNAUTHORIZED" });
-    await expect(vendorRouter.createCaller(ctx()).vendorPortal.latest()).rejects.toMatchObject({ code: "UNAUTHORIZED" });
+    await expect(vendorRouter.createCaller(ctx()).vendorPortal.listings()).rejects.toMatchObject({ code: "UNAUTHORIZED" });
   });
   it("rejects a verified email that is not on the owner list", async () => {
     const token = await accessToken({ email: "vendor@example.com" });

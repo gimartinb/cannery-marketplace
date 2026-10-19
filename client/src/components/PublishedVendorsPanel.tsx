@@ -1,0 +1,56 @@
+import { ExternalLink, Loader2, Pencil, Save, Search, UserCheck, X } from "lucide-react";
+import { useMemo, useState } from "react";
+import ListingFields, { toListingValues, uploadListingPhoto, type ListingValues } from "@/components/ListingFields";
+import { notifyError, notifySuccess } from "@/lib/notify";
+import { trpc } from "@/lib/trpc";
+
+type Vendor = Parameters<typeof toListingValues>[0] & { id: number; loginEmail: string | null };
+
+/** Owner dashboard tab: every listing, with visibility, direct editing, and who can sign in to edit it. */
+export default function PublishedVendorsPanel({ vendors, onRefresh }: { vendors: Vendor[]; onRefresh: () => Promise<unknown> }) {
+  const utils = trpc.useUtils();
+  const [query, setQuery] = useState("");
+  const [editing, setEditing] = useState<{ id: number; values: ListingValues } | null>(null);
+  const refreshAll = async () => { await Promise.all([onRefresh(), utils.directory.invalidate(), utils.adminPortal.makerInvites.invalidate()]); };
+  const toggle = trpc.adminPortal.setVendorActive.useMutation({
+    onSuccess: async (_result, input) => { notifySuccess(input.active ? "Listing is visible on the site" : "Listing hidden from the site"); await refreshAll(); },
+    onError: (error) => notifyError(error, "Visibility not changed"),
+  });
+  const save = trpc.adminPortal.updateVendor.useMutation({
+    onSuccess: async (result, input) => {
+      notifySuccess(`${input.name} saved`, {
+        description: input.loginEmail ? `${input.loginEmail} can sign in to the maker portal to edit this listing.` : "Changes are live now.",
+        link: { label: "View listing", href: `/vendors/${result.slug}` },
+      });
+      setEditing(null);
+      await refreshAll();
+    },
+    onError: (error) => notifyError(error, "Listing not saved"),
+  });
+
+  const shown = useMemo(() => {
+    const term = query.trim().toLowerCase();
+    return term ? vendors.filter((vendor) => [vendor.name, vendor.category, vendor.slug, vendor.loginEmail || ""].some((field) => field.toLowerCase().includes(term))) : vendors;
+  }, [vendors, query]);
+
+  return <section className="admin-content">
+    <div className="admin-section-heading"><div><p className="eyebrow">Approved public content</p><h2>Published vendors</h2><p>Edit any listing on a maker's behalf, hide or show it, and set the login email the maker uses to edit it in the maker portal.</p></div></div>
+    {editing && <form className="secure-admin-card" onSubmit={(event) => { event.preventDefault(); save.mutate({ id: editing.id, ...editing.values, loginEmail: editing.values.loginEmail || "" }); }}>
+      <div className="secure-card-heading"><div><span className="review-status">Owner edit, goes live when saved</span><h3>Edit {editing.values.name || "listing"}</h3></div><button className="button-plain compact-button" type="button" onClick={() => setEditing(null)}><X size={13} /> Close</button></div>
+      <ListingFields ownerControls value={editing.values} onChange={(values) => setEditing({ ...editing, values })} upload={(file) => uploadListingPhoto("/api/admin/upload?purpose=vendor", file)} />
+      <div className="review-actions"><button className="button-primary" type="submit" disabled={save.isPending}>{save.isPending ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />} Save and publish</button><button className="button-plain" type="button" onClick={() => setEditing(null)}>Cancel</button></div>
+    </form>}
+    {!editing && <>
+      <label className="admin-search"><Search size={15} /><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search by name, category, or login email" aria-label="Search listings" /></label>
+      <div className="secure-vendor-table">{shown.length ? shown.map((vendor) => <div key={vendor.id}>
+        <span>{vendor.coverImageUrl ? <img src={vendor.coverImageUrl} alt="" /> : vendor.name.slice(0, 2).toUpperCase()}</span>
+        <div><strong>{vendor.name}</strong><small>{vendor.category} · /vendors/{vendor.slug}</small><small className={vendor.loginEmail ? "login-email" : "login-email missing"}><UserCheck size={12} /> {vendor.loginEmail ? `Login: ${vendor.loginEmail}` : "No login email yet"}</small></div>
+        <div className="review-actions">
+          <label className="toggle-label"><input type="checkbox" checked={vendor.active} disabled={toggle.isPending} onChange={(event) => toggle.mutate({ id: vendor.id, active: event.target.checked })} /><span className="fake-toggle" /> {vendor.active ? "Public" : "Hidden"}</label>
+          <button className="button-plain" type="button" onClick={() => setEditing({ id: vendor.id, values: toListingValues(vendor, vendor.id) })}><Pencil size={14} /> Edit</button>
+          {vendor.active && <a className="button-plain" href={`/vendors/${vendor.slug}`} target="_blank" rel="noreferrer"><ExternalLink size={14} /> View</a>}
+        </div>
+      </div>) : <div className="admin-empty"><h3>{vendors.length ? "No listings match your search" : "No listings yet"}</h3><p>{vendors.length ? "Try a different word." : "Approve a maker submission or use the Vendor import tab."}</p></div>}</div>
+    </>}
+  </section>;
+}

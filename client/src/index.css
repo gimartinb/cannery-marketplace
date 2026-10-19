@@ -1022,3 +1022,102 @@
 .button-primary:disabled, .button-plain:disabled, .danger-button:disabled, .upload-button[aria-disabled="true"] { opacity: .5; cursor: not-allowed; transform: none; box-shadow: none; }
 .upload-button input { display: none; }
 .compact-button { min-height: 2.4rem; padding: .55rem .85rem; }
+
+/* ==========================================================================
+   v3.8: readable buttons everywhere, listing editor, maker listings,
+   requirement pop up, and confirmation pop ups.
+   ========================================================================== */
+/* Cards and forms style their own labels and links. A button inside them must
+   still look like a button: white ink on its color. (:is raises specificity.) */
+:is(.maker-editor-card, .secure-admin-card, .admin-content, .admin-login-card, .admin-form-grid, .admin-copy-grid, .portal-status, .maker-portal-header, .listing-fields, .maker-listing-card, .import-result) :is(.button-primary, .button-plain, .danger-button, .upload-button) {
+  display: inline-flex; margin-bottom: 0; color: #fffdf8; font-size: .7rem; font-weight: 800; letter-spacing: .12em; text-transform: uppercase;
+}
+/* Small gold labels are hard to read on the dark green sections, so they use the light gold there. */
+:is(.maker-portal-header, .vendor-faq, .community-creed, .site-footer, .visit-band, .vendor-profile-bottom, .vendor-panel, .admin-welcome, .admin-sidebar, .admin-preview-card) .eyebrow { color: var(--gold-soft); }
+.portal-breadcrumb a { color: #f1e2bb; }
+.portal-status .button-secondary { justify-self: start; margin-top: .6rem; }
+
+/* Requirement pop up before an image upload */
+.image-requirements { display: grid; gap: .7rem; margin: .5rem 0 0; padding: 0; list-style: none; }
+.image-requirements li { display: flex; gap: .6rem; align-items: flex-start; color: var(--ink); font-size: .9rem; line-height: 1.5; }
+.image-requirements svg { flex: 0 0 auto; margin-top: .2rem; color: var(--moss); }
+.image-requirements-note { margin: .4rem 0 0; color: #5f665a; font-size: .82rem; }
+.image-requirements-skip { display: flex; gap: .5rem; align-items: center; color: #5f665a; font-size: .8rem; }
+
+/* Listing editor (maker portal and owner dashboard) */
+.listing-fields { display: grid; gap: .2rem; }
+.listing-fields label { display: grid; gap: .45rem; margin-bottom: 1rem; color: var(--moss); font-size: .7rem; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; }
+.listing-fields input:not([type="checkbox"]), .listing-fields textarea, .listing-fields select { width: 100%; padding: .8rem; border: 1px solid var(--line); background: #fffdfa; color: var(--ink); font: inherit; font-size: .85rem; font-weight: 400; letter-spacing: 0; text-transform: none; }
+.listing-fields :is(input, textarea, select):focus { outline: 2px solid var(--gold-soft); outline-offset: 2px; }
+.listing-fields :is(input, textarea, select)[aria-invalid="true"] { border-color: #9b2c1f; background: #fff8f6; }
+.listing-fields .form-error { display: block; font-size: .78rem; font-weight: 600; letter-spacing: 0; text-transform: none; }
+.listing-fields .form-hint { margin: 0 0 .6rem; font-weight: 400; letter-spacing: 0; text-transform: none; }
+.listing-fields fieldset { margin: 0 0 1rem; padding: 1rem 1rem .2rem; border: 1px solid var(--line); }
+.listing-fields legend, .form-legend { padding: 0 .35rem; color: var(--moss); font-size: .7rem; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; }
+.form-legend { margin: 0 0 .4rem; padding: 0; }
+.listing-owner-controls { background: #fbf5e8; }
+.listing-owner-row { display: flex; flex-wrap: wrap; gap: 1rem 1.5rem; align-items: center; }
+.listing-fields .checkbox-label { display: inline-flex; align-items: center; gap: .45rem; margin: 0; text-transform: none; letter-spacing: 0; font-size: .85rem; }
+.listing-owner-row label:last-child { width: 10rem; }
+.review-time-note { display: flex; gap: .7rem; align-items: flex-start; margin: 1rem 0; padding: 1rem 1.1rem; border: 1px solid var(--gold-soft); background: #fbf5e8; }
+.review-time-note svg { flex: 0 0 auto; margin-top: .15rem; color: var(--gold); }
+.review-time-note p { margin: 0; color: var(--ink); font-size: .85rem; line-height: 1.55; }
+.portal-editor-actions { display: flex; flex-wrap: wrap; gap: .7rem; }
+
+/* Maker portal: list of listings */
+.maker-listings { display: grid; gap: 1.5rem; }
+.maker-listings .portal-card-heading { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: end; gap: 1rem; }
+.maker-listing-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1rem; }
+.maker-listing-card { display: grid; grid-template-rows: 170px auto; border: 1px solid var(--line); background: var(--paper); }
+.maker-listing-photo { display: grid; place-items: center; overflow: hidden; background: var(--moss); color: var(--gold-soft); font-family: "Playfair Display", Georgia, serif; font-size: 2rem; }
+.maker-listing-photo img { width: 100%; height: 100%; object-fit: cover; }
+.maker-listing-body { display: grid; gap: .45rem; padding: 1.1rem 1.2rem 1.3rem; }
+.maker-listing-body h3 { margin: 0; font-family: "Playfair Display", Georgia, serif; font-size: 1.35rem; }
+.maker-listing-body > p { margin: 0; color: #63695d; font-size: .85rem; }
+.maker-listing-body .listing-note { padding: .7rem .8rem; background: #fbf5e8; color: var(--ink); line-height: 1.5; }
+.listing-status { justify-self: start; display: inline-flex; padding: .3rem .6rem; border-radius: 999px; font-size: .62rem; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; background: #e9ece4; color: #3c4936; }
+.listing-status-published, .listing-status-live { background: #dfeedd; color: #24501f; }
+.listing-status-pending, .listing-status-scheduled { background: #f3ead0; color: #6b4c0e; }
+.listing-status-changes_requested { background: #fbe3d6; color: #7d3214; }
+.listing-status-rejected { background: #f6dcd8; color: #7c1f14; }
+.listing-status-hidden, .listing-status-muted { background: #e9ece4; color: #4c5346; }
+
+/* Owner dashboard additions */
+.admin-search { display: flex; align-items: center; gap: .5rem; margin: 0 2rem 1rem; padding: .2rem .9rem; border: 1px solid var(--line); background: var(--paper); color: #6b7165; }
+.admin-search input { flex: 1; min-height: 2.6rem; border: 0; background: transparent; font: inherit; outline: none; }
+.login-email { display: inline-flex; align-items: center; gap: .3rem; color: #24501f !important; font-weight: 700; }
+.login-email.missing { color: #7d3214 !important; }
+.listing-chips { display: flex; flex-wrap: wrap; gap: .4rem; margin-top: .35rem; }
+.listing-chip { display: inline-flex; align-items: center; gap: .35rem; padding: .3rem .4rem .3rem .65rem; border-radius: 999px; background: #dfeedd; color: #24501f; font-size: .75rem; font-weight: 700; }
+.listing-chip.empty { padding-right: .65rem; background: #f3ead0; color: #6b4c0e; }
+.listing-chip button { display: grid; place-items: center; width: 1.3rem; height: 1.3rem; border: 0; border-radius: 50%; background: rgba(36,80,31,.12); color: inherit; cursor: pointer; }
+.connect-listing { display: inline-flex; align-items: center; gap: .4rem; margin-top: .4rem; color: var(--moss); }
+.connect-listing select { min-height: 2.2rem; padding: .3rem .5rem; border: 1px solid var(--line); background: #fffdfa; font: inherit; font-size: .8rem; }
+.secure-admin-card select, .secure-admin-card input[type="date"] { min-height: 2.6rem; padding: .5rem .7rem; border: 1px solid var(--line); background: #fffdfa; font: inherit; font-size: .85rem; }
+.promote-card { display: grid; grid-template-columns: auto 1fr; gap: .4rem 1rem; align-items: center; }
+.promote-card > svg { color: var(--gold); }
+.promote-card .form-hint { grid-column: 2; }
+.highlight-dates { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; }
+.highlight-dates label { display: grid; gap: .45rem; color: #646b5f; font-size: .72rem; font-weight: 800; }
+.secure-admin-card > :is(label, .highlight-dates) + .form-hint { display: block; margin: -.4rem 0 1rem; }
+.secure-admin-card > .form-hint { display: block; }
+.import-result { display: grid; gap: 1rem; margin-bottom: 1.2rem; }
+.import-result-list { display: grid; gap: .4rem; margin: 0; padding: 0; list-style: none; }
+.import-result-list li { display: flex; flex-wrap: wrap; gap: .3rem 1rem; align-items: baseline; padding: .55rem .8rem; border: 1px solid var(--line); background: #fffdfa; }
+.import-result-list a { display: inline-flex; align-items: center; gap: .3rem; color: var(--moss); font-weight: 800; }
+.import-result-list small { color: #6b7165; }
+.cannery-toast { font-family: inherit; }
+@media (max-width: 760px) { .highlight-dates { grid-template-columns: 1fr; } .admin-search { margin-inline: 1rem; } .maker-listing-grid { grid-template-columns: 1fr; } }
+
+/* Owner cards: every text box gets a visible border, and fields get breathing room. */
+.secure-admin-card > label, .highlight-dates label { margin-bottom: 1rem; }
+.secure-admin-card :is(input[type="text"], input[type="email"], input[type="url"], input[type="number"], input:not([type])) { min-height: 2.6rem; padding: .5rem .75rem; border: 1px solid var(--line); background: #fffdfa; color: var(--ink); font: inherit; font-size: .9rem; font-weight: 400; }
+.secure-admin-card :is(input, select, textarea):focus { outline: 2px solid var(--gold-soft); outline-offset: 2px; }
+.secure-admin-card > h3 { margin: 0 0 1rem; font-family: "Playfair Display", Georgia, serif; font-size: 1.3rem; }
+.secure-vendor-table .review-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: .5rem; margin: 0; }
+/* Maker portal headline: full size, with a readable light gold accent on the dark green. */
+.maker-portal-header h1 { font-size: clamp(2.6rem, 5vw, 4.4rem); }
+:is(.maker-portal-header, .vendor-faq, .visit-band, .vendor-profile-bottom, .vendor-panel, .admin-welcome) .display em { color: var(--gold-soft); }
+.secure-vendor-table div > .listing-chips { display: flex; flex-wrap: wrap; }
+.secure-vendor-table .connect-listing { justify-self: start; }
+.secure-admin-card > .review-actions + .form-hint { margin-top: 1rem; }

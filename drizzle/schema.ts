@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { integer, sqliteTable, text, uniqueIndex } from "drizzle-orm/sqlite-core";
+import { index, integer, sqliteTable, text, uniqueIndex } from "drizzle-orm/sqlite-core";
 
 // Cloudflare D1 (SQLite) schema.
 // Sign in is handled by Cloudflare Access, so there are no password or session
@@ -38,11 +38,13 @@ const profileColumns = () => ({
 export const vendorProfiles = sqliteTable("vendor_profiles", {
   id: integer("id").primaryKey({ autoIncrement: true }),
   ownerAccountId: integer("ownerAccountId"),
+  // The maker email that may edit this listing in the maker portal. One email can own several listings.
+  loginEmail: text("loginEmail"),
   ...profileColumns(),
   approvedAt: integer("approvedAt", { mode: "timestamp" }).default(now).notNull(),
   createdAt: createdAt(),
   updatedAt: updatedAt(),
-}, (table) => [uniqueIndex("vendor_profiles_slug_unique").on(table.slug)]);
+}, (table) => [uniqueIndex("vendor_profiles_slug_unique").on(table.slug), index("vendor_profiles_login_email_idx").on(table.loginEmail)]);
 
 export const vendorSubmissions = sqliteTable("vendor_submissions", {
   id: integer("id").primaryKey({ autoIncrement: true }),
@@ -79,7 +81,8 @@ export const makerInvites = sqliteTable("maker_invites", {
   createdAt: createdAt(),
 });
 
-// Home page "Find something with a story" cards, managed by owners (up to 3).
+// Home page "Find something with a story" cards, managed by owners. The home page
+// shows up to 3 that are live (inside their optional start and end dates).
 export const productHighlights = sqliteTable("product_highlights", {
   id: integer("id").primaryKey({ autoIncrement: true }),
   title: text("title").notNull(),
@@ -89,6 +92,8 @@ export const productHighlights = sqliteTable("product_highlights", {
   makerName: text("makerName"),
   imageUrl: text("imageUrl"),
   displayOrder: integer("displayOrder").default(100).notNull(),
+  startsAt: integer("startsAt", { mode: "timestamp" }),
+  endsAt: integer("endsAt", { mode: "timestamp" }),
   createdAt: createdAt(),
   updatedAt: updatedAt(),
 });

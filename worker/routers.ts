@@ -1,10 +1,11 @@
-import { reviewDecisionSchema, vendorProfileSchema } from "../shared/vendorProfile";
+import { ownerVendorSchema, reviewDecisionSchema } from "../shared/vendorProfile";
 import { z } from "zod";
 import { SITE_IMAGE_SLOT_IDS } from "../shared/siteImageSlots";
+import { makerSubmissionSchema } from "../shared/makerListing";
 import { TRPCError } from "@trpc/server";
 import { deleteSiteImageObject } from "./media";
 import {
-  bulkImportVendorProfiles, deleteSiteImage, getSiteImage, listSiteImages, setSiteImageAlt, createVendorSubmission, getLatestVendorSubmission, getPublicVendorProfile,
+  bulkImportVendorProfiles, deleteSiteImage, getSiteImage, listSiteImages, setSiteImageAlt, createVendorSubmission, getPublicVendorProfile, listMakerListings, makerOwnsProfile, freeSlugFor, updateVendorProfileAsOwner, assignListingLogin,
   DIRECTORY_PAGE_SIZES, getSiteSetting, listAllVendorProfiles, listFeaturedVendorProfiles, listPublicVendorCategories, listPublicVendorPage, listVendorSubmissions,
   reviewVendorSubmission, setSiteSetting, setVendorActive, addMakerInvites, listMakerInvites, removeMakerInvite,
   createHighlight, deleteGalleryPhoto, deleteHighlight, getGalleryPhoto, getHighlight, listGalleryPhotos, listHighlights,
@@ -12,7 +13,8 @@ import {
 } from "./db";
 import { adminProcedure, mergeRouters, publicProcedure, router, vendorProcedure } from "./trpc";
 
-const ownerImagePath = z.string().trim().regex(/^\/media\/site\/[A-Za-z0-9._\/-]+$/, "Upload the image through the dashboard");
+// A photo uploaded through the dashboard, or a maker's existing photo when a maker is promoted.
+const ownerImagePath = z.string().trim().max(700).refine((value) => /^\/(media|manus-storage)\/[A-Za-z0-9._\/-]+$/.test(value) || /^https:\/\/[^\s"'<>]+$/i.test(value), "Upload the photo through the dashboard");
 const highlightInput = z.object({
   id: z.number().int().positive().optional(),
   title: z.string().trim().min(2).max(80),
@@ -21,7 +23,9 @@ const highlightInput = z.object({
   makerSlug: z.string().trim().max(160).nullish(),
   imageUrl: ownerImagePath.nullish(),
   displayOrder: z.number().int().min(0).max(99).default(1),
-});
+  startsAt: z.date().nullish(),
+  endsAt: z.date().nullish(),
+}).refine((value) => !value.startsAt || !value.endsAt || value.endsAt > value.startsAt, { message: "must be after the start date", path: ["endsAt"] });
 
 const giftBoxesEnabled = async (db: Parameters<typeof getSiteSetting>[0]) => (await getSiteSetting(db, "gift_boxes_enabled", "false")) === "true";
 
@@ -52,8 +56,22 @@ export const publicRouter = router({
 export const vendorRouter = router({
   vendorPortal: router({
     me: vendorProcedure.query(({ ctx }) => ({ email: ctx.email })),
-    latest: vendorProcedure.query(({ ctx }) => getLatestVendorSubmission(ctx.db, ctx.vendorAccount.id)),
-    submit: vendorProcedure.input(vendorProfileSchema).mutation(async ({ ctx, input }) => ({ id: await createVendorSubmission(ctx.db, ctx.vendorAccount.id, input), status: "pending" as const })),
+    // Every listing tied to this login email, plus new listings still waiting for approval.
+    listings: vendorProcedure.query(({ ctx }) => listMakerListings(ctx.db, ctx.email, ctx.vendorAccount.id)),
+    submit: vendorProcedure.input(makerSubmissionSchema).mutation(async ({ ctx, input }) => {
+      // Makers can only change listings tied to their own email. A new listing gets a web address no one else uses.
+      // Featured, order, and visibility stay under owner control, whatever the browser sends.
+      let owner: { slug: string; featured: boolean; displayOrder: number; active: boolean };
+      if (input.profileId) {
+        const owned = await makerOwnsProfile(ctx.db, input.profileId, ctx.email);
+        if (!owned) throw new TRPCError({ code: "FORBIDDEN", message: "This listing is not tied to your login email. Ask The Cannery Marketplace to connect it to you." });
+        owner = owned;
+      } else {
+        owner = { slug: await freeSlugFor(ctx.db, input.name), featured: false, displayOrder: 100, active: true };
+      }
+      const { slug, featured, displayOrder, active } = owner;
+      return { id: await createVendorSubmission(ctx.db, ctx.vendorAccount.id, { ...input, slug, featured, displayOrder, active }), status: "pending" as const };
+    }),
   }),
 });
 
@@ -64,6 +82,11 @@ export const adminRouter = router({
     dashboard: adminProcedure.query(async ({ ctx }) => ({ submissions: await listVendorSubmissions(ctx.db), vendors: await listAllVendorProfiles(ctx.db), giftBoxesEnabled: await giftBoxesEnabled(ctx.db) })),
     review: adminProcedure.input(reviewDecisionSchema).mutation(async ({ ctx, input }) => { await reviewVendorSubmission(ctx.db, input.submissionId, input.decision, input.note); return { success: true }; }),
     setGiftBoxesEnabled: adminProcedure.input(z.object({ enabled: z.boolean() })).mutation(async ({ ctx, input }) => { await setSiteSetting(ctx.db, "gift_boxes_enabled", String(input.enabled)); return { success: true }; }),
+    // Owner support: edit any listing directly. Setting a login email also invites that maker to the portal.
+    updateVendor: adminProcedure.input(ownerVendorSchema.extend({ id: z.number().int().positive() })).mutation(async ({ ctx, input }) => {
+      const { id, ...values } = input;
+      return updateVendorProfileAsOwner(ctx.db, id, values, ctx.email);
+    }),
     setVendorActive: adminProcedure.input(z.object({ id: z.number().int().positive(), active: z.boolean() })).mutation(async ({ ctx, input }) => { await setVendorActive(ctx.db, input.id, input.active); return { success: true }; }),
     // Uploads use POST /api/admin/upload?slot=... (raw bytes, see media.ts). These edit or undo them.
     setSiteImageAlt: adminProcedure.input(z.object({ id: z.enum(SITE_IMAGE_SLOT_IDS), alt: z.string().trim().max(300) })).mutation(async ({ ctx, input }) => {
@@ -79,6 +102,8 @@ export const adminRouter = router({
     // Maker portal guest list. Owners paste emails here; no Cloudflare dashboard needed.
     makerInvites: adminProcedure.query(({ ctx }) => listMakerInvites(ctx.db)),
     addMakerInvites: adminProcedure.input(z.object({ emails: z.array(z.string().trim().toLowerCase().email().max(320)).min(1).max(200) })).mutation(async ({ ctx, input }) => ({ added: await addMakerInvites(ctx.db, input.emails, ctx.email) })),
+    // The mapping between a listing and the maker email that may edit it. "" disconnects.
+    assignListing: adminProcedure.input(z.object({ profileId: z.number().int().positive(), email: z.union([z.literal(""), z.string().trim().toLowerCase().email().max(320)]) })).mutation(({ ctx, input }) => assignListingLogin(ctx.db, input.profileId, input.email, ctx.email)),
     removeMakerInvite: adminProcedure.input(z.object({ email: z.string().trim().toLowerCase().email().max(320) })).mutation(async ({ ctx, input }) => { await removeMakerInvite(ctx.db, input.email); return { success: true }; }),
     // Home page highlights. Images upload first via POST /api/admin/upload?purpose=highlight.
     highlights: adminProcedure.query(({ ctx }) => listHighlights(ctx.db)),
@@ -106,7 +131,7 @@ export const adminRouter = router({
       return { success: true };
     }),
     reorderGallery: adminProcedure.input(z.object({ ids: z.array(z.number().int().positive()).max(50) })).mutation(async ({ ctx, input }) => { await reorderGalleryPhotos(ctx.db, input.ids); return { success: true }; }),
-    bulkImport: adminProcedure.input(z.object({ vendors: z.array(vendorProfileSchema).min(1).max(500) })).mutation(async ({ ctx, input }) => ({ imported: await bulkImportVendorProfiles(ctx.db, input.vendors) })),
+    bulkImport: adminProcedure.input(z.object({ vendors: z.array(ownerVendorSchema).min(1).max(500) })).mutation(({ ctx, input }) => bulkImportVendorProfiles(ctx.db, input.vendors, ctx.email)),
   }),
 });
 

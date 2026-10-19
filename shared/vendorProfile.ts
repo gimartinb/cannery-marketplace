@@ -29,5 +29,12 @@ export const vendorProfileSchema = z.object({
   active: z.boolean().default(true),
 });
 
+/** Optional maker login email. Blank means no maker can edit the listing yet. */
+export const loginEmailSchema = z.string().trim().toLowerCase().max(320).refine((value) => !value || z.string().email().safeParse(value).success, "Enter a valid email address, like name@example.com").optional().default("");
+
+/** What owners send when importing or editing a listing: the profile plus who may edit it. */
+export const ownerVendorSchema = vendorProfileSchema.extend({ loginEmail: loginEmailSchema });
+export type OwnerVendorInput = z.infer<typeof ownerVendorSchema>;
+
 export const reviewDecisionSchema = z.object({ submissionId: z.number().int().positive(), decision: z.enum(["approved", "rejected", "changes_requested"]), note: z.string().trim().max(1200).optional().default("") }).refine((value) => value.decision === "approved" || value.note.length >= 5, { message: "Add a short note when rejecting or requesting changes", path: ["note"] });
 export type VendorProfileInput = z.infer<typeof vendorProfileSchema>;

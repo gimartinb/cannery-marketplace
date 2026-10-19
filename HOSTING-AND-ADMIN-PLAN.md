@@ -4,6 +4,7 @@
 
 | Version | Date | Author | Change |
 |---|---|---|---|
+| 3.8 | 2026-10-19 | Gilbert Martin (with Claude) | Listings tied to maker login emails (`vendor_profiles.loginEmail`, migration 0004): owners connect listings in Maker access, in the listing editor, or with the optional `login_email` import column, and one email can own several listings. Owners can edit any listing directly. Maker portal lists every listing for the signed in email, uses a category list, requires every field except the website plus at least one social link, and states the 72 hour review time. Review queue adds "Email the maker". Home highlights can promote a maker or be custom, with start and end dates (the 3 newest live cards show). Every image upload shows its required pixel size first (300 DPI nice to have) and rejects smaller images. Confirmation and error pop ups across the dashboard and portal, with links to see the result. |
 | 3.7 | 2026-10-19 | Gilbert Martin (with Claude) | One button system across the site: gold for main actions, dark green for other actions, red for remove or delete, all with white text; outlined white buttons over photos unchanged. Fixes unreadable upload buttons in the dashboard. |
 | 3.6 | 2026-10-19 | Gilbert Martin (with Claude) | Owner managed Home highlights (up to 3 cards with optional photo and maker link) and an About page "Inside the Cannery" gallery (up to 12 photos with captions and ordering). Tables `product_highlights` and `gallery_photos` (migration 0003). The 6 sample makers are provided as an import spreadsheet for the test site only. |
 | 3.5 | 2026-10-19 | Gilbert Martin (with Claude) | Maker login button added to the header. Contact form validates full name, email, and an optional US phone number (area code and 7 digit number), and sends through FormSubmit's AJAX endpoint with a pop up confirmation instead of leaving the site. |
@@ -33,7 +34,7 @@ Cloudflare Access sits in front of the private paths and sends the visitor a one
 | Path | Who gets in |
 |---|---|
 | `/admin`, `/api/admin/*` | Only the emails in `ADMIN_EMAILS` |
-| `/maker-portal`, `/api/vendor/*` | Any verified email (each becomes a vendor account) |
+| `/maker-portal`, `/api/vendor/*` | Emails on the Maker access list. Each sees the listings tied to their email. |
 | Everything else | Public |
 
 The Zero Trust free plan covers up to 50 people, which fits the owners plus roughly 48 vendors. Unused seats can be removed in the Zero Trust dashboard.
@@ -61,6 +62,16 @@ Staging runs at the free `cannery-marketplace.<account>.workers.dev` address. Th
 5. **Zero Trust.** Open Zero Trust, choose the free plan, and pick a team name. Under Settings, then Authentication, enable One time PIN.
 6. **Lock the private pages on staging.** In Zero Trust, under Access controls, then Applications, add two self hosted applications on the `workers.dev` hostname: Owners (paths `admin` and `api/admin`, policy allowing only the `ADMIN_EMAILS`) and Makers (paths `maker-portal` and `api/vendor`, policy Allow, Include Everyone; the site's own guest list, managed in the Maker access tab, decides who actually gets in). Under Zero Trust Settings, turn on removing inactive users from seats so the 50 free seats are recycled. Copy both AUD tags. Leave Worker level Access off so public pages stay open.
 7. **Tell the Worker about Access.** In `wrangler.jsonc`, set `ACCESS_TEAM_DOMAIN` to `https://<team>.cloudflareaccess.com` and `ACCESS_AUD` to the AUD tags, comma separated. Commit, and the push redeploys.
+
+## Who can edit which listing
+
+Every listing has one login email. The maker who signs in with that email sees and edits that listing in the maker portal; one email can have several listings. Owners set it in any of three places:
+
+* Maker access tab: add the email, and pick the listing in "Connect to a listing", or use "Connect a listing" on an existing email.
+* Published vendors tab: Edit, then Login email.
+* Vendor import spreadsheet: the optional `login_email` column.
+
+Setting a login email also adds it to Maker access. Maker changes go to the Review queue, where owners approve, request changes, or reject, and can open a prefilled email to the maker. Approval can take up to 72 hours, which the portal tells makers.
 
 ## Moving existing data
 

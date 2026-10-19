@@ -3,6 +3,7 @@ import superjson from "superjson";
 import { checkAccess, isAdminEmail } from "./access";
 import { createDb, getOrCreateVendorAccount, isInvitedMaker, type Database } from "./db";
 import type { Env } from "./env";
+import { describeIssues, type IssueLike } from "../shared/friendlyErrors";
 
 export type TrpcContext = { env: Env; db: Database; request: Request };
 
@@ -11,7 +12,17 @@ export function createContext(env: Env, request: Request): TrpcContext {
 }
 
 // isDev false: never send server stack traces to browsers (tRPC cannot detect production on Workers).
-const t = initTRPC.context<TrpcContext>().create({ transformer: superjson, isDev: false });
+// Validation problems are rewritten as plain sentences ("Short description needs at least 20 characters.").
+const t = initTRPC.context<TrpcContext>().create({
+  transformer: superjson,
+  isDev: false,
+  errorFormatter({ shape, error }) {
+    const cause = error.cause as { issues?: IssueLike[] } | undefined;
+    if (error.code === "BAD_REQUEST" && cause && Array.isArray(cause.issues)) return { ...shape, message: describeIssues(cause.issues) };
+    if (error.code === "INTERNAL_SERVER_ERROR") return { ...shape, message: "Something went wrong on our side. Please try again in a moment." };
+    return shape;
+  },
+});
 
 export const router = t.router;
 export const mergeRouters = t.mergeRouters;

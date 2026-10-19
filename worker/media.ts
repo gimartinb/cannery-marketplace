@@ -57,6 +57,7 @@ export async function handleVendorUpload(request: Request, env: Env): Promise<Re
  *   ?slot=<site image spot>  replaces that spot's image and removes the previous upload
  *   ?purpose=highlight       stores a home highlight image and returns its URL (saved with the highlight)
  *   ?purpose=gallery&alt=... adds a photo to the About page gallery (up to 12)
+ *   ?purpose=vendor          stores a photo for a maker listing the owner is editing, and returns its URL
  */
 export async function handleSiteImageUpload(request: Request, env: Env): Promise<Response> {
   const identity = await getAccessIdentity(request, env);
@@ -65,6 +66,15 @@ export async function handleSiteImageUpload(request: Request, env: Env): Promise
   const params = new URL(request.url).searchParams;
   const purpose = params.get("purpose");
   const db = createDb(env.DB);
+
+  if (purpose === "vendor") {
+    const upload = validateImageUpload(request);
+    if (upload instanceof Response) return upload;
+    // Kept outside site/ so removing a highlight or gallery photo never deletes a maker's photo.
+    const key = `vendor-owner/${randomSuffix()}${randomSuffix()}.${upload.extension}`;
+    await env.MEDIA.put(key, upload.body, { httpMetadata: { contentType: upload.contentType } });
+    return json({ key, url: `/media/${key}` });
+  }
 
   if (purpose === "highlight" || purpose === "gallery") {
     if (purpose === "gallery" && (await countGalleryPhotos(db)) >= MAX_GALLERY_PHOTOS) return json({ error: `The gallery holds up to ${MAX_GALLERY_PHOTOS} photos. Remove one before adding another.` }, 400);

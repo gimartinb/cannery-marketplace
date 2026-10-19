@@ -1,8 +1,8 @@
-import { and, asc, desc, eq, inArray, sql, type SQL } from "drizzle-orm";
+import { and, asc, desc, eq, gt, inArray, isNull, lte, or, sql, type SQL } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { TRPCError } from "@trpc/server";
 import { galleryPhotos, makerInvites, productHighlights, siteImages, siteSettings, vendorAccounts, vendorProfiles, vendorSubmissions } from "../drizzle/schema";
-import type { VendorProfileInput } from "../shared/vendorProfile";
+import type { OwnerVendorInput, VendorProfileInput } from "../shared/vendorProfile";
 
 export type Database = ReturnType<typeof createDb>;
 export function createDb(d1: D1Database) { return drizzle(d1); }
@@ -86,13 +86,9 @@ export async function createVendorSubmission(db: Database, accountId: number, in
   return row.id;
 }
 
-export async function getLatestVendorSubmission(db: Database, accountId: number) {
-  const row = (await db.select().from(vendorSubmissions).where(eq(vendorSubmissions.accountId, accountId)).orderBy(desc(vendorSubmissions.updatedAt), desc(vendorSubmissions.id)).limit(1))[0];
-  return row ? deserializeProfile(row) : null;
-}
-
 export async function listVendorSubmissions(db: Database) {
-  return (await db.select().from(vendorSubmissions).orderBy(desc(vendorSubmissions.updatedAt), desc(vendorSubmissions.id))).map(deserializeProfile);
+  const rows = await db.select({ submission: vendorSubmissions, accountEmail: vendorAccounts.email }).from(vendorSubmissions).leftJoin(vendorAccounts, eq(vendorAccounts.id, vendorSubmissions.accountId)).orderBy(desc(vendorSubmissions.updatedAt), desc(vendorSubmissions.id));
+  return rows.map((row) => ({ ...deserializeProfile(row.submission), accountEmail: row.accountEmail }));
 }
 
 export async function reviewVendorSubmission(db: Database, submissionId: number, decision: "approved" | "rejected" | "changes_requested", note: string) {
@@ -102,6 +98,7 @@ export async function reviewVendorSubmission(db: Database, submissionId: number,
   const markReviewed = db.update(vendorSubmissions).set({ status: decision, adminNote: note || null, reviewedAt }).where(eq(vendorSubmissions.id, submissionId));
   if (decision !== "approved") { await markReviewed; return; }
 
+  const account = (await db.select({ email: vendorAccounts.email }).from(vendorAccounts).where(eq(vendorAccounts.id, submission.accountId)).limit(1))[0];
   const profile = {
     ownerAccountId: submission.accountId, name: submission.name, category: submission.category, shortBio: submission.shortBio,
     ownerBio: submission.ownerBio, contactEmail: submission.contactEmail, websiteUrl: submission.websiteUrl,
@@ -112,19 +109,77 @@ export async function reviewVendorSubmission(db: Database, submissionId: number,
   // D1 has no interactive transactions; batch() runs both statements atomically.
   await db.batch([
     markReviewed,
-    db.insert(vendorProfiles).values({ ...profile, slug: submission.slug }).onConflictDoUpdate({ target: vendorProfiles.slug, set: profile }),
+    // A brand new listing belongs to the maker who submitted it. An existing listing keeps the login email the owners set.
+    db.insert(vendorProfiles).values({ ...profile, slug: submission.slug, loginEmail: account?.email ?? null }).onConflictDoUpdate({ target: vendorProfiles.slug, set: profile }),
   ]);
 }
 
-export async function bulkImportVendorProfiles(db: Database, inputs: VendorProfileInput[]) {
+export async function bulkImportVendorProfiles(db: Database, inputs: OwnerVendorInput[], invitedBy: string) {
   const slugs = inputs.map((input) => input.slug || slugify(input.name));
-  if (new Set(slugs).size !== slugs.length) throw new TRPCError({ code: "BAD_REQUEST", message: "The import contains duplicate slugs." });
+  if (new Set(slugs).size !== slugs.length) throw new TRPCError({ code: "BAD_REQUEST", message: "The spreadsheet lists the same maker web address more than once. Give each maker a unique name or slug." });
   const existing = slugs.length ? await db.select({ slug: vendorProfiles.slug }).from(vendorProfiles).where(inArray(vendorProfiles.slug, slugs)) : [];
-  if (existing.length) throw new TRPCError({ code: "CONFLICT", message: `Duplicate vendor slug${existing.length === 1 ? "" : "s"}: ${existing.map((item) => item.slug).join(", ")}` });
-  const inserts = inputs.map((input) => db.insert(vendorProfiles).values({ ...serializeProfile(input), ownerAccountId: null, approvedAt: new Date() }));
+  if (existing.length) throw new TRPCError({ code: "CONFLICT", message: `${existing.length === 1 ? "This maker is" : "These makers are"} already on the site: ${existing.map((item) => item.slug).join(", ")}. Remove ${existing.length === 1 ? "that row" : "those rows"} or edit the existing listing instead.` });
+  const inserts = inputs.map((input) => db.insert(vendorProfiles).values({ ...serializeProfile(input), loginEmail: input.loginEmail || null, ownerAccountId: null, approvedAt: new Date() }));
   const [first, ...rest] = inserts;
   if (first) await db.batch([first, ...rest]);
-  return inputs.length;
+  const invited = await addMakerInvites(db, inputs.map((input) => input.loginEmail).filter(Boolean), invitedBy);
+  return { imported: inputs.length, invited, makers: inputs.map((input, index) => ({ name: input.name, slug: slugs[index], loginEmail: input.loginEmail || null })) };
+}
+
+/** Owner support: edit a published listing directly (no review step) and set who may edit it. */
+export async function updateVendorProfileAsOwner(db: Database, id: number, input: OwnerVendorInput, invitedBy: string) {
+  const current = (await db.select({ slug: vendorProfiles.slug }).from(vendorProfiles).where(eq(vendorProfiles.id, id)).limit(1))[0];
+  if (!current) throw new TRPCError({ code: "NOT_FOUND", message: "That listing no longer exists. Refresh the page." });
+  // The web address stays the same so existing links keep working.
+  const { slug: _ignored, ...values } = serializeProfile({ ...input, slug: current.slug });
+  await db.update(vendorProfiles).set({ ...values, loginEmail: input.loginEmail || null }).where(eq(vendorProfiles.id, id));
+  const invited = input.loginEmail ? await addMakerInvites(db, [input.loginEmail], invitedBy) : 0;
+  return { slug: current.slug, invited };
+}
+
+/** Connects a listing to a maker login email (or disconnects it with ""), and invites that email. */
+export async function assignListingLogin(db: Database, profileId: number, email: string, invitedBy: string) {
+  const normalized = email.trim().toLowerCase();
+  const row = (await db.update(vendorProfiles).set({ loginEmail: normalized || null }).where(eq(vendorProfiles.id, profileId)).returning({ name: vendorProfiles.name, slug: vendorProfiles.slug }))[0];
+  if (!row) throw new TRPCError({ code: "NOT_FOUND", message: "That listing no longer exists. Refresh the page." });
+  if (normalized) await addMakerInvites(db, [normalized], invitedBy);
+  return row;
+}
+
+/** The listings a maker email may edit, each with its newest unapproved change if there is one. */
+export async function listMakerListings(db: Database, email: string, accountId: number) {
+  const normalized = email.toLowerCase();
+  const profiles = (await db.select().from(vendorProfiles).where(eq(vendorProfiles.loginEmail, normalized)).orderBy(asc(vendorProfiles.name))).map(deserializeProfile);
+  const submissions = (await db.select().from(vendorSubmissions).where(eq(vendorSubmissions.accountId, accountId)).orderBy(desc(vendorSubmissions.updatedAt), desc(vendorSubmissions.id))).map(deserializeProfile);
+  const ownedIds = new Set(profiles.map((profile) => profile.id));
+  const ownedSlugs = new Set(profiles.map((profile) => profile.slug));
+  const listings = profiles.map((profile) => {
+    const change = submissions.find((item) => (item.profileId === profile.id || item.slug === profile.slug) && (item.status === "pending" || (item.status !== "approved" && item.updatedAt >= profile.updatedAt))) ?? null;
+    return { profile, change };
+  });
+  // New listings the maker submitted that are not published yet (newest per name).
+  const seen = new Set<string>();
+  const drafts = submissions.filter((item) => {
+    if (item.status === "approved" || (item.profileId && ownedIds.has(item.profileId)) || ownedSlugs.has(item.slug) || seen.has(item.slug)) return false;
+    seen.add(item.slug);
+    return true;
+  });
+  return { listings, drafts };
+}
+
+/** The listing's web address and owner controlled settings, when this email may edit it. Otherwise null. */
+export async function makerOwnsProfile(db: Database, profileId: number, email: string) {
+  const row = (await db.select({ loginEmail: vendorProfiles.loginEmail, slug: vendorProfiles.slug, featured: vendorProfiles.featured, displayOrder: vendorProfiles.displayOrder, active: vendorProfiles.active }).from(vendorProfiles).where(eq(vendorProfiles.id, profileId)).limit(1))[0];
+  return row && row.loginEmail === email.toLowerCase() ? row : null;
+}
+
+/** Picks a web address for a brand new listing that no published listing already uses. */
+export async function freeSlugFor(db: Database, name: string) {
+  const base = slugify(name) || "maker";
+  const taken = new Set((await db.select({ slug: vendorProfiles.slug }).from(vendorProfiles).where(sql`${vendorProfiles.slug} = ${base} OR ${vendorProfiles.slug} LIKE ${`${base}-%`}`)).map((row) => row.slug));
+  if (!taken.has(base)) return base;
+  for (let suffix = 2; suffix < 1000; suffix += 1) if (!taken.has(`${base}-${suffix}`)) return `${base}-${suffix}`;
+  return `${base}-${crypto.randomUUID().slice(0, 6)}`;
 }
 
 export async function getSiteSetting(db: Database, key: string, fallback: string) {
@@ -166,7 +221,8 @@ export async function listMakerInvites(db: Database) {
   const invites = await db.select().from(makerInvites).orderBy(asc(makerInvites.email));
   const accounts = invites.length ? await db.select({ email: vendorAccounts.email, lastSignedIn: vendorAccounts.lastSignedIn }).from(vendorAccounts).where(inArray(vendorAccounts.email, invites.map((invite) => invite.email))) : [];
   const lastSeen = new Map(accounts.map((account) => [account.email, account.lastSignedIn]));
-  return invites.map((invite) => ({ ...invite, lastSignedIn: lastSeen.get(invite.email) ?? null }));
+  const owned = invites.length ? await db.select({ id: vendorProfiles.id, name: vendorProfiles.name, slug: vendorProfiles.slug, loginEmail: vendorProfiles.loginEmail }).from(vendorProfiles).where(inArray(vendorProfiles.loginEmail, invites.map((invite) => invite.email))).orderBy(asc(vendorProfiles.name)) : [];
+  return invites.map((invite) => ({ ...invite, lastSignedIn: lastSeen.get(invite.email) ?? null, listings: owned.filter((listing) => listing.loginEmail === invite.email).map(({ id, name, slug }) => ({ id, name, slug })) }));
 }
 
 export async function addMakerInvites(db: Database, emails: string[], invitedBy: string) {
@@ -181,14 +237,16 @@ export async function removeMakerInvite(db: Database, email: string) {
   await db.delete(makerInvites).where(eq(makerInvites.email, email.toLowerCase()));
 }
 
-// Home page product highlights (owner managed).
-export const MAX_HIGHLIGHTS = 3;
-export type HighlightInput = { title: string; description: string; category: string; makerSlug?: string | null; imageUrl?: string | null; displayOrder: number };
+// Home page product highlights (owner managed). Owners can save up to 12; the home
+// page shows the 3 newest that are live (inside their optional start and end dates).
+export const MAX_HIGHLIGHTS = 12;
+export const HIGHLIGHTS_SHOWN = 3;
+export type HighlightInput = { title: string; description: string; category: string; makerSlug?: string | null; imageUrl?: string | null; displayOrder: number; startsAt?: Date | null; endsAt?: Date | null };
 
 async function makerNameFor(db: Database, slug: string | null | undefined) {
   if (!slug) return null;
   const profile = (await db.select({ name: vendorProfiles.name }).from(vendorProfiles).where(eq(vendorProfiles.slug, slug)).limit(1))[0];
-  if (!profile) throw new TRPCError({ code: "BAD_REQUEST", message: "That maker could not be found." });
+  if (!profile) throw new TRPCError({ code: "BAD_REQUEST", message: "That maker could not be found. Pick another maker or remove the link." });
   return profile.name;
 }
 
@@ -196,12 +254,21 @@ export async function listHighlights(db: Database) {
   return db.select().from(productHighlights).orderBy(asc(productHighlights.displayOrder), asc(productHighlights.id));
 }
 
-/** Public: highlights whose linked maker is still published (or that link to no maker). */
+/** Ids of the highlights the home page shows right now: the newest live ones, up to 3. */
+export function pickLiveHighlights<T extends { id: number; startsAt: Date | null; endsAt: Date | null; createdAt: Date; displayOrder: number }>(rows: T[], now = new Date()) {
+  const live = rows.filter((row) => (!row.startsAt || row.startsAt <= now) && (!row.endsAt || row.endsAt > now));
+  const newest = [...live].sort((a, b) => (b.startsAt ?? b.createdAt).getTime() - (a.startsAt ?? a.createdAt).getTime() || b.id - a.id).slice(0, HIGHLIGHTS_SHOWN);
+  return newest.sort((a, b) => a.displayOrder - b.displayOrder || a.id - b.id);
+}
+
+/** Public: the live highlights, with links only to makers that are still published. */
 export async function listPublicHighlights(db: Database) {
-  const rows = await listHighlights(db);
-  const slugs = rows.map((row) => row.makerSlug).filter((slug): slug is string => Boolean(slug));
+  const now = new Date();
+  const rows = await db.select().from(productHighlights).where(and(or(isNull(productHighlights.startsAt), lte(productHighlights.startsAt, now)), or(isNull(productHighlights.endsAt), gt(productHighlights.endsAt, now))));
+  const shown = pickLiveHighlights(rows, now);
+  const slugs = shown.map((row) => row.makerSlug).filter((slug): slug is string => Boolean(slug));
   const active = slugs.length ? new Set((await db.select({ slug: vendorProfiles.slug }).from(vendorProfiles).where(and(inArray(vendorProfiles.slug, slugs), eq(vendorProfiles.active, true)))).map((row) => row.slug)) : new Set<string>();
-  return rows.map((row) => ({ ...row, makerSlug: row.makerSlug && active.has(row.makerSlug) ? row.makerSlug : null }));
+  return shown.map((row) => ({ ...row, makerSlug: row.makerSlug && active.has(row.makerSlug) ? row.makerSlug : null }));
 }
 
 export async function getHighlight(db: Database, id: number) {
@@ -210,15 +277,15 @@ export async function getHighlight(db: Database, id: number) {
 
 export async function createHighlight(db: Database, input: HighlightInput) {
   const [{ total }] = await db.select({ total: sql<number>`count(*)` }).from(productHighlights);
-  if (Number(total) >= MAX_HIGHLIGHTS) throw new TRPCError({ code: "BAD_REQUEST", message: `The home page shows up to ${MAX_HIGHLIGHTS} highlights. Remove one before adding another.` });
+  if (Number(total) >= MAX_HIGHLIGHTS) throw new TRPCError({ code: "BAD_REQUEST", message: `You can save up to ${MAX_HIGHLIGHTS} highlights. Remove an old one before adding another.` });
   const makerName = await makerNameFor(db, input.makerSlug);
-  const [row] = await db.insert(productHighlights).values({ ...input, makerSlug: input.makerSlug || null, imageUrl: input.imageUrl || null, makerName }).returning({ id: productHighlights.id });
+  const [row] = await db.insert(productHighlights).values({ ...input, makerSlug: input.makerSlug || null, imageUrl: input.imageUrl || null, startsAt: input.startsAt ?? null, endsAt: input.endsAt ?? null, makerName }).returning({ id: productHighlights.id });
   return row.id;
 }
 
 export async function updateHighlight(db: Database, id: number, input: HighlightInput) {
   const makerName = await makerNameFor(db, input.makerSlug);
-  await db.update(productHighlights).set({ ...input, makerSlug: input.makerSlug || null, imageUrl: input.imageUrl || null, makerName }).where(eq(productHighlights.id, id));
+  await db.update(productHighlights).set({ ...input, makerSlug: input.makerSlug || null, imageUrl: input.imageUrl || null, startsAt: input.startsAt ?? null, endsAt: input.endsAt ?? null, makerName }).where(eq(productHighlights.id, id));
 }
 
 export async function deleteHighlight(db: Database, id: number) {

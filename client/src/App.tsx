@@ -1,5 +1,6 @@
 import { lazy, Suspense, useEffect } from "react";
 import { Redirect, Route, Switch, useLocation } from "wouter";
+import { Toaster } from "sonner";
 import ErrorBoundary from "./components/ErrorBoundary";
 import Home from "./pages/Home";
 
@@ -49,5 +50,6 @@ function Router() {
 }
 
 export default function App() {
-  return <ErrorBoundary><Router /></ErrorBoundary>;
+  // Toaster: the small confirmation and error pop ups used across the site (see lib/notify.ts).
+  return <ErrorBoundary><Router /><Toaster position="top-right" richColors closeButton theme="light" toastOptions={{ className: "cannery-toast" }} /></ErrorBoundary>;
 }

@@ -29,6 +29,13 @@
       "when": 1792394611645,
       "tag": "0003_highlights_gallery",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "6",
+      "when": 1792396225545,
+      "tag": "0004_listing_owners_highlight_dates",
+      "breakpoints": true
     }
   ]
 }
