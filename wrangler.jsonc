@@ -35,11 +35,11 @@
   // Not secrets: the Access team domain and audience tags are public identifiers.
   "vars": {
     // ACCESS_AUD lists the Access applications allowed to sign people in, comma separated:
-    // Cannery Owners (staging), then the original whole site app (remove it once that app is deleted).
-    // Add the Cannery Makers app's tag here once it exists (HOSTING-AND-ADMIN-PLAN.md, setup steps 6 and 7).
+    // the two staging path apps (owners and makers on workers.dev), then the Worker level preview app.
+    // If a sign in is rejected, the error screen names the missing tag to add here.
     // While it is empty every admin and vendor request is denied, which is the safe default.
     "ACCESS_TEAM_DOMAIN": "https://cannery.cloudflareaccess.com",
-    "ACCESS_AUD": "bf301d5292396c1fdf1cbadda5016790c8faf05ffd925ba6278c737224ee1d7a,fcf5938c1fa88bba4bed870c5920f5123582ab1bad304290e44afb5d8b4da395",
+    "ACCESS_AUD": "41bb51742615818bc70d7589c7f06b47101e5deb0092296bd2ff484ffe315259,d28c9eae01c9aeae9eb0a36c8bf22409ea797ec870b0d612052155ac1f7333bf,bf301d5292396c1fdf1cbadda5016790c8faf05ffd925ba6278c737224ee1d7a",
     "ADMIN_EMAILS": "gilbert.martin@gmail.com,thecannerymarketplace@gmail.com"
   },
 
