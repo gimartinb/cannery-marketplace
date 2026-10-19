@@ -1,4 +1,4 @@
-import { createRemoteJWKSet, jwtVerify } from "jose";
+import { createRemoteJWKSet, decodeJwt, errors as joseErrors, jwtVerify } from "jose";
 import { csv, type Env } from "./env";
 
 // Cloudflare Access sits in front of /admin, /maker-portal, /api/admin and
@@ -18,7 +18,7 @@ export type AccessIdentity = { email: string };
  *  - invalid_token:  a sign in arrived but failed verification (usually ACCESS_AUD does not match the Access app)
  */
 export type AccessFailure = "not_configured" | "missing_token" | "invalid_token";
-export type AccessCheck = { identity: AccessIdentity; reason?: undefined } | { identity: null; reason: AccessFailure };
+export type AccessCheck = { identity: AccessIdentity; reason?: undefined } | { identity: null; reason: AccessFailure; detail?: string };
 
 const jwksCache = new Map<string, ReturnType<typeof createRemoteJWKSet>>();
 
@@ -69,6 +69,16 @@ export async function checkAccess(request: Request, env: Env): Promise<AccessChe
     const email = typeof payload.email === "string" ? payload.email.trim().toLowerCase() : "";
     return email ? { identity: { email } } : { identity: null, reason: "invalid_token" };
   } catch (error) {
+    // A genuine sign in from an Access app whose tag is not in ACCESS_AUD. The
+    // signature was already verified before this claim check failed, so the
+    // tag is real. Tags are public identifiers, so showing it is safe and tells
+    // the owner exactly which value to add.
+    if (error instanceof joseErrors.JWTClaimValidationFailed && error.claim === "aud") {
+      const aud = decodeJwt(token).aud;
+      const received = (Array.isArray(aud) ? aud : [aud]).filter((value): value is string => typeof value === "string");
+      console.warn(`Cloudflare Access sign in from an app not in ACCESS_AUD: ${received.join(",")}`);
+      return { identity: null, reason: "invalid_token", detail: `this sign in came from Access app tag ${received.join(", ")}, which is not in ACCESS_AUD` };
+    }
     // Visible in Workers Logs. Logs the verification error only, never the token.
     const code = error && typeof error === "object" && "code" in error ? String((error as { code: unknown }).code) : "unknown";
     console.warn(`Cloudflare Access token rejected: ${code}: ${error instanceof Error ? error.message : String(error)}`);

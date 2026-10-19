@@ -85,7 +85,12 @@ describe("Cloudflare Access verification", () => {
   it("reports why a sign in failed, without exposing the token", async () => {
     expect((await checkAccess(requestWith(), { ...baseEnv, ACCESS_AUD: "" })).reason).toBe("not_configured");
     expect((await checkAccess(requestWith(), baseEnv)).reason).toBe("missing_token");
-    expect((await checkAccess(requestWith(await accessToken({ email: "owner@example.com", aud: "other-app" })), baseEnv)).reason).toBe("invalid_token");
+    const wrongApp = await checkAccess(requestWith(await accessToken({ email: "owner@example.com", aud: "other-app" })), baseEnv);
+    expect(wrongApp.reason).toBe("invalid_token");
+    expect(wrongApp.identity === null && wrongApp.detail).toContain("other-app");
+    const forged = await generateKeyPair("RS256");
+    const forgedCheck = await checkAccess(requestWith(await accessToken({ email: "owner@example.com", aud: "made-up-tag" }, forged.privateKey)), baseEnv);
+    expect(forgedCheck.identity === null && forgedCheck.detail).toBeFalsy();
     expect((await checkAccess(requestWith(await accessToken({ email: "owner@example.com" })), baseEnv)).identity).toEqual({ email: "owner@example.com" });
   });
   it("matches the admin allow list exactly", () => {

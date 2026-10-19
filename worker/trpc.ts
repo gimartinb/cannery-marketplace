@@ -21,8 +21,9 @@ export const NOT_INVITED_MESSAGE = "This email has not been invited to the maker
 
 /** A verified email on the maker guest list (or an owner). Their email becomes their vendor account. */
 export const vendorProcedure = t.procedure.use(async ({ ctx, next }) => {
-  const { identity, reason } = await checkAccess(ctx.request, ctx.env);
-  if (!identity) throw new TRPCError({ code: "UNAUTHORIZED", message: `Please sign in to the maker portal. (${reason})` });
+  const check = await checkAccess(ctx.request, ctx.env);
+  const identity = check.identity;
+  if (!identity) throw new TRPCError({ code: "UNAUTHORIZED", message: `Please sign in to the maker portal. (${check.reason}${check.detail ? `: ${check.detail}` : ""})` });
   if (!isAdminEmail(ctx.env, identity.email) && !(await isInvitedMaker(ctx.db, identity.email))) throw new TRPCError({ code: "FORBIDDEN", message: NOT_INVITED_MESSAGE });
   const account = await getOrCreateVendorAccount(ctx.db, identity.email);
   return next({ ctx: { ...ctx, email: identity.email, vendorAccount: account } });
@@ -30,8 +31,9 @@ export const vendorProcedure = t.procedure.use(async ({ ctx, next }) => {
 
 /** Only emails on the ADMIN_EMAILS allow list. */
 export const adminProcedure = t.procedure.use(async ({ ctx, next }) => {
-  const { identity, reason } = await checkAccess(ctx.request, ctx.env);
-  if (!identity) throw new TRPCError({ code: "UNAUTHORIZED", message: `Please sign in as an administrator. (${reason})` });
+  const check = await checkAccess(ctx.request, ctx.env);
+  const identity = check.identity;
+  if (!identity) throw new TRPCError({ code: "UNAUTHORIZED", message: `Please sign in as an administrator. (${check.reason}${check.detail ? `: ${check.detail}` : ""})` });
   if (!isAdminEmail(ctx.env, identity.email)) throw new TRPCError({ code: "FORBIDDEN", message: "This email is not on the approved owner list." });
   return next({ ctx: { ...ctx, email: identity.email } });
 });
