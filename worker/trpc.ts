@@ -1,7 +1,7 @@
 import { initTRPC, TRPCError } from "@trpc/server";
 import superjson from "superjson";
 import { checkAccess, isAdminEmail } from "./access";
-import { createDb, getOrCreateVendorAccount, type Database } from "./db";
+import { createDb, getOrCreateVendorAccount, isInvitedMaker, type Database } from "./db";
 import type { Env } from "./env";
 
 export type TrpcContext = { env: Env; db: Database; request: Request };
@@ -17,10 +17,13 @@ export const router = t.router;
 export const mergeRouters = t.mergeRouters;
 export const publicProcedure = t.procedure;
 
-/** Any person Cloudflare Access verified. Their email becomes their vendor account. */
+export const NOT_INVITED_MESSAGE = "This email has not been invited to the maker portal yet. Please ask The Cannery Marketplace to add it.";
+
+/** A verified email on the maker guest list (or an owner). Their email becomes their vendor account. */
 export const vendorProcedure = t.procedure.use(async ({ ctx, next }) => {
   const { identity, reason } = await checkAccess(ctx.request, ctx.env);
   if (!identity) throw new TRPCError({ code: "UNAUTHORIZED", message: `Please sign in to the maker portal. (${reason})` });
+  if (!isAdminEmail(ctx.env, identity.email) && !(await isInvitedMaker(ctx.db, identity.email))) throw new TRPCError({ code: "FORBIDDEN", message: NOT_INVITED_MESSAGE });
   const account = await getOrCreateVendorAccount(ctx.db, identity.email);
   return next({ ctx: { ...ctx, email: identity.email, vendorAccount: account } });
 });

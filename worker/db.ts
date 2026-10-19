@@ -1,7 +1,7 @@
 import { and, asc, desc, eq, inArray, sql, type SQL } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { TRPCError } from "@trpc/server";
-import { siteImages, siteSettings, vendorAccounts, vendorProfiles, vendorSubmissions } from "../drizzle/schema";
+import { makerInvites, siteImages, siteSettings, vendorAccounts, vendorProfiles, vendorSubmissions } from "../drizzle/schema";
 import type { VendorProfileInput } from "../shared/vendorProfile";
 
 export type Database = ReturnType<typeof createDb>;
@@ -155,4 +155,28 @@ export async function setSiteImageAlt(db: Database, id: string, alt: string) {
 
 export async function deleteSiteImage(db: Database, id: string) {
   await db.delete(siteImages).where(eq(siteImages.id, id));
+}
+
+// Maker portal guest list.
+export async function isInvitedMaker(db: Database, email: string) {
+  return (await db.select({ email: makerInvites.email }).from(makerInvites).where(eq(makerInvites.email, email.toLowerCase())).limit(1)).length > 0;
+}
+
+export async function listMakerInvites(db: Database) {
+  const invites = await db.select().from(makerInvites).orderBy(asc(makerInvites.email));
+  const accounts = invites.length ? await db.select({ email: vendorAccounts.email, lastSignedIn: vendorAccounts.lastSignedIn }).from(vendorAccounts).where(inArray(vendorAccounts.email, invites.map((invite) => invite.email))) : [];
+  const lastSeen = new Map(accounts.map((account) => [account.email, account.lastSignedIn]));
+  return invites.map((invite) => ({ ...invite, lastSignedIn: lastSeen.get(invite.email) ?? null }));
+}
+
+export async function addMakerInvites(db: Database, emails: string[], invitedBy: string) {
+  const unique = Array.from(new Set(emails.map((email) => email.trim().toLowerCase())));
+  if (!unique.length) return 0;
+  const [first, ...rest] = unique.map((email) => db.insert(makerInvites).values({ email, invitedBy: invitedBy.toLowerCase() }).onConflictDoNothing());
+  await db.batch([first, ...rest]);
+  return unique.length;
+}
+
+export async function removeMakerInvite(db: Database, email: string) {
+  await db.delete(makerInvites).where(eq(makerInvites.email, email.toLowerCase()));
 }

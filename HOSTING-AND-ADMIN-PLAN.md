@@ -4,6 +4,7 @@
 
 | Version | Date | Author | Change |
 |---|---|---|---|
+| 3.4 | 2026-10-18 | Gilbert Martin (with Claude) | Maker portal guest list: owners invite makers by email from the new Maker access tab (table `maker_invites`, migration 0002), so no Cloudflare dashboard work is needed per maker. The Makers Access app allows everyone to request a code; the Worker only lets invited emails (and owners) in. |
 | 3.3 | 2026-10-18 | Gilbert Martin (with Claude) | Makers page loads 10, 25, or 50 makers at a time with a Show more button; mock preview profiles removed from public pages. Images cached at Cloudflare's edge. Sign in failures now report a reason (not_configured, missing_token, invalid_token). Staging Access moves to path based apps (/admin, /maker-portal, and their APIs) instead of the whole site. |
 | 3.2 | 2026-10-18 | Gilbert Martin (with Claude) | Owners can now replace the logo and site photos from the dashboard (Site images tab). Replacements are stored in R2 and listed in the new `site_images` table; built-in defaults ship in `client/public/images` and "Reset to original" restores them. Cloudflare Access turned on for staging (team `cannery`). |
 | 3.1 | 2026-10-18 | Gilbert Martin (with Claude) | Staging setup progress: D1 database and private R2 bucket created (R2 is not created automatically; added as setup step 2b), Workers Builds connected to GitHub (production branch `cloudflare` until the PR merges), deploy token `cannery-marketplace-builds` created with D1 edit. Email verification on the Cloudflare account is still pending, which blocks member invites and Zero Trust. |
@@ -19,7 +20,7 @@
 | Database | MySQL | Cloudflare D1 (`drizzle/schema.ts`, migrations in `drizzle/d1`) |
 | Images | S3 through the Manus storage proxy | Cloudflare R2, served at `/media/<key>` (old `/manus-storage/<key>` links still work). Site photos: built-in defaults in `client/public/images`, owner replacements in R2 under `site/` |
 | Owner sign in | Username and password | Cloudflare Access email code, limited to `ADMIN_EMAILS` |
-| Vendor sign in | Email and password | Cloudflare Access email code. Vendor accounts are created automatically from the verified email. |
+| Vendor sign in | Email and password | Cloudflare Access email code, limited to emails the owners invite in the Maker access tab. Vendor accounts are created automatically on first sign in. |
 | Deploys | Manual | GitOps: every push to GitHub builds and deploys through Workers Builds |
 
 ### How sign in works
@@ -55,7 +56,7 @@ Staging runs at the free `cannery-marketplace.<account>.workers.dev` address. Th
    * Non production branch deploy command: `pnpm run deploy:preview` (preview URL, no migrations)
    * Root directory: `/`
 5. **Zero Trust.** Open Zero Trust, choose the free plan, and pick a team name. Under Settings, then Authentication, enable One time PIN.
-6. **Lock the private pages on staging.** In Zero Trust, under Access controls, then Applications, add two self hosted applications on the `workers.dev` hostname: Owners (paths `admin` and `api/admin`, policy allowing only the `ADMIN_EMAILS`) and Makers (paths `maker-portal` and `api/vendor`, policy allowing the testers). Copy both AUD tags. Leave Worker level Access off so public pages stay open.
+6. **Lock the private pages on staging.** In Zero Trust, under Access controls, then Applications, add two self hosted applications on the `workers.dev` hostname: Owners (paths `admin` and `api/admin`, policy allowing only the `ADMIN_EMAILS`) and Makers (paths `maker-portal` and `api/vendor`, policy Allow, Include Everyone; the site's own guest list, managed in the Maker access tab, decides who actually gets in). Under Zero Trust Settings, turn on removing inactive users from seats so the 50 free seats are recycled. Copy both AUD tags. Leave Worker level Access off so public pages stay open.
 7. **Tell the Worker about Access.** In `wrangler.jsonc`, set `ACCESS_TEAM_DOMAIN` to `https://<team>.cloudflareaccess.com` and `ACCESS_AUD` to the AUD tags, comma separated. Commit, and the push redeploys.
 
 ## Moving existing data

@@ -1,6 +1,6 @@
 import { isSiteImageSlot } from "../shared/siteImageSlots";
 import { getAccessIdentity, isAdminEmail } from "./access";
-import { createDb, getOrCreateVendorAccount, getSiteImage, setSiteImageUrl } from "./db";
+import { createDb, getOrCreateVendorAccount, getSiteImage, isInvitedMaker, setSiteImageUrl } from "./db";
 import type { Env } from "./env";
 
 const MAX_UPLOAD_BYTES = 5 * 1024 * 1024;
@@ -38,6 +38,7 @@ export async function deleteSiteImageObject(env: Env, url: string | null | undef
 export async function handleVendorUpload(request: Request, env: Env): Promise<Response> {
   const identity = await getAccessIdentity(request, env);
   if (!identity) return json({ error: "Please sign in to the maker portal." }, 401);
+  if (!isAdminEmail(env, identity.email) && !(await isInvitedMaker(createDb(env.DB), identity.email))) return json({ error: "This email has not been invited to the maker portal yet." }, 403);
   const upload = validateImageUpload(request);
   if (upload instanceof Response) return upload;
   const { contentType, extension } = upload;

@@ -71,6 +71,14 @@ export const siteImages = sqliteTable("site_images", {
   updatedAt: updatedAt(),
 });
 
+// The guest list for the maker portal. Cloudflare Access lets anyone request an
+// email code; only these emails (plus the owners) can then use the portal.
+export const makerInvites = sqliteTable("maker_invites", {
+  email: text("email").primaryKey(),
+  invitedBy: text("invitedBy").notNull(),
+  createdAt: createdAt(),
+});
+
 export type VendorAccount = typeof vendorAccounts.$inferSelect;
 export type VendorProfile = typeof vendorProfiles.$inferSelect;
 export type VendorSubmission = typeof vendorSubmissions.$inferSelect;

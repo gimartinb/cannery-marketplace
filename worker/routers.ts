@@ -6,7 +6,7 @@ import { deleteSiteImageObject } from "./media";
 import {
   bulkImportVendorProfiles, deleteSiteImage, getSiteImage, listSiteImages, setSiteImageAlt, createVendorSubmission, getLatestVendorSubmission, getPublicVendorProfile,
   DIRECTORY_PAGE_SIZES, getSiteSetting, listAllVendorProfiles, listFeaturedVendorProfiles, listPublicVendorCategories, listPublicVendorPage, listVendorSubmissions,
-  reviewVendorSubmission, setSiteSetting, setVendorActive,
+  reviewVendorSubmission, setSiteSetting, setVendorActive, addMakerInvites, listMakerInvites, removeMakerInvite,
 } from "./db";
 import { adminProcedure, mergeRouters, publicProcedure, router, vendorProcedure } from "./trpc";
 
@@ -60,6 +60,10 @@ export const adminRouter = router({
       await deleteSiteImageObject(ctx.env, current?.url);
       return { success: true };
     }),
+    // Maker portal guest list. Owners paste emails here; no Cloudflare dashboard needed.
+    makerInvites: adminProcedure.query(({ ctx }) => listMakerInvites(ctx.db)),
+    addMakerInvites: adminProcedure.input(z.object({ emails: z.array(z.string().trim().toLowerCase().email().max(320)).min(1).max(200) })).mutation(async ({ ctx, input }) => ({ added: await addMakerInvites(ctx.db, input.emails, ctx.email) })),
+    removeMakerInvite: adminProcedure.input(z.object({ email: z.string().trim().toLowerCase().email().max(320) })).mutation(async ({ ctx, input }) => { await removeMakerInvite(ctx.db, input.email); return { success: true }; }),
     bulkImport: adminProcedure.input(z.object({ vendors: z.array(vendorProfileSchema).min(1).max(500) })).mutation(async ({ ctx, input }) => ({ imported: await bulkImportVendorProfiles(ctx.db, input.vendors) })),
   }),
 });

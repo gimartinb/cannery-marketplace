@@ -15,6 +15,13 @@
       "when": 1792389513953,
       "tag": "0001_site_images",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1792392661371,
+      "tag": "0002_maker_invites",
+      "breakpoints": true
     }
   ]
 }
