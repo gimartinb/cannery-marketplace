@@ -1,20 +1,20 @@
-import { Star, Trash2 } from "lucide-react";
+import { Check, Loader2, RotateCcw, Sparkles, Star, Trash2, X } from "lucide-react";
 import { useState } from "react";
 import ImageUploadButton from "@/components/ImageUploadButton";
 import { notifyError, notifySuccess } from "@/lib/notify";
 import { resizeImageForPreview } from "@/lib/imageProcessing";
 import { describeRequirement } from "@shared/imageRequirements";
-import { MAKER_CATEGORIES, type ListingField, type ListingProblems } from "@shared/makerListing";
+import { isListedCategory, MAKER_CATEGORIES, type ListingField, type ListingProblems } from "@shared/makerListing";
 import type { VendorProfileInput } from "@shared/vendorProfile";
 
 export const MAX_LISTING_GALLERY = 5;
 export type ListingValues = VendorProfileInput & { loginEmail?: string };
 
-export const emptyListing: ListingValues = { name: "", category: "", shortBio: "", ownerBio: "", contactEmail: "", websiteUrl: "", instagramUrl: "", facebookUrl: "", tiktokUrl: "", coverImageUrl: "", galleryImageUrls: [], featured: false, displayOrder: 100, active: true };
+export const emptyListing: ListingValues = { name: "", ownerName: "", category: "", shortBio: "", ownerBio: "", contactEmail: "", websiteUrl: "", instagramUrl: "", facebookUrl: "", tiktokUrl: "", coverImageUrl: "", galleryImageUrls: [], featured: false, displayOrder: 100, active: true };
 
 /** Copies a stored listing (profile or submission) into form values. */
-export function toListingValues(row: { id?: number; profileId?: number | null; name: string; slug: string; category: string; shortBio: string; ownerBio: string | null; contactEmail: string; websiteUrl: string | null; instagramUrl: string | null; facebookUrl: string | null; tiktokUrl: string | null; coverImageUrl: string | null; galleryImageUrls: string[]; featured: boolean; displayOrder: number; active: boolean; loginEmail?: string | null }, profileId?: number): ListingValues {
-  return { profileId: profileId ?? row.profileId ?? undefined, name: row.name, slug: row.slug, category: row.category, shortBio: row.shortBio, ownerBio: row.ownerBio || "", contactEmail: row.contactEmail, websiteUrl: row.websiteUrl || "", instagramUrl: row.instagramUrl || "", facebookUrl: row.facebookUrl || "", tiktokUrl: row.tiktokUrl || "", coverImageUrl: row.coverImageUrl || "", galleryImageUrls: row.galleryImageUrls || [], featured: row.featured, displayOrder: row.displayOrder, active: row.active, loginEmail: row.loginEmail || "" };
+export function toListingValues(row: { id?: number; profileId?: number | null; name: string; slug: string; category: string; shortBio: string; ownerBio: string | null; ownerName?: string | null; contactEmail: string; websiteUrl: string | null; instagramUrl: string | null; facebookUrl: string | null; tiktokUrl: string | null; coverImageUrl: string | null; galleryImageUrls: string[]; featured: boolean; displayOrder: number; active: boolean; loginEmail?: string | null }, profileId?: number): ListingValues {
+  return { profileId: profileId ?? row.profileId ?? undefined, name: row.name, slug: row.slug, category: row.category, shortBio: row.shortBio, ownerBio: row.ownerBio || "", ownerName: row.ownerName || "", contactEmail: row.contactEmail, websiteUrl: row.websiteUrl || "", instagramUrl: row.instagramUrl || "", facebookUrl: row.facebookUrl || "", tiktokUrl: row.tiktokUrl || "", coverImageUrl: row.coverImageUrl || "", galleryImageUrls: row.galleryImageUrls || [], featured: row.featured, displayOrder: row.displayOrder, active: row.active, loginEmail: row.loginEmail || "" };
 }
 
 /** Resizes in the browser (long side 1600 px, JPEG) and streams the bytes to the given upload endpoint. */
@@ -37,6 +37,10 @@ type Props = {
   ownerControls?: boolean;
   /** Problems to show under each field (shown after the first submit attempt). */
   problems?: ListingProblems;
+  /** Maker portal: the email they signed in with, shown read only. */
+  signedInEmail?: string;
+  /** Maker portal: asks the AI helper for an improved short description. */
+  onImprove?: (input: { text: string; name: string; category: string }) => Promise<string>;
 };
 
 function FieldError({ problems, field }: { problems?: ListingProblems; field: ListingField }) {
@@ -45,13 +49,25 @@ function FieldError({ problems, field }: { problems?: ListingProblems; field: Li
 }
 
 /** The listing form shared by the maker portal and the owner dashboard, so both edit the same fields. */
-export default function ListingFields({ value, onChange, upload, ownerControls, problems }: Props) {
+export default function ListingFields({ value, onChange, upload, ownerControls, problems, signedInEmail, onImprove }: Props) {
   const [busy, setBusy] = useState<"cover" | "gallery" | null>(null);
+  const [suggestion, setSuggestion] = useState<string | null>(null);
+  const [improving, setImproving] = useState(false);
+  const shortReady = value.shortBio.trim().length >= 20;
+
+  async function improve() {
+    if (!onImprove || !shortReady) return;
+    setImproving(true);
+    try { setSuggestion(await onImprove({ text: value.shortBio, name: value.name, category: value.category })); }
+    catch (error) { notifyError(error, "Writing help is not available right now"); }
+    finally { setImproving(false); }
+  }
   const set = <K extends keyof ListingValues>(key: K, next: ListingValues[K]) => onChange({ ...value, [key]: next });
   const galleryRoom = MAX_LISTING_GALLERY - value.galleryImageUrls.length;
   const invalid = (field: ListingField) => (problems?.[field] ? { "aria-invalid": true as const, "aria-describedby": `listing-${field}-error` } : {});
-  // Owners can keep a category that is not on the maker list (for example from an import).
-  const categories = value.category && !(MAKER_CATEGORIES as readonly string[]).includes(value.category) ? [value.category, ...MAKER_CATEGORIES] : [...MAKER_CATEGORIES];
+  // A category not on the list is shown as "Other" with the typed name in a text box.
+  const categoryChoice = !value.category ? "" : isListedCategory(value.category) ? value.category : "Other";
+  const ownCategory = categoryChoice === "Other" && value.category !== "Other" ? value.category : "";
 
   async function addPhotos(kind: "cover" | "gallery", files: File[]) {
     const selected = kind === "cover" ? files.slice(0, 1) : files.slice(0, Math.max(0, galleryRoom));
@@ -82,9 +98,21 @@ export default function ListingFields({ value, onChange, upload, ownerControls, 
       </div>
     </fieldset>}
     <p className="form-hint">{ownerControls ? "Asterisks mark what makers must fill in. As an owner you can save a listing with gaps and finish it later." : "Fields marked with an asterisk are required."}</p>
-    <label>Maker name *<input id="listing-name" maxLength={140} value={value.name} onChange={(event) => set("name", event.target.value)} {...invalid("name")} /><FieldError problems={problems} field="name" /></label>
-    <label>Category *<select id="listing-category" value={value.category} onChange={(event) => set("category", event.target.value)} {...invalid("category")}><option value="">Choose a category</option>{categories.map((category) => <option key={category} value={category}>{category}</option>)}</select><FieldError problems={problems} field="category" /></label>
+    {signedInEmail && <p className="signed-in-email">Your login email: <strong>{signedInEmail}</strong>. This is how you sign in. It is not shown on your public page.</p>}
+    <label>Business or maker name *<input id="listing-name" maxLength={140} value={value.name} onChange={(event) => set("name", event.target.value)} {...invalid("name")} /><FieldError problems={problems} field="name" /></label>
+    <label>Owner's full name *<input id="listing-ownerName" maxLength={120} autoComplete="name" value={value.ownerName || ""} onChange={(event) => set("ownerName", event.target.value)} placeholder="Gilbert Martin" {...invalid("ownerName")} /><small className="form-hint">Shown on your page as "Meet" and your name.</small><FieldError problems={problems} field="ownerName" /></label>
+    <label>Category *<select id="listing-category" value={categoryChoice} onChange={(event) => set("category", event.target.value)} {...invalid("category")}><option value="">Choose a category</option>{MAKER_CATEGORIES.map((category) => <option key={category} value={category}>{category}</option>)}</select>{categoryChoice !== "Other" && <FieldError problems={problems} field="category" />}</label>
+    {categoryChoice === "Other" && <label>Your category *<input id="listing-category-other" maxLength={40} value={ownCategory} onChange={(event) => set("category", event.target.value || "Other")} placeholder="Leather goods" {...invalid("category")} /><small className="form-hint">The marketplace reviews new categories and may match yours to one on the list.</small><FieldError problems={problems} field="category" /></label>}
     <label>Short description *<textarea id="listing-shortBio" maxLength={800} rows={3} value={value.shortBio} onChange={(event) => set("shortBio", event.target.value)} {...invalid("shortBio")} /><small className="form-hint">{value.shortBio.trim().length} / 800, at least 20</small><FieldError problems={problems} field="shortBio" /></label>
+    {onImprove && <div className="ai-helper">
+      {!suggestion && <><button className="button-plain compact-button" type="button" disabled={!shortReady || improving} onClick={() => void improve()}>{improving ? <Loader2 size={13} className="animate-spin" /> : <Sparkles size={13} />} {improving ? "Polishing…" : "Help me improve this"}</button><small className="form-hint">{shortReady ? "Suggests a polished version of your words. You choose whether to use it." : "Write at least 20 characters first, then ask for help polishing it."}</small></>}
+      {suggestion && <div className="ai-suggestion" role="status">
+        <p className="form-legend"><Sparkles size={13} /> Suggested description</p>
+        <p>{suggestion}</p>
+        <small className="form-hint">Check that every detail is true before using it. The marketplace still reviews your listing.</small>
+        <div className="review-actions"><button className="button-primary compact-button" type="button" onClick={() => { set("shortBio", suggestion); setSuggestion(null); notifySuccess("Description updated", { description: "You can still edit it." }); }}><Check size={13} /> Use this</button><button className="button-plain compact-button" type="button" disabled={improving} onClick={() => void improve()}>{improving ? <Loader2 size={13} className="animate-spin" /> : <RotateCcw size={13} />} Try again</button><button className="button-plain compact-button" type="button" onClick={() => setSuggestion(null)}><X size={13} /> Keep mine</button></div>
+      </div>}
+    </div>}
     <label>About the maker *<textarea id="listing-ownerBio" rows={5} maxLength={1800} value={value.ownerBio} onChange={(event) => set("ownerBio", event.target.value)} {...invalid("ownerBio")} /><small className="form-hint">{(value.ownerBio || "").trim().length} / 1,800, at least 40</small><FieldError problems={problems} field="ownerBio" /></label>
     <label>Contact email (shown to shoppers) *<input id="listing-contactEmail" type="email" value={value.contactEmail} onChange={(event) => set("contactEmail", event.target.value)} {...invalid("contactEmail")} /><FieldError problems={problems} field="contactEmail" /></label>
     <fieldset className="listing-links">

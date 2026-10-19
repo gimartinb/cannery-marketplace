@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { index, integer, sqliteTable, text, uniqueIndex } from "drizzle-orm/sqlite-core";
+import { index, integer, primaryKey, sqliteTable, text, uniqueIndex } from "drizzle-orm/sqlite-core";
 
 // Cloudflare D1 (SQLite) schema.
 // Sign in is handled by Cloudflare Access, so there are no password or session
@@ -23,6 +23,8 @@ const profileColumns = () => ({
   category: text("category").notNull(),
   shortBio: text("shortBio").notNull(),
   ownerBio: text("ownerBio"),
+  // The person behind the business, shown as "Meet <name>" on the profile.
+  ownerName: text("ownerName"),
   contactEmail: text("contactEmail").notNull(),
   websiteUrl: text("websiteUrl"),
   instagramUrl: text("instagramUrl"),
@@ -107,6 +109,14 @@ export const galleryPhotos = sqliteTable("gallery_photos", {
   displayOrder: integer("displayOrder").default(100).notNull(),
   createdAt: createdAt(),
 });
+
+// How many times each maker used the AI writing helper per day (UTC), to stay
+// inside Cloudflare's free Workers AI allowance.
+export const aiUsage = sqliteTable("ai_usage", {
+  email: text("email").notNull(),
+  day: text("day").notNull(),
+  count: integer("count").default(0).notNull(),
+}, (table) => [primaryKey({ columns: [table.email, table.day] })]);
 
 export type VendorAccount = typeof vendorAccounts.$inferSelect;
 export type VendorProfile = typeof vendorProfiles.$inferSelect;

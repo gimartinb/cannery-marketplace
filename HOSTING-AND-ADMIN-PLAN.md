@@ -4,6 +4,7 @@
 
 | Version | Date | Author | Change |
 |---|---|---|---|
+| 4.0 | 2026-10-19 | Gilbert Martin (with Claude) | Photos: every maker photo frame on the site is now 4:3 (work photos square), and after choosing a photo people frame it in that exact shape with drag and zoom, with "show the whole image" for logos. Minimums lowered to 800 x 600 (cover) and 800 x 800 (work). Listings gain a required owner name (shown as "Meet" and the name; optional owner_name import column); the maker portal shows the login email read only. Makers can choose Other and type their own category, which the owner keeps or switches when approving. "Help me improve this" on the short description uses Cloudflare Workers AI (free 10,000 neurons a day, about 800 suggestions; 15 per maker per day; table `ai_usage`, migration 0005). |
 | 3.9 | 2026-10-19 | Gilbert Martin (with Claude) | Bulk update in Published vendors: tick several listings (or select all matching a search) and assign one login email, remove the login email, show or hide, or feature or unfeature them in one step. Moving a listing away from another email asks for confirmation first. |
 | 3.8 | 2026-10-19 | Gilbert Martin (with Claude) | Listings tied to maker login emails (`vendor_profiles.loginEmail`, migration 0004): owners connect listings in Maker access, in the listing editor, or with the optional `login_email` import column, and one email can own several listings. Owners can edit any listing directly. Maker portal lists every listing for the signed in email, uses a category list, requires every field except the website plus at least one social link, and states the 72 hour review time. Review queue adds "Email the maker". Home highlights can promote a maker or be custom, with start and end dates (the 3 newest live cards show). Every image upload shows its required pixel size first (300 DPI nice to have) and rejects smaller images. Confirmation and error pop ups across the dashboard and portal, with links to see the result. |
 | 3.7 | 2026-10-19 | Gilbert Martin (with Claude) | One button system across the site: gold for main actions, dark green for other actions, red for remove or delete, all with white text; outlined white buttons over photos unchanged. Fixes unreadable upload buttons in the dashboard. |
@@ -44,7 +45,7 @@ If the Access settings are blank or wrong, the Worker denies every owner and ven
 
 ### Cost
 
-$0 a month on the free plans at this site's traffic. The only realistic upgrade is the $5 a month Workers Paid plan, if traffic ever outgrows the free tier.
+$0 a month on the free plans at this site's traffic. Workers AI (the description helper) is free up to 10,000 neurons a day; past that, requests fail for the rest of the day and nothing is billed. The only realistic upgrade is the $5 a month Workers Paid plan, if traffic ever outgrows the free tier.
 
 ## One time setup (staging)
 

@@ -13,6 +13,7 @@ export type Vendor = {
   spotlight?: "editorial" | "popular";
   displayOrder?: number;
   ownerBio?: string;
+  ownerName?: string;
   makerStory?: string;
   workSamples?: { title: string; description: string; tone: string }[];
   websiteUrl?: string;
@@ -22,9 +23,9 @@ export type Vendor = {
   galleryImageUrls?: string[];
 };
 
-export function publishedVendorToView(vendor: { slug: string; name: string; category: string; shortBio: string; ownerBio?: string | null; websiteUrl?: string | null; instagramUrl?: string | null; facebookUrl?: string | null; tiktokUrl?: string | null; coverImageUrl?: string | null; galleryImageUrls?: string[]; featured: boolean; displayOrder: number; active: boolean }): Vendor {
+export function publishedVendorToView(vendor: { slug: string; name: string; category: string; shortBio: string; ownerBio?: string | null; ownerName?: string | null; websiteUrl?: string | null; instagramUrl?: string | null; facebookUrl?: string | null; tiktokUrl?: string | null; coverImageUrl?: string | null; galleryImageUrls?: string[]; featured: boolean; displayOrder: number; active: boolean }): Vendor {
   const socialUrl = vendor.instagramUrl || vendor.websiteUrl || vendor.facebookUrl || vendor.tiktokUrl || "";
-  return { slug: vendor.slug, name: vendor.name, category: vendor.category, bio: vendor.shortBio, ownerBio: vendor.ownerBio || undefined, makerStory: vendor.ownerBio || undefined, socialLabel: vendor.instagramUrl ? "Instagram" : vendor.websiteUrl ? "Website" : vendor.facebookUrl ? "Facebook" : vendor.tiktokUrl ? "TikTok" : "", socialUrl, initials: vendor.name.split(/\s+/).map((word) => word[0]).join("").slice(0, 2).toUpperCase(), tone: "moss", photoUrl: vendor.coverImageUrl || undefined, active: vendor.active, featured: vendor.featured, displayOrder: vendor.displayOrder, websiteUrl: vendor.websiteUrl || undefined, instagramUrl: vendor.instagramUrl || undefined, facebookUrl: vendor.facebookUrl || undefined, tiktokUrl: vendor.tiktokUrl || undefined, galleryImageUrls: vendor.galleryImageUrls || [] };
+  return { slug: vendor.slug, name: vendor.name, category: vendor.category, bio: vendor.shortBio, ownerBio: vendor.ownerBio || undefined, ownerName: vendor.ownerName || undefined, makerStory: vendor.ownerBio || undefined, socialLabel: vendor.instagramUrl ? "Instagram" : vendor.websiteUrl ? "Website" : vendor.facebookUrl ? "Facebook" : vendor.tiktokUrl ? "TikTok" : "", socialUrl, initials: vendor.name.split(/\s+/).map((word) => word[0]).join("").slice(0, 2).toUpperCase(), tone: "moss", photoUrl: vendor.coverImageUrl || undefined, active: vendor.active, featured: vendor.featured, displayOrder: vendor.displayOrder, websiteUrl: vendor.websiteUrl || undefined, instagramUrl: vendor.instagramUrl || undefined, facebookUrl: vendor.facebookUrl || undefined, tiktokUrl: vendor.tiktokUrl || undefined, galleryImageUrls: vendor.galleryImageUrls || [] };
 }
 
 export const defaultVendors: Vendor[] = [

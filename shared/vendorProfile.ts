@@ -17,6 +17,7 @@ export const vendorProfileSchema = z.object({
   category: z.string().trim().min(2).max(100),
   shortBio: z.string().trim().min(20).max(800),
   ownerBio: z.string().trim().max(1800).optional().default(""),
+  ownerName: z.string().trim().max(120).optional().default(""),
   contactEmail: z.string().trim().email().max(320),
   websiteUrl: optionalHttpUrl.optional().default(""),
   instagramUrl: socialUrl("Instagram", ["instagram.com"]).optional().default(""),
@@ -36,5 +37,5 @@ export const loginEmailSchema = z.string().trim().toLowerCase().max(320).refine(
 export const ownerVendorSchema = vendorProfileSchema.extend({ loginEmail: loginEmailSchema });
 export type OwnerVendorInput = z.infer<typeof ownerVendorSchema>;
 
-export const reviewDecisionSchema = z.object({ submissionId: z.number().int().positive(), decision: z.enum(["approved", "rejected", "changes_requested"]), note: z.string().trim().max(1200).optional().default("") }).refine((value) => value.decision === "approved" || value.note.length >= 5, { message: "Add a short note when rejecting or requesting changes", path: ["note"] });
+export const reviewDecisionSchema = z.object({ submissionId: z.number().int().positive(), decision: z.enum(["approved", "rejected", "changes_requested"]), note: z.string().trim().max(1200).optional().default(""), category: z.string().trim().min(2).max(100).optional() }).refine((value) => value.decision === "approved" || value.note.length >= 5, { message: "Add a short note when rejecting or requesting changes", path: ["note"] });
 export type VendorProfileInput = z.infer<typeof vendorProfileSchema>;

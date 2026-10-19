@@ -12,7 +12,7 @@ export function slugify(value: string) { return value.toLowerCase().trim().repla
 function serializeProfile(input: VendorProfileInput) {
   return {
     slug: input.slug || slugify(input.name), name: input.name, category: input.category, shortBio: input.shortBio,
-    ownerBio: input.ownerBio || null, contactEmail: input.contactEmail.toLowerCase(), websiteUrl: input.websiteUrl || null,
+    ownerBio: input.ownerBio || null, ownerName: input.ownerName || null, contactEmail: input.contactEmail.toLowerCase(), websiteUrl: input.websiteUrl || null,
     instagramUrl: input.instagramUrl || null, facebookUrl: input.facebookUrl || null, tiktokUrl: input.tiktokUrl || null,
     coverImageUrl: input.coverImageUrl || null, galleryImageUrls: JSON.stringify(input.galleryImageUrls || []),
     featured: input.featured, displayOrder: input.displayOrder, active: input.active,
@@ -91,17 +91,19 @@ export async function listVendorSubmissions(db: Database) {
   return rows.map((row) => ({ ...deserializeProfile(row.submission), accountEmail: row.accountEmail }));
 }
 
-export async function reviewVendorSubmission(db: Database, submissionId: number, decision: "approved" | "rejected" | "changes_requested", note: string) {
+export async function reviewVendorSubmission(db: Database, submissionId: number, decision: "approved" | "rejected" | "changes_requested", note: string, categoryOverride?: string) {
   const submission = (await db.select().from(vendorSubmissions).where(eq(vendorSubmissions.id, submissionId)).limit(1))[0];
   if (!submission) throw new TRPCError({ code: "NOT_FOUND", message: "Submission not found" });
   const reviewedAt = new Date();
-  const markReviewed = db.update(vendorSubmissions).set({ status: decision, adminNote: note || null, reviewedAt }).where(eq(vendorSubmissions.id, submissionId));
+  // Owners can keep a maker's own category or switch it to one on the list when approving.
+  const category = categoryOverride || submission.category;
+  const markReviewed = db.update(vendorSubmissions).set({ status: decision, adminNote: note || null, reviewedAt, category }).where(eq(vendorSubmissions.id, submissionId));
   if (decision !== "approved") { await markReviewed; return; }
 
   const account = (await db.select({ email: vendorAccounts.email }).from(vendorAccounts).where(eq(vendorAccounts.id, submission.accountId)).limit(1))[0];
   const profile = {
-    ownerAccountId: submission.accountId, name: submission.name, category: submission.category, shortBio: submission.shortBio,
-    ownerBio: submission.ownerBio, contactEmail: submission.contactEmail, websiteUrl: submission.websiteUrl,
+    ownerAccountId: submission.accountId, name: submission.name, category, shortBio: submission.shortBio,
+    ownerBio: submission.ownerBio, ownerName: submission.ownerName, contactEmail: submission.contactEmail, websiteUrl: submission.websiteUrl,
     instagramUrl: submission.instagramUrl, facebookUrl: submission.facebookUrl, tiktokUrl: submission.tiktokUrl,
     coverImageUrl: submission.coverImageUrl, galleryImageUrls: submission.galleryImageUrls, featured: submission.featured,
     displayOrder: submission.displayOrder, active: submission.active, approvedAt: reviewedAt,

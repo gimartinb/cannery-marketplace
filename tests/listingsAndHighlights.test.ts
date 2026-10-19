@@ -4,9 +4,18 @@ import { checkImageSize } from "../shared/imageRequirements";
 import { describeIssues } from "../shared/friendlyErrors";
 import { ownerVendorSchema } from "../shared/vendorProfile";
 import { pickLiveHighlights } from "../worker/db";
+import { cleanSuggestion } from "../worker/aiWriting";
+
+describe("AI description helper", () => {
+  it("strips labels and quotes from the model reply", () => {
+    expect(cleanSuggestion('Here is the improved description: "Hand built walnut boards made one at a time in Gilroy."')).toBe("Hand built walnut boards made one at a time in Gilroy.");
+    expect(cleanSuggestion("ok")).toBeNull();
+    expect(cleanSuggestion(undefined)).toBeNull();
+  });
+});
 
 const complete = {
-  name: "The 45 Workshop", category: "Woodworking", shortBio: "Hand built boards and boxes from local walnut.",
+  name: "The 45 Workshop", ownerName: "Gilbert Martin", category: "Woodworking", shortBio: "Hand built boards and boxes from local walnut.",
   ownerBio: "Gilbert builds every piece in a small Gilroy shop, one board at a time.", contactEmail: "maker@example.com",
   websiteUrl: "", instagramUrl: "https://instagram.com/the45workshop", facebookUrl: "", tiktokUrl: "",
   coverImageUrl: "/media/vendor-1/cover.jpg", galleryImageUrls: ["/media/vendor-1/work.jpg"], featured: false, displayOrder: 100, active: true,
@@ -18,9 +27,13 @@ describe("maker listing rules", () => {
     expect(makerSubmissionSchema.safeParse(complete).success).toBe(true);
   });
   it("requires every field except the website, and at least one social link", () => {
-    const problems = listingProblems({ ...complete, category: "Pottery", ownerBio: "", instagramUrl: "", coverImageUrl: "", galleryImageUrls: [] });
-    expect(Object.keys(problems).sort()).toEqual(["category", "coverImageUrl", "galleryImageUrls", "ownerBio", "social"]);
+    const problems = listingProblems({ ...complete, ownerName: "Gilbert", category: "Other", ownerBio: "", instagramUrl: "", coverImageUrl: "", galleryImageUrls: [] });
+    expect(Object.keys(problems).sort()).toEqual(["category", "coverImageUrl", "galleryImageUrls", "ownerBio", "ownerName", "social"]);
     expect(makerSubmissionSchema.safeParse({ ...complete, instagramUrl: "" }).success).toBe(false);
+  });
+  it("accepts a maker's own category typed after choosing Other", () => {
+    expect(listingProblems({ ...complete, category: "Leather Goods" })).toEqual({});
+    expect(listingProblems({ ...complete, category: "x" }).category).toMatch(/between 3 and 40/);
   });
   it("rejects a social link on the wrong site", () => {
     expect(listingProblems({ ...complete, instagramUrl: "https://example.com/me" }).instagramUrl).toMatch(/Instagram/);
@@ -40,7 +53,9 @@ describe("image size requirements", () => {
     expect(checkImageSize("home-hero", 1920, 1080)).toBeNull();
     expect(checkImageSize("home-hero", 1280, 720)).toMatch(/1280 x 720/);
     expect(checkImageSize("gallery", 1200, 1600)).toBeNull();
-    expect(checkImageSize("maker-gallery", 900, 1200)).toMatch(/at least 1000 x 1000/);
+    expect(checkImageSize("maker-cover", 800, 600)).toBeNull();
+    expect(checkImageSize("maker-cover", 640, 480)).toMatch(/at least 800 x 600/);
+    expect(checkImageSize("maker-gallery", 700, 1200)).toMatch(/at least 800 x 800/);
   });
 });
 

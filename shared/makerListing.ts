@@ -19,7 +19,11 @@ export const MAKER_CATEGORIES = [
   "Other",
 ] as const;
 
-export type ListingField = "name" | "category" | "shortBio" | "ownerBio" | "contactEmail" | "websiteUrl" | "instagramUrl" | "facebookUrl" | "tiktokUrl" | "social" | "coverImageUrl" | "galleryImageUrls";
+export function isListedCategory(category: string) {
+  return (MAKER_CATEGORIES as readonly string[]).includes(category) && category !== "Other";
+}
+
+export type ListingField = "name" | "ownerName" | "category" | "shortBio" | "ownerBio" | "contactEmail" | "websiteUrl" | "instagramUrl" | "facebookUrl" | "tiktokUrl" | "social" | "coverImageUrl" | "galleryImageUrls";
 export type ListingProblems = Partial<Record<ListingField, string>>;
 
 const EMAIL = /^[^\s@]+@[^\s@.]+(\.[^\s@.]+)+$/;
@@ -35,8 +39,16 @@ export function listingProblems(values: VendorProfileInput): ListingProblems {
   if (name.length < 2) problems.name = "Enter your business or maker name.";
   else if (name.length > 140) problems.name = "Keep the name under 140 characters.";
 
-  if (!values.category.trim()) problems.category = "Choose a category.";
-  else if (!(MAKER_CATEGORIES as readonly string[]).includes(values.category)) problems.category = "Choose a category from the list.";
+  const owner = (values.ownerName || "").trim().replace(/\s+/g, " ");
+  if (!owner) problems.ownerName = "Enter the owner's full name.";
+  else if (owner.split(" ").length < 2) problems.ownerName = "Enter a first and last name.";
+  else if (!/^[\p{L}][\p{L}' .-]*[\p{L}.]$/u.test(owner)) problems.ownerName = "Use letters, spaces, apostrophes, periods, or hyphens.";
+
+  // A maker can pick a category from the list, or choose Other and type their own (the owner approves it).
+  const category = values.category.trim();
+  if (!category || category === "Other") problems.category = category === "Other" ? "Type your category in the box." : "Choose a category.";
+  else if (!isListedCategory(category) && (category.length < 3 || category.length > 40)) problems.category = "Keep your own category between 3 and 40 characters.";
+  else if (!isListedCategory(category) && !/^[\p{L}][\p{L}0-9 &',.-]*$/u.test(category)) problems.category = "Use letters, numbers, spaces, and & for your category.";
 
   const short = values.shortBio.trim();
   if (!short) problems.shortBio = "Write a short description of what you make.";
@@ -65,7 +77,7 @@ export function listingProblems(values: VendorProfileInput): ListingProblems {
   return problems;
 }
 
-export const LISTING_FIELD_ORDER: ListingField[] = ["name", "category", "shortBio", "ownerBio", "contactEmail", "websiteUrl", "instagramUrl", "facebookUrl", "tiktokUrl", "social", "coverImageUrl", "galleryImageUrls"];
+export const LISTING_FIELD_ORDER: ListingField[] = ["name", "ownerName", "category", "shortBio", "ownerBio", "contactEmail", "websiteUrl", "instagramUrl", "facebookUrl", "tiktokUrl", "social", "coverImageUrl", "galleryImageUrls"];
 
 /** What makers send from the portal: the profile rules plus the required fields above. */
 export const makerSubmissionSchema = vendorProfileSchema.superRefine((values, context) => {

@@ -1136,3 +1136,31 @@
 .bulk-bar-email input { min-height: 2.75rem; padding: .5rem .75rem; border: 1px solid var(--line); background: #fff; font: inherit; font-size: .9rem; font-weight: 400; }
 .bulk-bar .review-actions { margin-top: 0; }
 @media (max-width: 760px) { .selectable-table > div { grid-template-columns: 20px 42px 1fr; } .selectable-table .review-actions { grid-column: 1 / -1; justify-content: flex-start; } .bulk-bar, .select-all { margin-inline: 1rem; } }
+
+/* v4.0: every maker photo frame is 4:3, the same shape people frame their photo in,
+   so what they upload is what shoppers see. Work photos are square. */
+.vendor-placeholder, .vendor-profile-placeholder, .featured-maker-image { aspect-ratio: 4 / 3; min-height: 0 !important; height: auto; }
+.vendor-profile-grid { align-items: center; }
+.vendor-photo { filter: none; }
+.portal-preview-photo { aspect-ratio: 4 / 3; min-height: 0; }
+.portal-preview-photo img { min-height: 0; }
+.maker-listing-card { grid-template-rows: auto auto; }
+.maker-listing-photo { aspect-ratio: 4 / 3; }
+.maker-gallery-thumb { aspect-ratio: 1; }
+.maker-gallery-thumb:first-child:has(span) { aspect-ratio: 4 / 3; }
+
+/* Crop step */
+.crop-dialog { max-width: min(560px, calc(100vw - 2rem)); }
+.crop-frame { position: relative; width: 100%; overflow: hidden; background: repeating-conic-gradient(#efe9dd 0% 25%, #fbf8f1 0% 50%) 0 0 / 20px 20px; border: 1px solid var(--line); cursor: grab; touch-action: none; user-select: none; }
+.crop-frame:active { cursor: grabbing; }
+.crop-stage { position: absolute; top: 0; left: 0; transform-origin: 0 0; overflow: hidden; background: #fff; }
+.crop-stage img { position: absolute; top: 0; left: 0; max-width: none; pointer-events: none; }
+.crop-controls { display: flex; align-items: center; gap: .7rem; }
+.crop-controls input[type="range"] { flex: 1; accent-color: var(--moss); }
+.crop-controls .button-plain { width: 2.4rem; padding: 0; }
+.signed-in-email { margin: 0 0 1rem; padding: .7rem .9rem; background: #eef2ea; color: var(--ink); font-size: .85rem; }
+.ai-helper { display: grid; gap: .4rem; margin: -.4rem 0 1.2rem; }
+.ai-helper > .button-plain { justify-self: start; }
+.ai-suggestion { display: grid; gap: .5rem; padding: 1rem 1.1rem; border: 1px solid var(--gold-soft); background: #fbf5e8; }
+.ai-suggestion > p:not(.form-legend) { margin: 0; color: var(--ink); font-size: .92rem; line-height: 1.6; }
+.ai-suggestion .form-legend { display: flex; align-items: center; gap: .35rem; }

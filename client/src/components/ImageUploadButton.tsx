@@ -1,4 +1,5 @@
-import { CheckCircle2, ImagePlus, Info, Loader2 } from "lucide-react";
+import { CheckCircle2, Crop, ImagePlus, Info, Loader2 } from "lucide-react";
+import ImageCropDialog from "@/components/ImageCropDialog";
 import { useRef, useState, type ReactNode } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { notifyError } from "@/lib/notify";
@@ -58,6 +59,9 @@ type Props = {
  */
 export default function ImageUploadButton({ spot, onFiles, children, multiple, busy, disabled, className = "button-plain upload-button" }: Props) {
   const input = useRef<HTMLInputElement>(null);
+  // Photos waiting to be framed, and the ones already framed in this round.
+  const [queue, setQueue] = useState<File[]>([]);
+  const framed = useRef<File[]>([]);
   const [open, setOpen] = useState(false);
   const [dontShow, setDontShow] = useState(false);
   const rule = IMAGE_REQUIREMENTS[spot];
@@ -78,7 +82,20 @@ export default function ImageUploadButton({ spot, onFiles, children, multiple, b
     const files = Array.from(list || []);
     if (!files.length) return;
     const passed = await screenImages(files, spot);
-    if (passed.length) await onFiles(passed);
+    if (!passed.length) return;
+    if (!rule.crop) { await onFiles(passed); return; }
+    framed.current = [];
+    setQueue(passed);
+  }
+
+  // Moves to the next photo; when none are left, hands the framed photos on.
+  function advance(result: File | null) {
+    if (result) framed.current.push(result);
+    setQueue((current) => {
+      const rest = current.slice(1);
+      if (!rest.length && framed.current.length) { const done = framed.current; framed.current = []; void onFiles(done); }
+      return rest;
+    });
   }
 
   return <>
@@ -93,7 +110,8 @@ export default function ImageUploadButton({ spot, onFiles, children, multiple, b
           <DialogDescription>Check your photo before uploading so it looks sharp on every screen.</DialogDescription>
         </DialogHeader>
         <ul className="image-requirements">
-          <li><CheckCircle2 size={16} /><span><strong>Required:</strong> {describeRequirement(spot)}. {rule.shape}.</span></li>
+          <li><CheckCircle2 size={16} /><span><strong>Required:</strong> {describeRequirement(spot)}.</span></li>
+          {rule.crop ? <li><Crop size={16} /><span><strong>Next step:</strong> {rule.shape}. Drag and zoom so it looks just right.</span></li> : <li><CheckCircle2 size={16} /><span><strong>Shape:</strong> {rule.shape}.</span></li>}
           <li><CheckCircle2 size={16} /><span><strong>Required:</strong> JPEG, PNG, or WebP, up to {MAX_IMAGE_MB} MB.</span></li>
           <li><Info size={16} /><span><strong>Nice to have:</strong> {RECOMMENDED_DPI} DPI, so the same photo also prints well. Screens only use the pixel size above.</span></li>
         </ul>
@@ -105,5 +123,6 @@ export default function ImageUploadButton({ spot, onFiles, children, multiple, b
         </DialogFooter>
       </DialogContent>
     </Dialog>
+    {rule.crop && <ImageCropDialog file={queue[0] ?? null} settings={{ ...rule.crop, minSourceWidth: Math.min(rule.minWidth, rule.minHeight * rule.crop.aspect) }} title={queue.length > 1 ? `Frame your photo (${queue.length} left)` : "Frame your photo"} onDone={(file) => advance(file)} onCancel={() => advance(null)} />}
   </>;
 }

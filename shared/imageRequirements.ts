@@ -13,6 +13,8 @@ export type ImageRequirement = {
   /** "landscape" means wider than tall; "any" accepts either way as long as the long and short sides meet the minimums. */
   orientation: "landscape" | "any";
   shape: string;
+  /** When set, the person frames the photo in this exact shape before it uploads. */
+  crop?: { aspect: number; outputWidth: number; allowWholeImage?: boolean };
 };
 
 export const IMAGE_REQUIREMENTS: Record<ImageSpot, ImageRequirement> = {
@@ -21,10 +23,10 @@ export const IMAGE_REQUIREMENTS: Record<ImageSpot, ImageRequirement> = {
   "marketplace-interior": { label: "Marketplace interior", minWidth: 1600, minHeight: 1200, orientation: "landscape", shape: "Landscape, 4:3" },
   "about-display": { label: "About page display", minWidth: 1600, minHeight: 1200, orientation: "landscape", shape: "Landscape, 4:3" },
   "social-sharing": { label: "Social sharing image", minWidth: 1200, minHeight: 630, orientation: "landscape", shape: "Landscape, 1.91:1" },
-  highlight: { label: "Home highlight", minWidth: 1200, minHeight: 900, orientation: "landscape", shape: "Landscape, 4:3" },
-  gallery: { label: "About page gallery", minWidth: 1600, minHeight: 1200, orientation: "any", shape: "Landscape or portrait, 4:3" },
-  "maker-cover": { label: "Maker cover photo", minWidth: 1200, minHeight: 900, orientation: "landscape", shape: "Landscape, 4:3" },
-  "maker-gallery": { label: "Maker work photo", minWidth: 1000, minHeight: 1000, orientation: "any", shape: "Square or close to square" },
+  highlight: { label: "Home highlight", minWidth: 1200, minHeight: 900, orientation: "any", shape: "You frame it as a 4:3 landscape after choosing it", crop: { aspect: 4 / 3, outputWidth: 1600, allowWholeImage: true } },
+  gallery: { label: "About page gallery", minWidth: 1200, minHeight: 900, orientation: "any", shape: "You frame it as a 4:3 landscape after choosing it", crop: { aspect: 4 / 3, outputWidth: 1600 } },
+  "maker-cover": { label: "Maker cover photo", minWidth: 800, minHeight: 600, orientation: "any", shape: "You frame it as a 4:3 landscape after choosing it. Logos can be shown whole", crop: { aspect: 4 / 3, outputWidth: 1600, allowWholeImage: true } },
+  "maker-gallery": { label: "Maker work photo", minWidth: 800, minHeight: 800, orientation: "any", shape: "You frame it as a square after choosing it", crop: { aspect: 1, outputWidth: 1200, allowWholeImage: true } },
 };
 
 export const RECOMMENDED_DPI = 300;
