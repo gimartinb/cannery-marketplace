@@ -1,0 +1,108 @@
+import { desc, eq, inArray, and } from "drizzle-orm";
+import { drizzle } from "drizzle-orm/d1";
+import { TRPCError } from "@trpc/server";
+import { siteSettings, vendorAccounts, vendorProfiles, vendorSubmissions } from "../drizzle/schema";
+import type { VendorProfileInput } from "../shared/vendorProfile";
+
+export type Database = ReturnType<typeof createDb>;
+export function createDb(d1: D1Database) { return drizzle(d1); }
+
+export function slugify(value: string) { return value.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, ""); }
+
+function serializeProfile(input: VendorProfileInput) {
+  return {
+    slug: input.slug || slugify(input.name), name: input.name, category: input.category, shortBio: input.shortBio,
+    ownerBio: input.ownerBio || null, contactEmail: input.contactEmail.toLowerCase(), websiteUrl: input.websiteUrl || null,
+    instagramUrl: input.instagramUrl || null, facebookUrl: input.facebookUrl || null, tiktokUrl: input.tiktokUrl || null,
+    coverImageUrl: input.coverImageUrl || null, galleryImageUrls: JSON.stringify(input.galleryImageUrls || []),
+    featured: input.featured, displayOrder: input.displayOrder, active: input.active,
+  };
+}
+
+function deserializeProfile<T extends { galleryImageUrls: string | null }>(row: T) {
+  let galleryImageUrls: string[] = [];
+  try { galleryImageUrls = JSON.parse(row.galleryImageUrls || "[]"); } catch { galleryImageUrls = []; }
+  return { ...row, galleryImageUrls };
+}
+
+// Vendor accounts: created on first visit, keyed by the email Cloudflare Access verified.
+export async function getOrCreateVendorAccount(db: Database, email: string) {
+  const normalized = email.toLowerCase();
+  await db.insert(vendorAccounts).values({ email: normalized, lastSignedIn: new Date() })
+    .onConflictDoUpdate({ target: vendorAccounts.email, set: { lastSignedIn: new Date() } });
+  const account = (await db.select().from(vendorAccounts).where(eq(vendorAccounts.email, normalized)).limit(1))[0];
+  if (!account) throw new Error("Could not load vendor account");
+  return account;
+}
+
+export async function listPublicVendorProfiles(db: Database) {
+  const rows = await db.select().from(vendorProfiles).where(eq(vendorProfiles.active, true)).orderBy(vendorProfiles.displayOrder, vendorProfiles.name);
+  return rows.map(deserializeProfile);
+}
+
+export async function getPublicVendorProfile(db: Database, slug: string) {
+  const row = (await db.select().from(vendorProfiles).where(and(eq(vendorProfiles.slug, slug), eq(vendorProfiles.active, true))).limit(1))[0];
+  return row ? deserializeProfile(row) : null;
+}
+
+export async function listAllVendorProfiles(db: Database) {
+  return (await db.select().from(vendorProfiles).orderBy(vendorProfiles.displayOrder, vendorProfiles.name)).map(deserializeProfile);
+}
+
+export async function setVendorActive(db: Database, id: number, active: boolean) {
+  await db.update(vendorProfiles).set({ active }).where(eq(vendorProfiles.id, id));
+}
+
+export async function createVendorSubmission(db: Database, accountId: number, input: VendorProfileInput) {
+  const [row] = await db.insert(vendorSubmissions).values({ ...serializeProfile(input), accountId, profileId: input.profileId || null, status: "pending", adminNote: null, reviewedAt: null }).returning({ id: vendorSubmissions.id });
+  return row.id;
+}
+
+export async function getLatestVendorSubmission(db: Database, accountId: number) {
+  const row = (await db.select().from(vendorSubmissions).where(eq(vendorSubmissions.accountId, accountId)).orderBy(desc(vendorSubmissions.updatedAt), desc(vendorSubmissions.id)).limit(1))[0];
+  return row ? deserializeProfile(row) : null;
+}
+
+export async function listVendorSubmissions(db: Database) {
+  return (await db.select().from(vendorSubmissions).orderBy(desc(vendorSubmissions.updatedAt), desc(vendorSubmissions.id))).map(deserializeProfile);
+}
+
+export async function reviewVendorSubmission(db: Database, submissionId: number, decision: "approved" | "rejected" | "changes_requested", note: string) {
+  const submission = (await db.select().from(vendorSubmissions).where(eq(vendorSubmissions.id, submissionId)).limit(1))[0];
+  if (!submission) throw new TRPCError({ code: "NOT_FOUND", message: "Submission not found" });
+  const reviewedAt = new Date();
+  const markReviewed = db.update(vendorSubmissions).set({ status: decision, adminNote: note || null, reviewedAt }).where(eq(vendorSubmissions.id, submissionId));
+  if (decision !== "approved") { await markReviewed; return; }
+
+  const profile = {
+    ownerAccountId: submission.accountId, name: submission.name, category: submission.category, shortBio: submission.shortBio,
+    ownerBio: submission.ownerBio, contactEmail: submission.contactEmail, websiteUrl: submission.websiteUrl,
+    instagramUrl: submission.instagramUrl, facebookUrl: submission.facebookUrl, tiktokUrl: submission.tiktokUrl,
+    coverImageUrl: submission.coverImageUrl, galleryImageUrls: submission.galleryImageUrls, featured: submission.featured,
+    displayOrder: submission.displayOrder, active: submission.active, approvedAt: reviewedAt,
+  };
+  // D1 has no interactive transactions; batch() runs both statements atomically.
+  await db.batch([
+    markReviewed,
+    db.insert(vendorProfiles).values({ ...profile, slug: submission.slug }).onConflictDoUpdate({ target: vendorProfiles.slug, set: profile }),
+  ]);
+}
+
+export async function bulkImportVendorProfiles(db: Database, inputs: VendorProfileInput[]) {
+  const slugs = inputs.map((input) => input.slug || slugify(input.name));
+  if (new Set(slugs).size !== slugs.length) throw new TRPCError({ code: "BAD_REQUEST", message: "The import contains duplicate slugs." });
+  const existing = slugs.length ? await db.select({ slug: vendorProfiles.slug }).from(vendorProfiles).where(inArray(vendorProfiles.slug, slugs)) : [];
+  if (existing.length) throw new TRPCError({ code: "CONFLICT", message: `Duplicate vendor slug${existing.length === 1 ? "" : "s"}: ${existing.map((item) => item.slug).join(", ")}` });
+  const inserts = inputs.map((input) => db.insert(vendorProfiles).values({ ...serializeProfile(input), ownerAccountId: null, approvedAt: new Date() }));
+  const [first, ...rest] = inserts;
+  if (first) await db.batch([first, ...rest]);
+  return inputs.length;
+}
+
+export async function getSiteSetting(db: Database, key: string, fallback: string) {
+  return (await db.select().from(siteSettings).where(eq(siteSettings.key, key)).limit(1))[0]?.value ?? fallback;
+}
+
+export async function setSiteSetting(db: Database, key: string, value: string) {
+  await db.insert(siteSettings).values({ key, value }).onConflictDoUpdate({ target: siteSettings.key, set: { value } });
+}

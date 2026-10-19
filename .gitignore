@@ -112,3 +112,9 @@ temp/
 # Manus version file (auto-generated, not part of source)
 client/public/__manus__/version.json
 .project-config.json
+
+# Cloudflare Wrangler local state and secrets
+.wrangler/
+.dev.vars
+.dev.vars.*
+!.dev.vars.example

@@ -1,0 +1,46 @@
+// Cloudflare Worker configuration for The Cannery Marketplace.
+// Deploys automatically from GitHub through Workers Builds (see HOSTING-AND-ADMIN-PLAN.md).
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "cannery-marketplace",
+  "main": "worker/index.ts",
+  "compatibility_date": "2026-10-01",
+
+  // The React build. The Worker only runs first for API, upload, and image paths;
+  // every other path is a static file, with index.html as the fallback for client routes.
+  "assets": {
+    "directory": "./dist/public",
+    "binding": "ASSETS",
+    "not_found_handling": "single-page-application",
+    "run_worker_first": ["/api/*", "/media/*", "/manus-storage/*"]
+  },
+
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "cannery-marketplace",
+      // Filled in once the database is created in the Cloudflare dashboard (HOSTING-AND-ADMIN-PLAN.md, setup step 2).
+      "database_id": "REPLACE_WITH_D1_DATABASE_ID",
+      "migrations_dir": "drizzle/d1"
+    }
+  ],
+
+  "r2_buckets": [
+    {
+      "binding": "MEDIA",
+      // Created automatically on the first deploy if it does not exist yet.
+      "bucket_name": "cannery-marketplace-media"
+    }
+  ],
+
+  // Not secrets: the Access team domain and audience tags are public identifiers.
+  "vars": {
+    // Filled in after Zero Trust is set up (HOSTING-AND-ADMIN-PLAN.md, setup steps 5 to 7). Until then every
+    // admin and vendor request is denied, which is the safe default.
+    "ACCESS_TEAM_DOMAIN": "",
+    "ACCESS_AUD": "",
+    "ADMIN_EMAILS": "gilbert.martin@gmail.com,thecannerymarketplace@gmail.com"
+  },
+
+  "observability": { "enabled": true }
+}

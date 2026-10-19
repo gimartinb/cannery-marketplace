@@ -1,5 +1,7 @@
 import { z } from "zod";
 
+// Uploaded images live at /media/<key>. /manus-storage/<key> is kept for images saved on the old site.
+const storedImagePath = z.string().trim().max(700).regex(/^\/(media|manus-storage)\/[A-Za-z0-9._\/-]+$/, "Invalid image path");
 const optionalHttpUrl = z.string().trim().max(500).refine((value) => !value || /^https?:\/\//i.test(value), "Use a full http:// or https:// URL");
 function socialUrl(label: string, hosts: string[]) {
   return optionalHttpUrl.refine((value) => {
@@ -20,8 +22,8 @@ export const vendorProfileSchema = z.object({
   instagramUrl: socialUrl("Instagram", ["instagram.com"]).optional().default(""),
   facebookUrl: socialUrl("Facebook", ["facebook.com", "fb.com"]).optional().default(""),
   tiktokUrl: socialUrl("TikTok", ["tiktok.com"]).optional().default(""),
-  coverImageUrl: optionalHttpUrl.or(z.string().startsWith("/manus-storage/")).optional().default(""),
-  galleryImageUrls: z.array(optionalHttpUrl.or(z.string().startsWith("/manus-storage/"))).max(5).default([]),
+  coverImageUrl: optionalHttpUrl.or(storedImagePath).optional().default(""),
+  galleryImageUrls: z.array(optionalHttpUrl.or(storedImagePath)).max(5).default([]),
   featured: z.boolean().default(false),
   displayOrder: z.number().int().min(0).max(9999).default(100),
   active: z.boolean().default(true),

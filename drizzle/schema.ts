@@ -1,111 +1,67 @@
-import { boolean, int, mysqlEnum, mysqlTable, text, timestamp, uniqueIndex, varchar } from "drizzle-orm/mysql-core";
+import { sql } from "drizzle-orm";
+import { integer, sqliteTable, text, uniqueIndex } from "drizzle-orm/sqlite-core";
 
-export const users = mysqlTable("users", {
-  id: int("id").autoincrement().primaryKey(),
-  openId: varchar("openId", { length: 64 }).notNull().unique(),
-  name: text("name"),
-  email: varchar("email", { length: 320 }),
-  loginMethod: varchar("loginMethod", { length: 64 }),
-  role: mysqlEnum("role", ["user", "admin"]).default("user").notNull(),
-  createdAt: timestamp("createdAt").defaultNow().notNull(),
-  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
-  lastSignedIn: timestamp("lastSignedIn").defaultNow().notNull(),
-});
+// Cloudflare D1 (SQLite) schema.
+// Sign in is handled by Cloudflare Access, so there are no password or session
+// tables. Vendors are identified by the verified email Access gives us.
 
-export const vendorAccounts = mysqlTable("vendor_accounts", {
-  id: int("id").autoincrement().primaryKey(),
-  email: varchar("email", { length: 320 }).notNull(),
-  passwordHash: text("passwordHash").notNull(),
-  createdAt: timestamp("createdAt").defaultNow().notNull(),
-  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
-  lastSignedIn: timestamp("lastSignedIn"),
+const now = sql`(unixepoch())`;
+const createdAt = () => integer("createdAt", { mode: "timestamp" }).default(now).notNull();
+const updatedAt = () => integer("updatedAt", { mode: "timestamp" }).default(now).notNull().$onUpdate(() => new Date());
+
+export const vendorAccounts = sqliteTable("vendor_accounts", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  email: text("email").notNull(),
+  createdAt: createdAt(),
+  updatedAt: updatedAt(),
+  lastSignedIn: integer("lastSignedIn", { mode: "timestamp" }),
 }, (table) => [uniqueIndex("vendor_accounts_email_unique").on(table.email)]);
 
-export const adminCredentials = mysqlTable("admin_credentials", {
-  id: int("id").autoincrement().primaryKey(),
-  username: varchar("username", { length: 80 }).notNull(),
-  passwordHash: text("passwordHash").notNull(),
-  failedAttempts: int("failedAttempts").default(0).notNull(),
-  lockedUntil: timestamp("lockedUntil"),
-  createdAt: timestamp("createdAt").defaultNow().notNull(),
-  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
-  lastSignedIn: timestamp("lastSignedIn"),
-}, (table) => [uniqueIndex("admin_credentials_username_unique").on(table.username)]);
-
-export const credentialSessions = mysqlTable("credential_sessions", {
-  id: int("id").autoincrement().primaryKey(),
-  tokenHash: varchar("tokenHash", { length: 64 }).notNull(),
-  accountType: mysqlEnum("accountType", ["admin", "vendor"]).notNull(),
-  accountId: int("accountId").notNull(),
-  expiresAt: timestamp("expiresAt").notNull(),
-  createdAt: timestamp("createdAt").defaultNow().notNull(),
-}, (table) => [uniqueIndex("credential_sessions_token_unique").on(table.tokenHash)]);
-
-export const vendorProfiles = mysqlTable("vendor_profiles", {
-  id: int("id").autoincrement().primaryKey(),
-  ownerAccountId: int("ownerAccountId"),
-  slug: varchar("slug", { length: 160 }).notNull(),
-  name: varchar("name", { length: 140 }).notNull(),
-  category: varchar("category", { length: 100 }).notNull(),
+const profileColumns = () => ({
+  name: text("name").notNull(),
+  slug: text("slug").notNull(),
+  category: text("category").notNull(),
   shortBio: text("shortBio").notNull(),
   ownerBio: text("ownerBio"),
-  contactEmail: varchar("contactEmail", { length: 320 }).notNull(),
-  websiteUrl: varchar("websiteUrl", { length: 500 }),
-  instagramUrl: varchar("instagramUrl", { length: 500 }),
-  facebookUrl: varchar("facebookUrl", { length: 500 }),
-  tiktokUrl: varchar("tiktokUrl", { length: 500 }),
-  coverImageUrl: varchar("coverImageUrl", { length: 700 }),
+  contactEmail: text("contactEmail").notNull(),
+  websiteUrl: text("websiteUrl"),
+  instagramUrl: text("instagramUrl"),
+  facebookUrl: text("facebookUrl"),
+  tiktokUrl: text("tiktokUrl"),
+  coverImageUrl: text("coverImageUrl"),
   galleryImageUrls: text("galleryImageUrls"),
-  featured: boolean("featured").default(false).notNull(),
-  displayOrder: int("displayOrder").default(100).notNull(),
-  active: boolean("active").default(true).notNull(),
-  approvedAt: timestamp("approvedAt").defaultNow().notNull(),
-  createdAt: timestamp("createdAt").defaultNow().notNull(),
-  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+  featured: integer("featured", { mode: "boolean" }).default(false).notNull(),
+  displayOrder: integer("displayOrder").default(100).notNull(),
+  active: integer("active", { mode: "boolean" }).default(true).notNull(),
+});
+
+export const vendorProfiles = sqliteTable("vendor_profiles", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  ownerAccountId: integer("ownerAccountId"),
+  ...profileColumns(),
+  approvedAt: integer("approvedAt", { mode: "timestamp" }).default(now).notNull(),
+  createdAt: createdAt(),
+  updatedAt: updatedAt(),
 }, (table) => [uniqueIndex("vendor_profiles_slug_unique").on(table.slug)]);
 
-export const vendorSubmissions = mysqlTable("vendor_submissions", {
-  id: int("id").autoincrement().primaryKey(),
-  accountId: int("accountId").notNull(),
-  profileId: int("profileId"),
-  name: varchar("name", { length: 140 }).notNull(),
-  slug: varchar("slug", { length: 160 }).notNull(),
-  category: varchar("category", { length: 100 }).notNull(),
-  shortBio: text("shortBio").notNull(),
-  ownerBio: text("ownerBio"),
-  contactEmail: varchar("contactEmail", { length: 320 }).notNull(),
-  websiteUrl: varchar("websiteUrl", { length: 500 }),
-  instagramUrl: varchar("instagramUrl", { length: 500 }),
-  facebookUrl: varchar("facebookUrl", { length: 500 }),
-  tiktokUrl: varchar("tiktokUrl", { length: 500 }),
-  coverImageUrl: varchar("coverImageUrl", { length: 700 }),
-  galleryImageUrls: text("galleryImageUrls"),
-  featured: boolean("featured").default(false).notNull(),
-  displayOrder: int("displayOrder").default(100).notNull(),
-  active: boolean("active").default(true).notNull(),
-  status: mysqlEnum("status", ["draft", "pending", "approved", "rejected", "changes_requested"]).default("draft").notNull(),
+export const vendorSubmissions = sqliteTable("vendor_submissions", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  accountId: integer("accountId").notNull(),
+  profileId: integer("profileId"),
+  ...profileColumns(),
+  status: text("status", { enum: ["draft", "pending", "approved", "rejected", "changes_requested"] }).default("draft").notNull(),
   adminNote: text("adminNote"),
-  reviewedAt: timestamp("reviewedAt"),
-  createdAt: timestamp("createdAt").defaultNow().notNull(),
-  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+  reviewedAt: integer("reviewedAt", { mode: "timestamp" }),
+  createdAt: createdAt(),
+  updatedAt: updatedAt(),
 });
 
-export const siteSettings = mysqlTable("site_settings", {
-  key: varchar("key", { length: 100 }).primaryKey(),
+export const siteSettings = sqliteTable("site_settings", {
+  key: text("key").primaryKey(),
   value: text("value").notNull(),
-  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+  updatedAt: updatedAt(),
 });
 
-export type User = typeof users.$inferSelect;
-export type InsertUser = typeof users.$inferInsert;
 export type VendorAccount = typeof vendorAccounts.$inferSelect;
 export type VendorProfile = typeof vendorProfiles.$inferSelect;
 export type VendorSubmission = typeof vendorSubmissions.$inferSelect;
-
-export const adminGoogleAccounts = mysqlTable("admin_google_accounts", {
-  id: int("id").autoincrement().primaryKey(),
-  googleSub: varchar("googleSub", { length: 64 }).notNull(),
-  email: varchar("email", { length: 320 }).notNull(),
-  createdAt: timestamp("createdAt").defaultNow().notNull(),
-  lastSignedIn: timestamp("lastSignedIn"),
-}, (table) => [uniqueIndex("admin_google_accounts_sub_unique").on(table.googleSub)]);
