@@ -5,7 +5,7 @@ import PageMeta from "@/components/PageMeta";
 import SiteShell from "@/components/SiteShell";
 import SiteImagesPanel from "@/components/SiteImagesPanel";
 import VendorImportPanel from "@/components/VendorImportPanel";
-import { signInThroughAccess, signOutOfAccess, trpc } from "@/lib/trpc";
+import { clearSignInAttempt, signInJustFailed, signInThroughAccess, signOutOfAccess, trpc } from "@/lib/trpc";
 
 const GOOGLE_FORM = "https://docs.google.com/forms/d/e/1FAIpQLSdyAfXeN1Y_vIga_U-fQWoe_Yj4eSp8pzTu4JsTkFW1exue7Q/viewform";
 const tabs = [{ id: "overview", label: "Overview", icon: LayoutDashboard }, { id: "review", label: "Review queue", icon: FileCheck2 }, { id: "vendors", label: "Published vendors", icon: UsersRound }, { id: "images", label: "Site images", icon: ImageIcon }, { id: "gifts", label: "Gift boxes", icon: Gift }, { id: "import", label: "Vendor import", icon: FileSpreadsheet }, { id: "form", label: "Google Form", icon: Settings2 }] as const;
@@ -17,6 +17,7 @@ export default function SecureAdmin() {
   const dashboard = trpc.adminPortal.dashboard.useQuery(undefined, { retry: false });
   const me = trpc.adminPortal.me.useQuery(undefined, { retry: false, enabled: dashboard.isSuccess });
   if (dashboard.isLoading) return <SiteShell><PageMeta canonicalPath="/admin" noIndex title="Owner portal" description="Private owner access for The Cannery Marketplace." /><main className="portal-loading"><Loader2 className="animate-spin" /> Checking secure access…</main></SiteShell>;
+  if (dashboard.isSuccess) clearSignInAttempt();
   if (dashboard.error) return <AccessProblem forbidden={dashboard.error.data?.code === "FORBIDDEN"} />;
   const data = dashboard.data!;
   const pending = data.submissions.filter((item) => item.status === "pending");
@@ -26,6 +27,8 @@ export default function SecureAdmin() {
 // Sign in itself happens on Cloudflare Access's email code screen, before this page loads.
 // This card only appears if that session is missing, expired, or for an email that is not approved.
 function AccessProblem({ forbidden }: { forbidden: boolean }) {
+  const stuck = !forbidden && signInJustFailed();
+  if (stuck) return <SiteShell><PageMeta canonicalPath="/admin" noIndex title="Owner sign in" description="Private owner access for The Cannery Marketplace." /><main className="admin-login"><div className="admin-login-card"><div className="admin-logo-mark"><LockKeyhole size={22} /></div><p className="eyebrow">Private owner area</p><h1 className="display">Sign in did not finish.</h1><p>The page reloaded, but no sign in came back from Cloudflare Access. This usually means Access is not protecting this web address yet, or its settings do not match the site. The site owner can check this in Cloudflare under the Worker's Access settings.</p><button className="button-primary" type="button" onClick={() => { clearSignInAttempt(); signInThroughAccess("/admin"); }}>Try again</button></div></main></SiteShell>;
   return <SiteShell><PageMeta canonicalPath="/admin" noIndex title="Owner sign in" description="Private owner access for The Cannery Marketplace." /><main className="admin-login"><div className="admin-login-card"><div className="admin-logo-mark"><LockKeyhole size={22} /></div><p className="eyebrow">Private owner area</p><h1 className="display">{forbidden ? "Not on the owner list." : "Owner sign in."}</h1><p>{forbidden ? "You are signed in, but this email is not approved for the owner dashboard. Sign out and use an approved email." : "Sign in with your approved email. We will send you a one time code. There is no password to remember."}</p>{forbidden ? <button className="button-primary" type="button" onClick={() => signOutOfAccess()}>Sign out</button> : <button className="button-primary" type="button" onClick={() => signInThroughAccess("/admin")}>Continue to sign in</button>}<div className="admin-demo-note"><LockKeyhole size={15} /><span>Protected by Cloudflare Access email verification.</span></div></div></main></SiteShell>;
 }
 

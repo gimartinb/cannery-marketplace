@@ -78,11 +78,19 @@ export async function handleSiteImageUpload(request: Request, env: Env): Promise
  * GET /media/<key> serves an image from R2.
  * GET /manus-storage/<key> is an alias so image URLs saved on the old site keep working after migration.
  */
-export async function handleMedia(request: Request, env: Env, key: string): Promise<Response> {
+export async function handleMedia(request: Request, env: Env, key: string, ctx: ExecutionContext): Promise<Response> {
   if (request.method !== "GET" && request.method !== "HEAD") return new Response("Method not allowed", { status: 405 });
   if (!key || key.includes("..")) return new Response("Not found", { status: 404 });
 
-  const object = await env.MEDIA.get(key, { onlyIf: request.headers });
+  // Cloudflare's edge cache (the free CDN). Every upload gets a unique file name,
+  // so a cached copy never goes stale. Note: the edge cache is active on a custom
+  // domain (cannerymarket.com); on workers.dev it is skipped and R2 serves every request.
+  const cache = caches.default;
+  const cacheKey = new Request(new URL(request.url).toString(), { method: "GET" });
+  const cached = await cache.match(cacheKey);
+  if (cached) return request.method === "HEAD" ? new Response(null, cached) : cached;
+
+  const object = await env.MEDIA.get(key);
   if (!object) return new Response("Not found", { status: 404 });
 
   const headers = new Headers();
@@ -91,7 +99,7 @@ export async function handleMedia(request: Request, env: Env, key: string): Prom
   headers.set("Cache-Control", "public, max-age=31536000, immutable");
   headers.set("X-Content-Type-Options", "nosniff");
 
-  // onlyIf matched a conditional request (If-None-Match etc.): no body returned.
-  if (!("body" in object)) return new Response(null, { status: 304, headers });
-  return new Response(request.method === "HEAD" ? null : object.body, { headers });
+  const response = new Response(object.body, { headers });
+  ctx.waitUntil(cache.put(cacheKey, response.clone()));
+  return request.method === "HEAD" ? new Response(null, { headers }) : response;
 }
