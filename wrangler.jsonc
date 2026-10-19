@@ -19,8 +19,7 @@
     {
       "binding": "DB",
       "database_name": "cannery-marketplace",
-      // Filled in once the database is created in the Cloudflare dashboard (HOSTING-AND-ADMIN-PLAN.md, setup step 2).
-      "database_id": "REPLACE_WITH_D1_DATABASE_ID",
+      "database_id": "92b7e94f-ce96-42ef-86e9-6d7d54aa759d",
       "migrations_dir": "drizzle/d1"
     }
   ],
