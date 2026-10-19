@@ -79,6 +79,30 @@ export const makerInvites = sqliteTable("maker_invites", {
   createdAt: createdAt(),
 });
 
+// Home page "Find something with a story" cards, managed by owners (up to 3).
+export const productHighlights = sqliteTable("product_highlights", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  title: text("title").notNull(),
+  description: text("description").notNull(),
+  category: text("category").notNull(),
+  makerSlug: text("makerSlug"),
+  makerName: text("makerName"),
+  imageUrl: text("imageUrl"),
+  displayOrder: integer("displayOrder").default(100).notNull(),
+  createdAt: createdAt(),
+  updatedAt: updatedAt(),
+});
+
+// About page "Inside the Cannery" gallery, managed by owners (up to 12 photos).
+export const galleryPhotos = sqliteTable("gallery_photos", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  url: text("url").notNull(),
+  alt: text("alt").notNull(),
+  caption: text("caption"),
+  displayOrder: integer("displayOrder").default(100).notNull(),
+  createdAt: createdAt(),
+});
+
 export type VendorAccount = typeof vendorAccounts.$inferSelect;
 export type VendorProfile = typeof vendorProfiles.$inferSelect;
 export type VendorSubmission = typeof vendorSubmissions.$inferSelect;

@@ -13,14 +13,12 @@ const hours = [
   ["Saturday", "11 AM–7 PM"], ["Sunday", "11 AM–6 PM"],
 ];
 
-const productHighlights = [
-  { maker: "Juniper Clay Studio", slug: "juniper-clay-studio", category: "Ceramics", name: "Hand-thrown pottery", description: "Small-batch vessels shaped for everyday rituals.", tone: "clay" },
-  { maker: "Golden Hour Goods", slug: "golden-hour-goods", category: "Home & Gifts", name: "Thoughtful home goods", description: "Useful, warm pieces inspired by California light.", tone: "sun" },
-  { maker: "VIVRA CAFÉ", slug: "vivra-cafe", category: "Coffee & Bakery", name: "Scratch-made café favorites", description: "Mexican-inspired drinks and artisan bakery treats.", tone: "cafe" },
-];
+const highlightTones = ["clay", "sun", "cafe"] as const;
 
 export default function Home() {
   const featured = trpc.directory.featured.useQuery(undefined, { staleTime: 5 * 60_000 });
+  const highlights = trpc.home.highlights.useQuery(undefined, { staleTime: 5 * 60_000 });
+  const productHighlights = highlights.data || [];
   const featuredVendors = useMemo<Vendor[]>(() => (featured.data || []).map(publishedVendorToView), [featured.data]);
   const heroImage = useSiteImage("home-hero");
   const interiorImage = useSiteImage("marketplace-interior");
@@ -56,11 +54,11 @@ export default function Home() {
       },
       ...productHighlights.map((product) => ({
         "@type": "Product",
-        name: product.name,
+        name: product.title,
         description: product.description,
         category: product.category,
-        brand: { "@type": "Brand", name: product.maker },
-        url: `https://cannerymarket.com/vendors/${product.slug}`,
+        ...(product.makerName ? { brand: { "@type": "Brand", name: product.makerName } } : {}),
+        ...(product.makerSlug ? { url: `https://cannerymarket.com/vendors/${product.makerSlug}` } : {}),
       })),
     ],
   };
@@ -76,7 +74,7 @@ export default function Home() {
 
       {featuredVendors.length > 0 && <section className="featured-makers-section home-maker-first" aria-labelledby="featured-makers-title"><div className="site-container"><div className="featured-makers-heading"><div><p className="eyebrow"><Sparkles size={14} /> Makers to discover</p><h2 className="display" id="featured-makers-title">Meet the people behind the <em>work.</em></h2></div><Link className="text-link" href="/vendors">See all makers <ArrowRight size={15} /></Link></div><div className="featured-makers-grid">{featuredVendors.map((vendor) => <article className="featured-maker-card" key={vendor.slug}><Link href={`/vendors/${vendor.slug}`} className={`featured-maker-image vendor-tone-${vendor.tone}`}><span className="placeholder-stamp">{vendor.spotlight === "popular" ? "Popular maker" : "Featured maker"}</span>{vendor.photoUrl ? <img className="vendor-photo" src={vendor.photoUrl} alt={`${vendor.name}, a ${vendor.category} maker at The Cannery Marketplace`} width="800" height="800" loading="lazy" decoding="async" /> : <span className="vendor-initials">{vendor.initials}</span>}<span className="sr-only">View {vendor.name} maker profile</span></Link><div className="featured-maker-copy"><span>{vendor.category}</span><h3><Link href={`/vendors/${vendor.slug}`}>{vendor.name}</Link></h3><p>{vendor.bio}</p><Link className="text-link" href={`/vendors/${vendor.slug}`}>Read their story <ArrowRight size={14} /></Link></div></article>)}</div></div></section>}
 
-      <section className="maker-products-section" aria-labelledby="maker-products-title"><div className="site-container"><div className="maker-products-heading"><div><p className="eyebrow">Made by local hands</p><h2 className="display" id="maker-products-title">Find something with a <em>story.</em></h2></div><p>Explore a few of the goods and flavors represented by makers at The Cannery, then step into each profile to learn who made them.</p></div><div className="maker-product-grid">{productHighlights.map((product) => <article className={`maker-product-card maker-product-${product.tone}`} key={product.name}><Link href={`/vendors/${product.slug}`}><span className="maker-product-category">{product.category}</span><h3>{product.name}</h3><p>{product.description}</p><strong>{product.maker} <ArrowRight size={14} /></strong></Link></article>)}</div></div></section>
+      {productHighlights.length > 0 && <section className="maker-products-section" aria-labelledby="maker-products-title"><div className="site-container"><div className="maker-products-heading"><div><p className="eyebrow">Made by local hands</p><h2 className="display" id="maker-products-title">Find something with a <em>story.</em></h2></div><p>Explore a few of the goods and flavors represented by makers at The Cannery, then step into each profile to learn who made them.</p></div><div className="maker-product-grid">{productHighlights.map((product, index) => { const inner = <>{product.imageUrl && <img className="maker-product-photo" src={product.imageUrl} alt="" loading="lazy" decoding="async" />}<span className="maker-product-category">{product.category}</span><h3>{product.title}</h3><p>{product.description}</p>{product.makerSlug && product.makerName && <strong>{product.makerName} <ArrowRight size={14} /></strong>}</>; return <article className={`maker-product-card maker-product-${highlightTones[index % highlightTones.length]}${product.imageUrl ? " has-photo" : ""}`} key={product.id}>{product.makerSlug ? <Link href={`/vendors/${product.makerSlug}`}>{inner}</Link> : <div className="maker-product-body">{inner}</div>}</article>; })}</div></div></section>}
 
       <section className="community-creed" aria-labelledby="community-title"><div className="site-container community-creed-grid"><div><p className="eyebrow">A marketplace made by its community</p><h2 className="display" id="community-title">Made here. Backed here. <em>Built to last.</em></h2></div><div className="community-creed-copy"><p className="body-large">Gilroy is shaped by makers, growers, doers, and neighbors who choose local. Every purchase keeps storefronts full, skills in motion, and opportunity close to home.</p><div className="community-values"><span>Meet the person behind the work</span><span>Choose local goods with a story</span><span>Build a stronger downtown together</span></div></div></div></section>
 

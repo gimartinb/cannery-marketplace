@@ -1,6 +1,6 @@
 import { isSiteImageSlot } from "../shared/siteImageSlots";
 import { getAccessIdentity, isAdminEmail } from "./access";
-import { createDb, getOrCreateVendorAccount, getSiteImage, isInvitedMaker, setSiteImageUrl } from "./db";
+import { addGalleryPhoto, countGalleryPhotos, createDb, getOrCreateVendorAccount, getSiteImage, isInvitedMaker, MAX_GALLERY_PHOTOS, setSiteImageUrl } from "./db";
 import type { Env } from "./env";
 
 const MAX_UPLOAD_BYTES = 5 * 1024 * 1024;
@@ -53,19 +53,38 @@ export async function handleVendorUpload(request: Request, env: Env): Promise<Re
 }
 
 /**
- * POST /api/admin/upload?slot=<site image spot>  (owners only)
- * Body: the raw image bytes. Replaces that spot's image and removes the previous upload.
+ * POST /api/admin/upload  (owners only). Body: the raw image bytes.
+ *   ?slot=<site image spot>  replaces that spot's image and removes the previous upload
+ *   ?purpose=highlight       stores a home highlight image and returns its URL (saved with the highlight)
+ *   ?purpose=gallery&alt=... adds a photo to the About page gallery (up to 12)
  */
 export async function handleSiteImageUpload(request: Request, env: Env): Promise<Response> {
   const identity = await getAccessIdentity(request, env);
   if (!identity) return json({ error: "Please sign in as an administrator." }, 401);
   if (!isAdminEmail(env, identity.email)) return json({ error: "This email is not on the approved owner list." }, 403);
-  const slot = new URL(request.url).searchParams.get("slot") || "";
+  const params = new URL(request.url).searchParams;
+  const purpose = params.get("purpose");
+  const db = createDb(env.DB);
+
+  if (purpose === "highlight" || purpose === "gallery") {
+    if (purpose === "gallery" && (await countGalleryPhotos(db)) >= MAX_GALLERY_PHOTOS) return json({ error: `The gallery holds up to ${MAX_GALLERY_PHOTOS} photos. Remove one before adding another.` }, 400);
+    const upload = validateImageUpload(request);
+    if (upload instanceof Response) return upload;
+    const key = `site/${purpose}/${randomSuffix()}${randomSuffix()}.${upload.extension}`;
+    await env.MEDIA.put(key, upload.body, { httpMetadata: { contentType: upload.contentType } });
+    const url = `/media/${key}`;
+    if (purpose === "gallery") {
+      const alt = (params.get("alt") || "").trim().slice(0, 300) || "Inside The Cannery Marketplace";
+      return json({ id: await addGalleryPhoto(db, url, alt), url });
+    }
+    return json({ url });
+  }
+
+  const slot = params.get("slot") || "";
   if (!isSiteImageSlot(slot)) return json({ error: "Unknown image spot." }, 400);
   const upload = validateImageUpload(request);
   if (upload instanceof Response) return upload;
 
-  const db = createDb(env.DB);
   const previous = await getSiteImage(db, slot);
   const key = `site/${slot}_${randomSuffix()}.${upload.extension}`;
   await env.MEDIA.put(key, upload.body, { httpMetadata: { contentType: upload.contentType } });

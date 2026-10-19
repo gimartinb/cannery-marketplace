@@ -1,7 +1,7 @@
 import { and, asc, desc, eq, inArray, sql, type SQL } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { TRPCError } from "@trpc/server";
-import { makerInvites, siteImages, siteSettings, vendorAccounts, vendorProfiles, vendorSubmissions } from "../drizzle/schema";
+import { galleryPhotos, makerInvites, productHighlights, siteImages, siteSettings, vendorAccounts, vendorProfiles, vendorSubmissions } from "../drizzle/schema";
 import type { VendorProfileInput } from "../shared/vendorProfile";
 
 export type Database = ReturnType<typeof createDb>;
@@ -179,4 +179,84 @@ export async function addMakerInvites(db: Database, emails: string[], invitedBy:
 
 export async function removeMakerInvite(db: Database, email: string) {
   await db.delete(makerInvites).where(eq(makerInvites.email, email.toLowerCase()));
+}
+
+// Home page product highlights (owner managed).
+export const MAX_HIGHLIGHTS = 3;
+export type HighlightInput = { title: string; description: string; category: string; makerSlug?: string | null; imageUrl?: string | null; displayOrder: number };
+
+async function makerNameFor(db: Database, slug: string | null | undefined) {
+  if (!slug) return null;
+  const profile = (await db.select({ name: vendorProfiles.name }).from(vendorProfiles).where(eq(vendorProfiles.slug, slug)).limit(1))[0];
+  if (!profile) throw new TRPCError({ code: "BAD_REQUEST", message: "That maker could not be found." });
+  return profile.name;
+}
+
+export async function listHighlights(db: Database) {
+  return db.select().from(productHighlights).orderBy(asc(productHighlights.displayOrder), asc(productHighlights.id));
+}
+
+/** Public: highlights whose linked maker is still published (or that link to no maker). */
+export async function listPublicHighlights(db: Database) {
+  const rows = await listHighlights(db);
+  const slugs = rows.map((row) => row.makerSlug).filter((slug): slug is string => Boolean(slug));
+  const active = slugs.length ? new Set((await db.select({ slug: vendorProfiles.slug }).from(vendorProfiles).where(and(inArray(vendorProfiles.slug, slugs), eq(vendorProfiles.active, true)))).map((row) => row.slug)) : new Set<string>();
+  return rows.map((row) => ({ ...row, makerSlug: row.makerSlug && active.has(row.makerSlug) ? row.makerSlug : null }));
+}
+
+export async function getHighlight(db: Database, id: number) {
+  return (await db.select().from(productHighlights).where(eq(productHighlights.id, id)).limit(1))[0] ?? null;
+}
+
+export async function createHighlight(db: Database, input: HighlightInput) {
+  const [{ total }] = await db.select({ total: sql<number>`count(*)` }).from(productHighlights);
+  if (Number(total) >= MAX_HIGHLIGHTS) throw new TRPCError({ code: "BAD_REQUEST", message: `The home page shows up to ${MAX_HIGHLIGHTS} highlights. Remove one before adding another.` });
+  const makerName = await makerNameFor(db, input.makerSlug);
+  const [row] = await db.insert(productHighlights).values({ ...input, makerSlug: input.makerSlug || null, imageUrl: input.imageUrl || null, makerName }).returning({ id: productHighlights.id });
+  return row.id;
+}
+
+export async function updateHighlight(db: Database, id: number, input: HighlightInput) {
+  const makerName = await makerNameFor(db, input.makerSlug);
+  await db.update(productHighlights).set({ ...input, makerSlug: input.makerSlug || null, imageUrl: input.imageUrl || null, makerName }).where(eq(productHighlights.id, id));
+}
+
+export async function deleteHighlight(db: Database, id: number) {
+  await db.delete(productHighlights).where(eq(productHighlights.id, id));
+}
+
+// About page gallery (owner managed).
+export const MAX_GALLERY_PHOTOS = 12;
+
+export async function listGalleryPhotos(db: Database) {
+  return db.select().from(galleryPhotos).orderBy(asc(galleryPhotos.displayOrder), asc(galleryPhotos.id));
+}
+
+export async function countGalleryPhotos(db: Database) {
+  const [{ total }] = await db.select({ total: sql<number>`count(*)` }).from(galleryPhotos);
+  return Number(total);
+}
+
+export async function addGalleryPhoto(db: Database, url: string, alt: string) {
+  const [{ next }] = await db.select({ next: sql<number>`coalesce(max(${galleryPhotos.displayOrder}), 0) + 1` }).from(galleryPhotos);
+  const [row] = await db.insert(galleryPhotos).values({ url, alt, displayOrder: Number(next) }).returning({ id: galleryPhotos.id });
+  return row.id;
+}
+
+export async function getGalleryPhoto(db: Database, id: number) {
+  return (await db.select().from(galleryPhotos).where(eq(galleryPhotos.id, id)).limit(1))[0] ?? null;
+}
+
+export async function updateGalleryPhoto(db: Database, id: number, input: { alt: string; caption: string }) {
+  await db.update(galleryPhotos).set({ alt: input.alt, caption: input.caption || null }).where(eq(galleryPhotos.id, id));
+}
+
+export async function deleteGalleryPhoto(db: Database, id: number) {
+  await db.delete(galleryPhotos).where(eq(galleryPhotos.id, id));
+}
+
+/** Saves a new order: ids listed first to last. */
+export async function reorderGalleryPhotos(db: Database, ids: number[]) {
+  const [first, ...rest] = ids.map((id, index) => db.update(galleryPhotos).set({ displayOrder: index + 1 }).where(eq(galleryPhotos.id, id)));
+  if (first) await db.batch([first, ...rest]);
 }

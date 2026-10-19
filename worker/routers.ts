@@ -7,14 +7,30 @@ import {
   bulkImportVendorProfiles, deleteSiteImage, getSiteImage, listSiteImages, setSiteImageAlt, createVendorSubmission, getLatestVendorSubmission, getPublicVendorProfile,
   DIRECTORY_PAGE_SIZES, getSiteSetting, listAllVendorProfiles, listFeaturedVendorProfiles, listPublicVendorCategories, listPublicVendorPage, listVendorSubmissions,
   reviewVendorSubmission, setSiteSetting, setVendorActive, addMakerInvites, listMakerInvites, removeMakerInvite,
+  createHighlight, deleteGalleryPhoto, deleteHighlight, getGalleryPhoto, getHighlight, listGalleryPhotos, listHighlights,
+  listPublicHighlights, reorderGalleryPhotos, updateGalleryPhoto, updateHighlight,
 } from "./db";
 import { adminProcedure, mergeRouters, publicProcedure, router, vendorProcedure } from "./trpc";
+
+const ownerImagePath = z.string().trim().regex(/^\/media\/site\/[A-Za-z0-9._\/-]+$/, "Upload the image through the dashboard");
+const highlightInput = z.object({
+  id: z.number().int().positive().optional(),
+  title: z.string().trim().min(2).max(80),
+  description: z.string().trim().min(10).max(220),
+  category: z.string().trim().min(2).max(60),
+  makerSlug: z.string().trim().max(160).nullish(),
+  imageUrl: ownerImagePath.nullish(),
+  displayOrder: z.number().int().min(0).max(99).default(1),
+});
 
 const giftBoxesEnabled = async (db: Parameters<typeof getSiteSetting>[0]) => (await getSiteSetting(db, "gift_boxes_enabled", "false")) === "true";
 
 // Mounted at /api/trpc. Open to everyone.
 export const publicRouter = router({
   settings: router({ public: publicProcedure.query(async ({ ctx }) => ({ giftBoxesEnabled: await giftBoxesEnabled(ctx.db) })) }),
+  // Owner managed content: home page highlights and the About page gallery.
+  home: router({ highlights: publicProcedure.query(({ ctx }) => listPublicHighlights(ctx.db)) }),
+  gallery: router({ list: publicProcedure.query(({ ctx }) => listGalleryPhotos(ctx.db)) }),
   // Owner replacements for the named image spots. Spots with no entry use the built-in default.
   siteImages: router({ list: publicProcedure.query(({ ctx }) => listSiteImages(ctx.db)) }),
   directory: router({
@@ -64,6 +80,32 @@ export const adminRouter = router({
     makerInvites: adminProcedure.query(({ ctx }) => listMakerInvites(ctx.db)),
     addMakerInvites: adminProcedure.input(z.object({ emails: z.array(z.string().trim().toLowerCase().email().max(320)).min(1).max(200) })).mutation(async ({ ctx, input }) => ({ added: await addMakerInvites(ctx.db, input.emails, ctx.email) })),
     removeMakerInvite: adminProcedure.input(z.object({ email: z.string().trim().toLowerCase().email().max(320) })).mutation(async ({ ctx, input }) => { await removeMakerInvite(ctx.db, input.email); return { success: true }; }),
+    // Home page highlights. Images upload first via POST /api/admin/upload?purpose=highlight.
+    highlights: adminProcedure.query(({ ctx }) => listHighlights(ctx.db)),
+    saveHighlight: adminProcedure.input(highlightInput).mutation(async ({ ctx, input }) => {
+      const { id, ...values } = input;
+      if (!id) return { id: await createHighlight(ctx.db, values) };
+      const current = await getHighlight(ctx.db, id);
+      if (!current) throw new TRPCError({ code: "NOT_FOUND", message: "Highlight not found." });
+      await updateHighlight(ctx.db, id, values);
+      if (current.imageUrl !== (values.imageUrl || null)) await deleteSiteImageObject(ctx.env, current.imageUrl);
+      return { id };
+    }),
+    deleteHighlight: adminProcedure.input(z.object({ id: z.number().int().positive() })).mutation(async ({ ctx, input }) => {
+      const current = await getHighlight(ctx.db, input.id);
+      await deleteHighlight(ctx.db, input.id);
+      await deleteSiteImageObject(ctx.env, current?.imageUrl);
+      return { success: true };
+    }),
+    // About page gallery. Photos are added via POST /api/admin/upload?purpose=gallery.
+    updateGalleryPhoto: adminProcedure.input(z.object({ id: z.number().int().positive(), alt: z.string().trim().min(3).max(300), caption: z.string().trim().max(200) })).mutation(async ({ ctx, input }) => { await updateGalleryPhoto(ctx.db, input.id, input); return { success: true }; }),
+    deleteGalleryPhoto: adminProcedure.input(z.object({ id: z.number().int().positive() })).mutation(async ({ ctx, input }) => {
+      const current = await getGalleryPhoto(ctx.db, input.id);
+      await deleteGalleryPhoto(ctx.db, input.id);
+      await deleteSiteImageObject(ctx.env, current?.url);
+      return { success: true };
+    }),
+    reorderGallery: adminProcedure.input(z.object({ ids: z.array(z.number().int().positive()).max(50) })).mutation(async ({ ctx, input }) => { await reorderGalleryPhotos(ctx.db, input.ids); return { success: true }; }),
     bulkImport: adminProcedure.input(z.object({ vendors: z.array(vendorProfileSchema).min(1).max(500) })).mutation(async ({ ctx, input }) => ({ imported: await bulkImportVendorProfiles(ctx.db, input.vendors) })),
   }),
 });

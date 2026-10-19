@@ -3,9 +3,12 @@ import { Link } from "wouter";
 import PageMeta from "@/components/PageMeta";
 import SiteShell from "@/components/SiteShell";
 import { useSiteImage } from "@/lib/siteImages";
+import { trpc } from "@/lib/trpc";
 
 export default function About() {
   const aboutImage = useSiteImage("about-display");
+  const gallery = trpc.gallery.list.useQuery(undefined, { staleTime: 5 * 60_000 });
+  const photos = gallery.data || [];
   return (
     <SiteShell>
       <PageMeta canonicalPath="/about" title="About our Gilroy artisan marketplace" description="Learn how The Cannery Marketplace gives Gilroy makers and artisans a welcoming place to share handcrafted work with the community." />
@@ -29,6 +32,14 @@ export default function About() {
           </div>
           <div className="site-container about-image"><img src={aboutImage?.url} alt={aboutImage?.alt} width="348" height="348" loading="lazy" decoding="async" /></div>
         </section>
+
+        {photos.length > 0 && <section className="about-gallery" aria-labelledby="about-gallery-title">
+          <div className="site-container">
+            <p className="eyebrow">Inside the Cannery</p>
+            <h2 className="display" id="about-gallery-title">A look <em>around.</em></h2>
+            <div className="about-gallery-grid">{photos.map((photo) => <figure key={photo.id}><img src={photo.url} alt={photo.alt} loading="lazy" decoding="async" />{photo.caption && <figcaption>{photo.caption}</figcaption>}</figure>)}</div>
+          </div>
+        </section>}
 
         <section className="cta-band">
           <div className="site-container cta-band-grid">
