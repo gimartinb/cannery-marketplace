@@ -3,7 +3,7 @@ import * as XLSX from "xlsx";
 import { exportJWK, generateKeyPair, SignJWT } from "jose";
 import { vendorProfileSchema } from "../shared/vendorProfile";
 import { parseVendorWorkbook } from "../client/src/components/VendorImportPanel";
-import { getAccessIdentity, isAdminEmail } from "../worker/access";
+import { checkAccess, getAccessIdentity, isAdminEmail } from "../worker/access";
 import { adminRouter, publicRouter, vendorRouter } from "../worker/routers";
 import type { Env } from "../worker/env";
 import type { TrpcContext } from "../worker/trpc";
@@ -81,6 +81,12 @@ describe("Cloudflare Access verification", () => {
     const devEnv = { ...baseEnv, ENVIRONMENT: "development", DEV_AUTH_EMAIL: "owner@example.com" };
     expect(await getAccessIdentity(requestWith(undefined, "http://localhost:8787/api/admin/trpc/x"), devEnv)).toEqual({ email: "owner@example.com" });
     expect(await getAccessIdentity(requestWith(undefined, "https://cannery-marketplace.example.workers.dev/api/admin/trpc/x"), devEnv)).toBeNull();
+  });
+  it("reports why a sign in failed, without exposing the token", async () => {
+    expect((await checkAccess(requestWith(), { ...baseEnv, ACCESS_AUD: "" })).reason).toBe("not_configured");
+    expect((await checkAccess(requestWith(), baseEnv)).reason).toBe("missing_token");
+    expect((await checkAccess(requestWith(await accessToken({ email: "owner@example.com", aud: "other-app" })), baseEnv)).reason).toBe("invalid_token");
+    expect((await checkAccess(requestWith(await accessToken({ email: "owner@example.com" })), baseEnv)).identity).toEqual({ email: "owner@example.com" });
   });
   it("matches the admin allow list exactly", () => {
     expect(isAdminEmail(baseEnv, "OWNER@example.com")).toBe(true);

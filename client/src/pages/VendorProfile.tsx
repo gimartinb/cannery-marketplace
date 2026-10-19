@@ -2,13 +2,13 @@ import { ArrowLeft, ArrowRight, ExternalLink, Facebook, Globe2, Instagram, Music
 import { Link, useParams } from "wouter";
 import PageMeta from "@/components/PageMeta";
 import SiteShell from "@/components/SiteShell";
-import { getDefaultVendor, publishedVendorToView } from "@/lib/vendors";
+import { publishedVendorToView } from "@/lib/vendors";
 import { trpc } from "@/lib/trpc";
 
 export default function VendorProfile() {
   const params = useParams<{ slug: string }>();
   const approved = trpc.directory.bySlug.useQuery({ slug: params.slug });
-  const vendor = approved.data ? publishedVendorToView(approved.data) : getDefaultVendor(params.slug);
+  const vendor = approved.data ? publishedVendorToView(approved.data) : undefined;
   if (approved.isLoading && !vendor) return <SiteShell><main><section className="page-hero"><div className="site-container page-hero-content"><p className="eyebrow">Loading maker</p><h1 className="display">Finding the profile…</h1></div></section></main></SiteShell>;
   if (!vendor) return <SiteShell><main><section className="page-hero"><div className="site-container page-hero-content"><p className="eyebrow">Maker not found</p><h1 className="display">That profile has moved.</h1><Link className="button-primary" href="/vendors">Back to the directory <ArrowLeft size={15} /></Link></div></section></main></SiteShell>;
   const hasStory = Boolean(vendor.ownerBio || vendor.makerStory || vendor.workSamples?.length || vendor.galleryImageUrls?.length);

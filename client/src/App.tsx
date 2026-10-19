@@ -1,5 +1,5 @@
 import { lazy, Suspense, useEffect } from "react";
-import { Route, Switch, useLocation } from "wouter";
+import { Redirect, Route, Switch, useLocation } from "wouter";
 import ErrorBoundary from "./components/ErrorBoundary";
 import Home from "./pages/Home";
 
@@ -24,6 +24,13 @@ function Router() {
   useEffect(() => {
     window.scrollTo({ top: 0, left: 0, behavior: "auto" });
   }, [location]);
+
+  // "/admin/" and "/admin" are the same page: drop a trailing slash so routes match.
+  if (location.length > 1 && location.endsWith("/")) {
+    const trimmed = location.replace(/\/+$/, "") || "/";
+    window.history.replaceState(window.history.state, "", trimmed + window.location.search + window.location.hash);
+    return <Redirect to={trimmed} replace />;
+  }
 
   return <Suspense fallback={<RouteLoading />}><Switch>
     <Route path="/" component={Home} />

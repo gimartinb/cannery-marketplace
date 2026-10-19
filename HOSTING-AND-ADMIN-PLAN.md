@@ -4,6 +4,7 @@
 
 | Version | Date | Author | Change |
 |---|---|---|---|
+| 3.3 | 2026-10-18 | Gilbert Martin (with Claude) | Makers page loads 10, 25, or 50 makers at a time with a Show more button; mock preview profiles removed from public pages. Images cached at Cloudflare's edge. Sign in failures now report a reason (not_configured, missing_token, invalid_token). Staging Access moves to path based apps (/admin, /maker-portal, and their APIs) instead of the whole site. |
 | 3.2 | 2026-10-18 | Gilbert Martin (with Claude) | Owners can now replace the logo and site photos from the dashboard (Site images tab). Replacements are stored in R2 and listed in the new `site_images` table; built-in defaults ship in `client/public/images` and "Reset to original" restores them. Cloudflare Access turned on for staging (team `cannery`). |
 | 3.1 | 2026-10-18 | Gilbert Martin (with Claude) | Staging setup progress: D1 database and private R2 bucket created (R2 is not created automatically; added as setup step 2b), Workers Builds connected to GitHub (production branch `cloudflare` until the PR merges), deploy token `cannery-marketplace-builds` created with D1 edit. Email verification on the Cloudflare account is still pending, which blocks member invites and Zero Trust. |
 | 3.0 | 2026-10-18 | Gilbert Martin (with Claude) | Moved the app to Cloudflare Workers, D1, and R2. Sign in for owners and vendors now uses Cloudflare Access email codes, with no passwords. Added GitOps deploys through Workers Builds and the DNS cutover plan. Replaces the Pages and Decap CMS plan in 2.0. |
@@ -54,8 +55,8 @@ Staging runs at the free `cannery-marketplace.<account>.workers.dev` address. Th
    * Non production branch deploy command: `pnpm run deploy:preview` (preview URL, no migrations)
    * Root directory: `/`
 5. **Zero Trust.** Open Zero Trust, choose the free plan, and pick a team name. Under Settings, then Authentication, enable One time PIN.
-6. **Lock staging.** On the Worker, under Settings, then Domains and Routes, enable Cloudflare Access for the `workers.dev` address. Limit the policy to the people testing staging. Copy the application's AUD tag.
-7. **Tell the Worker about Access.** In `wrangler.jsonc`, set `ACCESS_TEAM_DOMAIN` to `https://<team>.cloudflareaccess.com` and `ACCESS_AUD` to the AUD tag. Commit, and the push redeploys.
+6. **Lock the private pages on staging.** In Zero Trust, under Access controls, then Applications, add two self hosted applications on the `workers.dev` hostname: Owners (paths `admin` and `api/admin`, policy allowing only the `ADMIN_EMAILS`) and Makers (paths `maker-portal` and `api/vendor`, policy allowing the testers). Copy both AUD tags. Leave Worker level Access off so public pages stay open.
+7. **Tell the Worker about Access.** In `wrangler.jsonc`, set `ACCESS_TEAM_DOMAIN` to `https://<team>.cloudflareaccess.com` and `ACCESS_AUD` to the AUD tags, comma separated. Commit, and the push redeploys.
 
 ## Moving existing data
 

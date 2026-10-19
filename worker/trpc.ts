@@ -1,6 +1,6 @@
 import { initTRPC, TRPCError } from "@trpc/server";
 import superjson from "superjson";
-import { getAccessIdentity, isAdminEmail } from "./access";
+import { checkAccess, isAdminEmail } from "./access";
 import { createDb, getOrCreateVendorAccount, type Database } from "./db";
 import type { Env } from "./env";
 
@@ -19,16 +19,16 @@ export const publicProcedure = t.procedure;
 
 /** Any person Cloudflare Access verified. Their email becomes their vendor account. */
 export const vendorProcedure = t.procedure.use(async ({ ctx, next }) => {
-  const identity = await getAccessIdentity(ctx.request, ctx.env);
-  if (!identity) throw new TRPCError({ code: "UNAUTHORIZED", message: "Please sign in to the maker portal." });
+  const { identity, reason } = await checkAccess(ctx.request, ctx.env);
+  if (!identity) throw new TRPCError({ code: "UNAUTHORIZED", message: `Please sign in to the maker portal. (${reason})` });
   const account = await getOrCreateVendorAccount(ctx.db, identity.email);
   return next({ ctx: { ...ctx, email: identity.email, vendorAccount: account } });
 });
 
 /** Only emails on the ADMIN_EMAILS allow list. */
 export const adminProcedure = t.procedure.use(async ({ ctx, next }) => {
-  const identity = await getAccessIdentity(ctx.request, ctx.env);
-  if (!identity) throw new TRPCError({ code: "UNAUTHORIZED", message: "Please sign in as an administrator." });
+  const { identity, reason } = await checkAccess(ctx.request, ctx.env);
+  if (!identity) throw new TRPCError({ code: "UNAUTHORIZED", message: `Please sign in as an administrator. (${reason})` });
   if (!isAdminEmail(ctx.env, identity.email)) throw new TRPCError({ code: "FORBIDDEN", message: "This email is not on the approved owner list." });
   return next({ ctx: { ...ctx, email: identity.email } });
 });

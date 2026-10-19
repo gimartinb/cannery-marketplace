@@ -1,28 +1,38 @@
-import { ArrowRight, Search, Sparkles, X } from "lucide-react";
+import { ArrowRight, Loader2, Search, Sparkles, X } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "wouter";
 import PageMeta from "@/components/PageMeta";
 import SiteShell from "@/components/SiteShell";
-import { defaultVendors, publishedVendorToView } from "@/lib/vendors";
+import { publishedVendorToView } from "@/lib/vendors";
 import { trpc } from "@/lib/trpc";
+
+const PAGE_SIZES = [10, 25, 50] as const;
+type PageSize = (typeof PAGE_SIZES)[number];
+
+/** Waits until typing pauses before searching, so each keystroke is not a separate request. */
+function useDebounced<T>(value: T, delay = 350): T {
+  const [debounced, setDebounced] = useState(value);
+  useEffect(() => { const timer = setTimeout(() => setDebounced(value), delay); return () => clearTimeout(timer); }, [value, delay]);
+  return debounced;
+}
 
 export default function Vendors() {
   const [category, setCategory] = useState("All makers");
   const [search, setSearch] = useState("");
-  const vendors = defaultVendors;
-  const directory = trpc.directory.list.useQuery();
-  const allVendors = useMemo(() => { const approved = (directory.data || []).map(publishedVendorToView); const slugs = new Set(approved.map((vendor) => vendor.slug)); return [...approved, ...vendors.filter((vendor) => !slugs.has(vendor.slug))]; }, [directory.data, vendors]);
-  const categories = useMemo(() => ["All makers", ...Array.from(new Set(allVendors.filter((vendor) => vendor.active).map((vendor) => vendor.category))).sort()], [allVendors]);
-  useEffect(() => { if (!categories.includes(category)) setCategory("All makers"); }, [categories, category]);
-  const visibleVendors = useMemo(() => {
-    const normalizedSearch = search.trim().toLowerCase();
-    return allVendors.filter((vendor) => {
-      if (!vendor.active || (category !== "All makers" && vendor.category !== category)) return false;
-      if (!normalizedSearch) return true;
-      return [vendor.name, vendor.category, vendor.bio, vendor.socialLabel].some((value) => value.toLowerCase().includes(normalizedSearch));
-    });
-  }, [category, search, allVendors]);
-  const directoryStructuredData = { "@context": "https://schema.org", "@type": "CollectionPage", name: "Local makers at The Cannery Marketplace", url: "https://cannerymarket.com/vendors", mainEntity: { "@type": "ItemList", itemListElement: allVendors.filter((vendor) => vendor.active).map((vendor, index) => ({ "@type": "ListItem", position: index + 1, url: `https://cannerymarket.com/vendors/${vendor.slug}`, item: { "@type": "Organization", name: vendor.name, description: vendor.bio, knowsAbout: vendor.category } })) } };
+  const [pageSize, setPageSize] = useState<PageSize>(10);
+  const debouncedSearch = useDebounced(search.trim());
+  const categoriesQuery = trpc.directory.categories.useQuery(undefined, { staleTime: 5 * 60_000 });
+  const categories = useMemo(() => ["All makers", ...(categoriesQuery.data || [])], [categoriesQuery.data]);
+  useEffect(() => { if (categoriesQuery.data && !categories.includes(category)) setCategory("All makers"); }, [categoriesQuery.data, categories, category]);
+  // Loads makers in pages (10, 25, or 50 at a time) instead of the whole directory at once.
+  const directory = trpc.directory.page.useInfiniteQuery(
+    { limit: pageSize, category: category === "All makers" ? undefined : category, search: debouncedSearch || undefined },
+    { getNextPageParam: (lastPage) => lastPage.nextCursor ?? undefined, staleTime: 60_000 },
+  );
+  const visibleVendors = useMemo(() => (directory.data?.pages || []).flatMap((page) => page.items).map(publishedVendorToView), [directory.data]);
+  const total = directory.data?.pages[0]?.total ?? 0;
+  const remaining = Math.max(0, total - visibleVendors.length);
+  const directoryStructuredData = { "@context": "https://schema.org", "@type": "CollectionPage", name: "Local makers at The Cannery Marketplace", url: "https://cannerymarket.com/vendors", mainEntity: { "@type": "ItemList", itemListElement: visibleVendors.map((vendor, index) => ({ "@type": "ListItem", position: index + 1, url: `https://cannerymarket.com/vendors/${vendor.slug}`, name: vendor.name })) } };
 
   return (
     <SiteShell>
@@ -47,15 +57,13 @@ export default function Vendors() {
               </div>
             </div>
 
-            {visibleVendors.length > 0 ? <div className="vendor-grid">
+            {directory.isLoading ? <div className="directory-empty"><Loader2 size={19} className="animate-spin" /><h3>Loading makers…</h3></div> : visibleVendors.length > 0 ? <div className="vendor-grid">
               {visibleVendors.map((vendor, index) => (
                 <article className={`vendor-card ${index === 0 ? "vendor-card-featured" : ""}`} key={vendor.slug}>
                   <Link href={`/vendors/${vendor.slug}`} className={`vendor-placeholder vendor-tone-${vendor.tone}`} aria-label={`View ${vendor.name} profile`}>
                     {vendor.photoUrl && <img className="vendor-photo" src={vendor.photoUrl} alt={`${vendor.name}, a ${vendor.category} maker at The Cannery Marketplace`} width="800" height="800" loading="lazy" decoding="async" />}
-                    <span className="placeholder-stamp">Preview image</span>
-                    <span className="vendor-initials">{vendor.initials}</span>
-                    <span className="placeholder-note">Photo placeholder</span>
-                  </Link>
+                                        <span className="vendor-initials">{vendor.initials}</span>
+                                      </Link>
                   <div className="vendor-card-copy">
                     <div className="vendor-card-meta"><span>{vendor.category}</span>{vendor.featured && <span className="featured-label"><Sparkles size={12} /> Featured</span>}</div>
                     <h3><Link href={`/vendors/${vendor.slug}`}>{vendor.name}</Link></h3>
@@ -66,7 +74,13 @@ export default function Vendors() {
               ))}
             </div> : <div className="directory-empty"><Search size={19} /><h3>No makers found</h3><p>Try a different name, category, or keyword.</p><button className="button-plain" type="button" onClick={() => { setSearch(""); setCategory("All makers"); }}>Clear search <X size={14} /></button></div>}
 
-            <div className="directory-preview-note"><span><Sparkles size={15} /> Preview directory</span><p>Five mock profiles are loaded for review. Viva Café uses public profile details and a branded placeholder until the owner supplies or authorizes a photo.</p></div>
+            {visibleVendors.length > 0 && <div className="directory-pagination" style={{ display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: "1rem", marginTop: "2rem" }}>
+              <p aria-live="polite">Showing {visibleVendors.length} of {total} maker{total === 1 ? "" : "s"}</p>
+              <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "0.75rem" }}>
+                <label className="category-select"><span>Show</span><select value={pageSize} onChange={(event) => setPageSize(Number(event.target.value) as PageSize)} aria-label="Makers to load at a time">{PAGE_SIZES.map((size) => <option key={size} value={size}>{size} at a time</option>)}</select></label>
+                {directory.hasNextPage && <button className="button-primary" type="button" disabled={directory.isFetchingNextPage} onClick={() => void directory.fetchNextPage()}>{directory.isFetchingNextPage ? <><Loader2 size={14} className="animate-spin" /> Loading…</> : <>Show {Math.min(pageSize, remaining)} more <ArrowRight size={14} /></>}</button>}
+              </div>
+            </div>}
           </div>
         </section>
       </main>

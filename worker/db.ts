@@ -1,4 +1,4 @@
-import { desc, eq, inArray, and } from "drizzle-orm";
+import { and, asc, desc, eq, inArray, sql, type SQL } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { TRPCError } from "@trpc/server";
 import { siteImages, siteSettings, vendorAccounts, vendorProfiles, vendorSubmissions } from "../drizzle/schema";
@@ -35,8 +35,36 @@ export async function getOrCreateVendorAccount(db: Database, email: string) {
   return account;
 }
 
-export async function listPublicVendorProfiles(db: Database) {
-  const rows = await db.select().from(vendorProfiles).where(eq(vendorProfiles.active, true)).orderBy(vendorProfiles.displayOrder, vendorProfiles.name);
+export const DIRECTORY_PAGE_SIZES = [10, 25, 50] as const;
+
+/**
+ * One page of the public maker directory. Reads only the rows it returns plus a
+ * count, which keeps D1 usage tiny (the free tier allows 5 million row reads a day).
+ */
+export async function listPublicVendorPage(db: Database, options: { offset: number; limit: number; category?: string; search?: string }) {
+  const filters: SQL[] = [eq(vendorProfiles.active, true)];
+  if (options.category) filters.push(eq(vendorProfiles.category, options.category));
+  if (options.search) {
+    const pattern = `%${options.search.toLowerCase().replace(/[\\%_]/g, (match) => `\\${match}`)}%`;
+    filters.push(sql`(lower(${vendorProfiles.name}) LIKE ${pattern} ESCAPE '\\' OR lower(${vendorProfiles.category}) LIKE ${pattern} ESCAPE '\\' OR lower(${vendorProfiles.shortBio}) LIKE ${pattern} ESCAPE '\\')`);
+  }
+  const where = and(...filters);
+  const [rows, [{ total }]] = await Promise.all([
+    db.select().from(vendorProfiles).where(where).orderBy(asc(vendorProfiles.displayOrder), asc(vendorProfiles.name), asc(vendorProfiles.id)).limit(options.limit).offset(options.offset),
+    db.select({ total: sql<number>`count(*)` }).from(vendorProfiles).where(where),
+  ]);
+  const items = rows.map(deserializeProfile);
+  const nextOffset = options.offset + items.length;
+  return { items, total: Number(total), nextCursor: nextOffset < Number(total) ? nextOffset : null };
+}
+
+export async function listPublicVendorCategories(db: Database) {
+  const rows = await db.selectDistinct({ category: vendorProfiles.category }).from(vendorProfiles).where(eq(vendorProfiles.active, true)).orderBy(asc(vendorProfiles.category));
+  return rows.map((row) => row.category);
+}
+
+export async function listFeaturedVendorProfiles(db: Database, limit: number) {
+  const rows = await db.select().from(vendorProfiles).where(and(eq(vendorProfiles.active, true), eq(vendorProfiles.featured, true))).orderBy(asc(vendorProfiles.displayOrder), asc(vendorProfiles.name)).limit(limit);
   return rows.map(deserializeProfile);
 }
 

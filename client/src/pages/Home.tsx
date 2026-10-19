@@ -4,7 +4,7 @@ import { Link } from "wouter";
 import PageMeta from "@/components/PageMeta";
 import SiteShell from "@/components/SiteShell";
 import { useSiteImage } from "@/lib/siteImages";
-import { defaultVendors, publishedVendorToView, type Vendor } from "@/lib/vendors";
+import { publishedVendorToView, type Vendor } from "@/lib/vendors";
 import { trpc } from "@/lib/trpc";
 
 const hours = [
@@ -20,15 +20,10 @@ const productHighlights = [
 ];
 
 export default function Home() {
-  const directory = trpc.directory.list.useQuery();
-  const vendors = useMemo<Vendor[]>(() => {
-    const approved = (directory.data || []).map(publishedVendorToView);
-    const approvedSlugs = new Set(approved.map((vendor) => vendor.slug));
-    return [...approved, ...defaultVendors.filter((vendor) => !approvedSlugs.has(vendor.slug))];
-  }, [directory.data]);
+  const featured = trpc.directory.featured.useQuery(undefined, { staleTime: 5 * 60_000 });
+  const featuredVendors = useMemo<Vendor[]>(() => (featured.data || []).map(publishedVendorToView), [featured.data]);
   const heroImage = useSiteImage("home-hero");
   const interiorImage = useSiteImage("marketplace-interior");
-  const featuredVendors = useMemo(() => vendors.filter((vendor) => vendor.active && vendor.featured).sort((a, b) => (a.displayOrder ?? 99) - (b.displayOrder ?? 99)).slice(0, 3), [vendors]);
 
   const structuredData = {
     "@context": "https://schema.org",

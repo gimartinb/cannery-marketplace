@@ -5,7 +5,7 @@ import { TRPCError } from "@trpc/server";
 import { deleteSiteImageObject } from "./media";
 import {
   bulkImportVendorProfiles, deleteSiteImage, getSiteImage, listSiteImages, setSiteImageAlt, createVendorSubmission, getLatestVendorSubmission, getPublicVendorProfile,
-  getSiteSetting, listAllVendorProfiles, listPublicVendorProfiles, listVendorSubmissions,
+  DIRECTORY_PAGE_SIZES, getSiteSetting, listAllVendorProfiles, listFeaturedVendorProfiles, listPublicVendorCategories, listPublicVendorPage, listVendorSubmissions,
   reviewVendorSubmission, setSiteSetting, setVendorActive,
 } from "./db";
 import { adminProcedure, mergeRouters, publicProcedure, router, vendorProcedure } from "./trpc";
@@ -18,7 +18,15 @@ export const publicRouter = router({
   // Owner replacements for the named image spots. Spots with no entry use the built-in default.
   siteImages: router({ list: publicProcedure.query(({ ctx }) => listSiteImages(ctx.db)) }),
   directory: router({
-    list: publicProcedure.query(({ ctx }) => listPublicVendorProfiles(ctx.db)),
+    // Paged: 10, 25, or 50 makers per request. "cursor" is how many have already been shown.
+    page: publicProcedure.input(z.object({
+      cursor: z.number().int().min(0).max(100_000).nullish(),
+      limit: z.number().int().refine((value) => (DIRECTORY_PAGE_SIZES as readonly number[]).includes(value), "Choose 10, 25, or 50").default(10),
+      category: z.string().trim().max(100).optional(),
+      search: z.string().trim().max(80).optional(),
+    })).query(({ ctx, input }) => listPublicVendorPage(ctx.db, { offset: input.cursor ?? 0, limit: input.limit, category: input.category || undefined, search: input.search || undefined })),
+    categories: publicProcedure.query(({ ctx }) => listPublicVendorCategories(ctx.db)),
+    featured: publicProcedure.query(({ ctx }) => listFeaturedVendorProfiles(ctx.db, 3)),
     bySlug: publicProcedure.input(z.object({ slug: z.string().trim().min(1).max(160) })).query(({ ctx, input }) => getPublicVendorProfile(ctx.db, input.slug)),
   }),
 });
