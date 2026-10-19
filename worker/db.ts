@@ -137,6 +137,28 @@ export async function updateVendorProfileAsOwner(db: Database, id: number, input
   return { slug: current.slug, invited };
 }
 
+/**
+ * Owner bulk update: applies the same change to several listings in one step.
+ * Only the fields provided change. A login email is also added to Maker access.
+ */
+export async function bulkUpdateVendorProfiles(db: Database, ids: number[], change: { loginEmail?: string; active?: boolean; featured?: boolean }, invitedBy: string) {
+  const unique = Array.from(new Set(ids));
+  const set: { loginEmail?: string | null; active?: boolean; featured?: boolean } = {};
+  if (change.loginEmail !== undefined) set.loginEmail = change.loginEmail.trim().toLowerCase() || null;
+  if (change.active !== undefined) set.active = change.active;
+  if (change.featured !== undefined) set.featured = change.featured;
+  if (!Object.keys(set).length) throw new TRPCError({ code: "BAD_REQUEST", message: "Choose what to change for the selected listings." });
+  // D1 allows about 100 values per statement, so large selections run in chunks inside one batch.
+  const chunks: number[][] = [];
+  for (let start = 0; start < unique.length; start += 90) chunks.push(unique.slice(start, start + 90));
+  const statements = chunks.map((chunk) => db.update(vendorProfiles).set(set).where(inArray(vendorProfiles.id, chunk)).returning({ id: vendorProfiles.id, name: vendorProfiles.name, slug: vendorProfiles.slug }));
+  const [first, ...rest] = statements;
+  const rows = (await db.batch([first, ...rest])).flat();
+  if (!rows.length) throw new TRPCError({ code: "NOT_FOUND", message: "Those listings no longer exist. Refresh the page." });
+  if (set.loginEmail) await addMakerInvites(db, [set.loginEmail], invitedBy);
+  return { updated: rows.length, listings: rows };
+}
+
 /** Connects a listing to a maker login email (or disconnects it with ""), and invites that email. */
 export async function assignListingLogin(db: Database, profileId: number, email: string, invitedBy: string) {
   const normalized = email.trim().toLowerCase();

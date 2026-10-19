@@ -5,7 +5,7 @@ import { makerSubmissionSchema } from "../shared/makerListing";
 import { TRPCError } from "@trpc/server";
 import { deleteSiteImageObject } from "./media";
 import {
-  bulkImportVendorProfiles, deleteSiteImage, getSiteImage, listSiteImages, setSiteImageAlt, createVendorSubmission, getPublicVendorProfile, listMakerListings, makerOwnsProfile, freeSlugFor, updateVendorProfileAsOwner, assignListingLogin,
+  bulkImportVendorProfiles, deleteSiteImage, getSiteImage, listSiteImages, setSiteImageAlt, createVendorSubmission, getPublicVendorProfile, listMakerListings, makerOwnsProfile, freeSlugFor, updateVendorProfileAsOwner, assignListingLogin, bulkUpdateVendorProfiles,
   DIRECTORY_PAGE_SIZES, getSiteSetting, listAllVendorProfiles, listFeaturedVendorProfiles, listPublicVendorCategories, listPublicVendorPage, listVendorSubmissions,
   reviewVendorSubmission, setSiteSetting, setVendorActive, addMakerInvites, listMakerInvites, removeMakerInvite,
   createHighlight, deleteGalleryPhoto, deleteHighlight, getGalleryPhoto, getHighlight, listGalleryPhotos, listHighlights,
@@ -86,6 +86,16 @@ export const adminRouter = router({
     updateVendor: adminProcedure.input(ownerVendorSchema.extend({ id: z.number().int().positive() })).mutation(async ({ ctx, input }) => {
       const { id, ...values } = input;
       return updateVendorProfileAsOwner(ctx.db, id, values, ctx.email);
+    }),
+    // Same change to many listings at once: login email ("" clears it), visibility, or featured.
+    bulkUpdateVendors: adminProcedure.input(z.object({
+      ids: z.array(z.number().int().positive()).min(1, "Select at least one listing").max(500),
+      loginEmail: z.union([z.literal(""), z.string().trim().toLowerCase().email().max(320)]).optional(),
+      active: z.boolean().optional(),
+      featured: z.boolean().optional(),
+    })).mutation(({ ctx, input }) => {
+      const { ids, ...change } = input;
+      return bulkUpdateVendorProfiles(ctx.db, ids, change, ctx.email);
     }),
     setVendorActive: adminProcedure.input(z.object({ id: z.number().int().positive(), active: z.boolean() })).mutation(async ({ ctx, input }) => { await setVendorActive(ctx.db, input.id, input.active); return { success: true }; }),
     // Uploads use POST /api/admin/upload?slot=... (raw bytes, see media.ts). These edit or undo them.

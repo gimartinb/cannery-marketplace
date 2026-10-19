@@ -1121,3 +1121,18 @@
 .secure-vendor-table div > .listing-chips { display: flex; flex-wrap: wrap; }
 .secure-vendor-table .connect-listing { justify-self: start; }
 .secure-admin-card > .review-actions + .form-hint { margin-top: 1rem; }
+
+/* Published vendors: bulk selection */
+.selectable-table > div { grid-template-columns: 20px 48px 1fr auto; }
+.selectable-table > div.is-selected { background: #fbf5e8; }
+.row-select, .select-all input { width: 18px; height: 18px; accent-color: var(--moss); cursor: pointer; }
+.select-all { display: inline-flex; align-items: center; gap: .45rem; margin: 0 2rem .7rem; color: var(--moss); font-size: .8rem; font-weight: 700; cursor: pointer; }
+.bulk-bar { position: sticky; top: .75rem; z-index: 3; display: grid; gap: .9rem; margin: 0 2rem 1rem; padding: 1.1rem 1.2rem; border: 1px solid var(--gold-soft); background: #fffaf0; box-shadow: 0 12px 28px rgba(32,36,29,.12); }
+.bulk-bar-head { display: flex; flex-wrap: wrap; align-items: center; gap: .4rem 1rem; }
+.bulk-bar-head strong { color: var(--moss); }
+.bulk-bar-head span { flex: 1; color: #6b7165; font-size: .82rem; }
+.bulk-bar-email { display: flex; flex-wrap: wrap; align-items: end; gap: .7rem; }
+.bulk-bar-email label { display: grid; flex: 1 1 260px; gap: .4rem; color: #646b5f; font-size: .72rem; font-weight: 800; }
+.bulk-bar-email input { min-height: 2.75rem; padding: .5rem .75rem; border: 1px solid var(--line); background: #fff; font: inherit; font-size: .9rem; font-weight: 400; }
+.bulk-bar .review-actions { margin-top: 0; }
+@media (max-width: 760px) { .selectable-table > div { grid-template-columns: 20px 42px 1fr; } .selectable-table .review-actions { grid-column: 1 / -1; justify-content: flex-start; } .bulk-bar, .select-all { margin-inline: 1rem; } }

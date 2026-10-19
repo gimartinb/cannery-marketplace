@@ -4,6 +4,7 @@
 
 | Version | Date | Author | Change |
 |---|---|---|---|
+| 3.9 | 2026-10-19 | Gilbert Martin (with Claude) | Bulk update in Published vendors: tick several listings (or select all matching a search) and assign one login email, remove the login email, show or hide, or feature or unfeature them in one step. Moving a listing away from another email asks for confirmation first. |
 | 3.8 | 2026-10-19 | Gilbert Martin (with Claude) | Listings tied to maker login emails (`vendor_profiles.loginEmail`, migration 0004): owners connect listings in Maker access, in the listing editor, or with the optional `login_email` import column, and one email can own several listings. Owners can edit any listing directly. Maker portal lists every listing for the signed in email, uses a category list, requires every field except the website plus at least one social link, and states the 72 hour review time. Review queue adds "Email the maker". Home highlights can promote a maker or be custom, with start and end dates (the 3 newest live cards show). Every image upload shows its required pixel size first (300 DPI nice to have) and rejects smaller images. Confirmation and error pop ups across the dashboard and portal, with links to see the result. |
 | 3.7 | 2026-10-19 | Gilbert Martin (with Claude) | One button system across the site: gold for main actions, dark green for other actions, red for remove or delete, all with white text; outlined white buttons over photos unchanged. Fixes unreadable upload buttons in the dashboard. |
 | 3.6 | 2026-10-19 | Gilbert Martin (with Claude) | Owner managed Home highlights (up to 3 cards with optional photo and maker link) and an About page "Inside the Cannery" gallery (up to 12 photos with captions and ordering). Tables `product_highlights` and `gallery_photos` (migration 0003). The 6 sample makers are provided as an import spreadsheet for the test site only. |
@@ -68,7 +69,7 @@ Staging runs at the free `cannery-marketplace.<account>.workers.dev` address. Th
 Every listing has one login email. The maker who signs in with that email sees and edits that listing in the maker portal; one email can have several listings. Owners set it in any of three places:
 
 * Maker access tab: add the email, and pick the listing in "Connect to a listing", or use "Connect a listing" on an existing email.
-* Published vendors tab: Edit, then Login email.
+* Published vendors tab: Edit, then Login email. To assign several at once, tick the listings, type the email in the bulk bar, and click Assign email.
 * Vendor import spreadsheet: the optional `login_email` column.
 
 Setting a login email also adds it to Maker access. Maker changes go to the Review queue, where owners approve, request changes, or reject, and can open a prefilled email to the maker. Approval can take up to 72 hours, which the portal tells makers.
