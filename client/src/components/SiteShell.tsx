@@ -1,4 +1,4 @@
-import { Facebook, Instagram, Menu, X } from "lucide-react";
+import { Facebook, Instagram, LogIn, Menu, X } from "lucide-react";
 import { ReactNode, useEffect, useState } from "react";
 import { Link, useLocation } from "wouter";
 import { useSiteImage } from "@/lib/siteImages";
@@ -19,6 +19,11 @@ function NavigationLink({ href, label, currentPath, close }: { href: string; lab
   return <Link href={href} className={`nav-link ${active ? "active" : ""}`} aria-current={active ? "page" : undefined} onClick={close}>{label}</Link>;
 }
 
+// A plain link (not a client side route) so the page loads through Cloudflare Access, which shows the email code screen.
+function MakerLoginLink() {
+  return <a className="nav-login" href="/maker-portal" aria-label="Maker login: sign in to manage your maker profile"><LogIn size={14} strokeWidth={2} /> Maker login</a>;
+}
+
 export function Header() {
   const [open, setOpen] = useState(false);
   const [location] = useLocation();
@@ -33,9 +38,9 @@ export function Header() {
   return <header className="navbar"><div className="site-container navbar-inner">
     <nav className="nav-links nav-links-left" aria-label="Primary navigation, first group">{leftNavigation.map((item) => <NavigationLink key={item.href} {...item} currentPath={location} />)}</nav>
     <Link className="brand-link" href="/" onClick={close} aria-label="The Cannery Marketplace home"><img className="brand-mark" src={logo} alt="The Cannery Marketplace — Gilroy, California" width="1173" height="618" /></Link>
-    <nav className="nav-links nav-links-right" aria-label="Primary navigation, second group">{rightLinks.map((item) => <NavigationLink key={item.href} {...item} currentPath={location} />)}</nav>
+    <nav className="nav-links nav-links-right" aria-label="Primary navigation, second group">{rightLinks.map((item) => <NavigationLink key={item.href} {...item} currentPath={location} />)}<MakerLoginLink /></nav>
     <button className="menu-toggle" type="button" onClick={() => setOpen((value) => !value)} aria-expanded={open} aria-controls="mobile-navigation" aria-label={open ? "Close menu" : "Open menu"}>{open ? <X size={18} strokeWidth={1.9} /> : <Menu size={19} strokeWidth={1.9} />}</button>
-  </div>{open && <nav id="mobile-navigation" className="mobile-menu" aria-label="Mobile navigation">{[...leftNavigation, ...rightLinks].map((item) => <NavigationLink key={item.href} {...item} currentPath={location} close={close} />)}</nav>}</header>;
+  </div>{open && <nav id="mobile-navigation" className="mobile-menu" aria-label="Mobile navigation">{[...leftNavigation, ...rightLinks].map((item) => <NavigationLink key={item.href} {...item} currentPath={location} close={close} />)}<MakerLoginLink /></nav>}</header>;
 }
 
 export function Footer() {

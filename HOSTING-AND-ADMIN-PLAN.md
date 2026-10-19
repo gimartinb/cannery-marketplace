@@ -4,6 +4,7 @@
 
 | Version | Date | Author | Change |
 |---|---|---|---|
+| 3.5 | 2026-10-19 | Gilbert Martin (with Claude) | Maker login button added to the header. Contact form validates full name, email, and an optional US phone number (area code and 7 digit number), and sends through FormSubmit's AJAX endpoint with a pop up confirmation instead of leaving the site. |
 | 3.4 | 2026-10-18 | Gilbert Martin (with Claude) | Maker portal guest list: owners invite makers by email from the new Maker access tab (table `maker_invites`, migration 0002), so no Cloudflare dashboard work is needed per maker. The Makers Access app allows everyone to request a code; the Worker only lets invited emails (and owners) in. |
 | 3.3 | 2026-10-18 | Gilbert Martin (with Claude) | Makers page loads 10, 25, or 50 makers at a time with a Show more button; mock preview profiles removed from public pages. Images cached at Cloudflare's edge. Sign in failures now report a reason (not_configured, missing_token, invalid_token). Staging Access moves to path based apps (/admin, /maker-portal, and their APIs) instead of the whole site. |
 | 3.2 | 2026-10-18 | Gilbert Martin (with Claude) | Owners can now replace the logo and site photos from the dashboard (Site images tab). Replacements are stored in R2 and listed in the new `site_images` table; built-in defaults ship in `client/public/images` and "Reset to original" restores them. Cloudflare Access turned on for staging (team `cannery`). |
