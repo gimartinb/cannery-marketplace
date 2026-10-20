@@ -4,6 +4,7 @@ import { aiUsage } from "../drizzle/schema";
 import type { AiWriteInput, AiField } from "../shared/aiWriting";
 import type { Database } from "./db";
 import type { Env } from "./env";
+import { addSiteNeurons, assertAiBudget, estimateNeurons } from "./usage";
 
 // Small, fast model: about 12 to 20 neurons per request, so the free 10,000 a day
 // covers several hundred suggestions. Daily caps per person keep one account from
@@ -76,6 +77,7 @@ export async function aiWrite(env: Env, db: Database, who: { email: string; role
   ].filter(Boolean).join("\n");
   if (input.mode === "draft" && !input.notes.trim() && details.replace(/^.*?: /gm, "").trim().length < 15) throw new TRPCError({ code: "BAD_REQUEST", message: "Add a few words about what you make so the helper has something true to work with." });
 
+  await assertAiBudget(db, who.role);
   await takeDailyAllowance(db, `${who.role}:${who.email.toLowerCase()}`, who.role === "owner" ? AI_DAILY_LIMIT_PER_OWNER : AI_DAILY_LIMIT_PER_MAKER);
   const user = [tag("details", details), tag("notes", input.notes), input.mode === "improve" ? tag("text", input.text) : ""].filter(Boolean).join("\n");
 
@@ -88,6 +90,10 @@ export async function aiWrite(env: Env, db: Database, who: { email: string; role
     if (/4006|neuron|daily/i.test(message)) throw new TRPCError({ code: "TOO_MANY_REQUESTS", message: "The writing helper has reached today's free limit for the whole marketplace. Please try again tomorrow." });
     throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "The writing helper did not answer. Please try again in a minute." });
   }
+  // Count what this request cost against the shared free daily allowance.
+  const usage = (reply as { usage?: { prompt_tokens?: number; completion_tokens?: number } } | null)?.usage;
+  const response = (reply as { response?: unknown } | null)?.response;
+  await addSiteNeurons(db, estimateNeurons(usage?.prompt_tokens ?? Math.ceil((systemPrompt(input.field, input.mode).length + user.length) / 4), usage?.completion_tokens ?? Math.ceil(String(response ?? "").length / 4)));
   const suggestion = cleanSuggestion((reply as { response?: unknown } | null)?.response, rule.maxChars);
   if (!suggestion) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "The writing helper could not write this one. Try adding a little more detail first." });
   return { suggestion };

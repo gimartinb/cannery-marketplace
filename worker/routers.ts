@@ -14,6 +14,7 @@ import {
   listPublicHighlights, reorderGalleryPhotos, updateGalleryPhoto, updateHighlight,
 } from "./db";
 import { aiWrite } from "./aiWriting";
+import { runStorageMaintenance, usageSummary } from "./usage";
 import { aiWriteSchema } from "../shared/aiWriting";
 import { adminProcedure, mergeRouters, publicProcedure, router, vendorProcedure } from "./trpc";
 
@@ -115,6 +116,10 @@ export const adminRouter = router({
     dashboard: adminProcedure.query(async ({ ctx }) => ({ submissions: await listVendorSubmissions(ctx.db), vendors: await listAllVendorProfiles(ctx.db), giftBoxesEnabled: await giftBoxesEnabled(ctx.db) })),
     review: adminProcedure.input(reviewDecisionSchema).mutation(async ({ ctx, input }) => { await reviewVendorSubmission(ctx.db, input.submissionId, input.decision, input.note, input.category); return { success: true }; }),
     setGiftBoxesEnabled: adminProcedure.input(z.object({ enabled: z.boolean() })).mutation(async ({ ctx, input }) => { await setSiteSetting(ctx.db, "gift_boxes_enabled", String(input.enabled)); return { success: true }; }),
+    // Free tier guardrails: today's AI use and photo storage, shown on the Overview.
+    usage: adminProcedure.query(({ ctx }) => usageSummary(ctx.db)),
+    // Recounts photo storage now and removes photos nothing uses (older than a week). Also runs nightly.
+    runStorageCheck: adminProcedure.mutation(({ ctx }) => runStorageMaintenance(ctx.env, { removeUnused: true })),
     // The same writing help for owners (listing editor and home highlights), with a higher daily limit.
     aiWrite: adminProcedure.input(aiWriteSchema).mutation(({ ctx, input }) => aiWrite(ctx.env, ctx.db, { email: ctx.email, role: "owner" }, input)),
     // Vendor interest form submissions. "invited" also adds the email to the maker portal guest list.

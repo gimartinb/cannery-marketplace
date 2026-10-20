@@ -2,6 +2,7 @@ import { isSiteImageSlot } from "../shared/siteImageSlots";
 import { getAccessIdentity, isAdminEmail } from "./access";
 import { addGalleryPhoto, countGalleryPhotos, createDb, getOrCreateVendorAccount, getSiteImage, isInvitedMaker, MAX_GALLERY_PHOTOS, setSiteImageUrl } from "./db";
 import type { Env } from "./env";
+import { deleteStoredObject, recordUpload, storageRoomProblem } from "./usage";
 
 const MAX_UPLOAD_BYTES = 5 * 1024 * 1024;
 const EXTENSIONS: Record<string, string> = { "image/jpeg": "jpg", "image/png": "png", "image/webp": "webp" };
@@ -16,7 +17,7 @@ function json(body: unknown, status = 200) {
  * Worker CPU (base64 inside JSON would not fit the free tier's CPU budget).
  */
 /** Checks method, type, and size. Returns the image type and extension, or an error response. */
-function validateImageUpload(request: Request): { contentType: string; extension: string; body: ReadableStream } | Response {
+function validateImageUpload(request: Request): { contentType: string; extension: string; body: ReadableStream; length: number } | Response {
   if (request.method !== "POST") return json({ error: "Method not allowed" }, 405);
   const contentType = (request.headers.get("Content-Type") || "").split(";")[0].trim().toLowerCase();
   const extension = EXTENSIONS[contentType];
@@ -25,14 +26,27 @@ function validateImageUpload(request: Request): { contentType: string; extension
   if (!length) return json({ error: "Missing image." }, 411);
   if (length > MAX_UPLOAD_BYTES) return json({ error: "Image exceeds 5 MB." }, 413);
   if (!request.body) return json({ error: "Missing image." }, 400);
-  return { contentType, extension, body: request.body };
+  return { contentType, extension, body: request.body, length };
 }
 
 const randomSuffix = () => crypto.randomUUID().replace(/-/g, "").slice(0, 8);
 
 /** Deletes an owner-uploaded site image from R2. Never touches vendor photos or built-in defaults. */
 export async function deleteSiteImageObject(env: Env, url: string | null | undefined) {
-  if (url && url.startsWith("/media/site/")) await env.MEDIA.delete(url.slice("/media/".length));
+  if (url && url.startsWith("/media/site/")) await deleteStoredObject(env, url.slice("/media/".length));
+}
+
+/**
+ * Saves one upload to R2, but only if it fits inside the free storage and upload
+ * allowances (see usage.ts), and adds it to the running totals.
+ */
+async function storeObject(env: Env, key: string, upload: { body: ReadableStream; contentType: string; length: number }): Promise<Response | null> {
+  const db = createDb(env.DB);
+  const problem = await storageRoomProblem(db, upload.length);
+  if (problem) return json({ error: problem }, 507);
+  const stored = await env.MEDIA.put(key, upload.body, { httpMetadata: { contentType: upload.contentType } });
+  await recordUpload(db, stored?.size ?? upload.length);
+  return null;
 }
 
 export async function handleVendorUpload(request: Request, env: Env): Promise<Response> {
@@ -48,7 +62,7 @@ export async function handleVendorUpload(request: Request, env: Env): Promise<Re
   const base = rawName.replace(/\.[^.]+$/, "").replace(/[^a-z0-9._-]+/gi, "-").replace(/^-+|-+$/g, "").slice(0, 120) || "image";
   const key = `vendor-${account.id}/${base}_${randomSuffix()}.${extension}`;
 
-  await env.MEDIA.put(key, upload.body, { httpMetadata: { contentType } });
+  { const refused = await storeObject(env, key, upload); if (refused) return refused; }
   return json({ key, url: `/media/${key}` });
 }
 
@@ -72,7 +86,7 @@ export async function handleSiteImageUpload(request: Request, env: Env): Promise
     if (upload instanceof Response) return upload;
     // Kept outside site/ so removing a highlight or gallery photo never deletes a maker's photo.
     const key = `vendor-owner/${randomSuffix()}${randomSuffix()}.${upload.extension}`;
-    await env.MEDIA.put(key, upload.body, { httpMetadata: { contentType: upload.contentType } });
+    { const refused = await storeObject(env, key, upload); if (refused) return refused; }
     return json({ key, url: `/media/${key}` });
   }
 
@@ -81,7 +95,7 @@ export async function handleSiteImageUpload(request: Request, env: Env): Promise
     const upload = validateImageUpload(request);
     if (upload instanceof Response) return upload;
     const key = `site/${purpose}/${randomSuffix()}${randomSuffix()}.${upload.extension}`;
-    await env.MEDIA.put(key, upload.body, { httpMetadata: { contentType: upload.contentType } });
+    { const refused = await storeObject(env, key, upload); if (refused) return refused; }
     const url = `/media/${key}`;
     if (purpose === "gallery") {
       const alt = (params.get("alt") || "").trim().slice(0, 300) || "Inside The Cannery Marketplace";
@@ -97,7 +111,7 @@ export async function handleSiteImageUpload(request: Request, env: Env): Promise
 
   const previous = await getSiteImage(db, slot);
   const key = `site/${slot}_${randomSuffix()}.${upload.extension}`;
-  await env.MEDIA.put(key, upload.body, { httpMetadata: { contentType: upload.contentType } });
+  { const refused = await storeObject(env, key, upload); if (refused) return refused; }
   const url = `/media/${key}`;
   await setSiteImageUrl(db, slot, url);
   await deleteSiteImageObject(env, previous?.url);

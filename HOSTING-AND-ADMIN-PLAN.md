@@ -4,6 +4,7 @@
 
 | Version | Date | Author | Change |
 |---|---|---|---|
+| 4.5 | 2026-10-19 | Gilbert Martin (with Claude) | Free tier guardrails. Workers AI: a site wide daily budget on top of the per person limits (makers pause at 70% of the free 10,000 neurons, owners at 85%), measured from the token counts each request reports. R2 photos: every upload is counted, uploads pause at 9 GB stored or 900,000 uploads in a month, photos are deleted when replaced or removed, and a free nightly job (3:17 a.m. Pacific) recounts storage and removes photos nothing has used for a week. A "Free plan usage" card on the dashboard Overview shows all three, with a Check storage now button. A Cloudflare budget alert emails the owners if any usage based charge appears. |
 | 4.4 | 2026-10-19 | Gilbert Martin (with Claude) | AI writing help on every listing text field: "Improve my writing" polishes what is there, and "Write it for me" drafts from the listing details plus a few optional notes. Available to makers (short description and About the maker, 25 a day) and owners (listing editor and home highlight descriptions, 60 a day). It only uses facts it is given, and people always see the suggestion before using it. Not offered on the vendor interest form, so applications stay in the applicant's own words. |
 | 4.3 | 2026-10-19 | Gilbert Martin (with Claude) | AI writing helper restored ("Help me improve this" on the maker short description; Cloudflare Workers AI, free 10,000 neurons a day, about 800 suggestions; 15 per maker per day; table `ai_usage` recreated in migration 0008). The Workers Builds token now includes Account, Workers AI, Edit. |
 | 4.2 | 2026-10-19 | Gilbert Martin (with Claude) | Vendor interest form moved onto the site at /apply (replaces the Google Form, same questions and choices). Every answer is required except the website, with at least one social link; US phone check; spam honeypot and a limit of 5 forms per connection per day. Submissions are saved in D1 (table `maker_applications`, migration 0007), shown in a new Applications tab (New, Invited, Declined, Archived), and emailed to the marketplace inbox through FormSubmit. "Approve and invite" adds the applicant to Maker access and opens a prefilled welcome email. Applicants see an on site confirmation; an automatic confirmation email to applicants is planned after cutover with Resend (free: 3,000 a month, 100 a day). Google Form tab removed from the dashboard. |
@@ -50,6 +51,16 @@ If the Access settings are blank or wrong, the Worker denies every owner and ven
 ### Cost
 
 $0 a month on the free plans at this site's traffic. Workers AI (the maker description helper) is free up to 10,000 neurons a day; past that, requests fail until the next day and nothing is billed on the Free plan.  The only realistic upgrade is the $5 a month Workers Paid plan, if traffic ever outgrows the free tier.
+
+### Free tier guardrails
+
+| Service | Free allowance | What the site does |
+|---|---|---|
+| Workers AI | 10,000 neurons a day | Makers pause at 70%, owners at 85%; Cloudflare itself stops at 100% without charging on the Free plan |
+| R2 storage | 10 GB stored, 1 million uploads a month (charged beyond) | Uploads pause at 9 GB or 900,000 uploads; unused photos removed nightly |
+| Workers, D1, Zero Trust | See Cost above | Cannot charge on the Free plan; no extra limits needed |
+
+**Budget alert (one time, free):** Manage Account, then Billing, then Billable Usage, then create a budget alert. Name it "Any charge", set the threshold to 1 USD, and add gilbert.martin@gmail.com and thecannerymarketplace@gmail.com. It only sends email; the site's own limits are what prevent charges.
 
 ## One time setup (staging)
 

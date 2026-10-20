@@ -5,6 +5,7 @@ import { handleMedia, handleSiteImageUpload, handleVendorUpload } from "./media"
 import { adminRouter, publicRouter, vendorRouter } from "./routers";
 import { createContext } from "./trpc";
 import { handlePage, robotsTxt, sitemapXml } from "./seo";
+import { runStorageMaintenance } from "./usage";
 
 // Route map. Cloudflare Access protects /api/admin/* and /api/vendor/* (plus the
 // /admin and /maker-portal pages) before requests ever reach this Worker.
@@ -52,5 +53,11 @@ export default {
 
     // Everything else is the React app. Pages get their own search and sharing tags.
     return withSecurityHeaders(await handlePage(request, env));
+  },
+
+  // Nightly job (see "triggers" in wrangler.jsonc): recount photo storage and
+  // remove photos that no page uses anymore, to stay inside the free tier.
+  async scheduled(_controller: ScheduledController, env: Env, ctx: ExecutionContext): Promise<void> {
+    ctx.waitUntil(runStorageMaintenance(env, { removeUnused: true }).then((result) => console.log("Storage check", result)));
   },
 } satisfies ExportedHandler<Env>;

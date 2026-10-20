@@ -1237,3 +1237,17 @@ main { min-height: 100svh; }
 .ai-helper .review-actions { margin-top: 0; }
 .ai-notes { display: grid; gap: .5rem; padding: .9rem 1rem; border: 1px dashed var(--gold-soft); background: #fffaf0; }
 .ai-notes label { margin-bottom: 0; }
+
+/* Overview: free plan usage */
+.usage-card { margin-top: 1.5rem; }
+.usage-card .eyebrow { display: flex; align-items: center; gap: .4rem; }
+.usage-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1.2rem; margin-bottom: 1rem; }
+.usage-item { display: grid; gap: .45rem; padding: 1rem; border: 1px solid var(--line); background: #fffdfa; }
+.usage-label { display: flex; align-items: center; gap: .45rem; color: #575d52; font-size: .78rem; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; }
+.usage-item strong { color: var(--ink); font-family: "Playfair Display", Georgia, serif; font-size: 1.5rem; }
+.usage-item strong small { color: #575d52; font-family: inherit; font-size: .8rem; font-weight: 400; }
+.usage-item p { margin: 0; color: #575d52; font-size: .82rem; line-height: 1.5; }
+.usage-meter { height: 8px; overflow: hidden; border-radius: 999px; background: #e9e4d8; }
+.usage-meter span { display: block; height: 100%; border-radius: inherit; background: var(--moss); }
+.usage-meter.usage-warn span { background: var(--gold); }
+.usage-meter.usage-danger span { background: #ae4b32; }

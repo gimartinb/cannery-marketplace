@@ -48,5 +48,9 @@
     "ADMIN_EMAILS": "gilbert.martin@gmail.com,thecannerymarketplace@gmail.com"
   },
 
+  // Nightly at 3:17 a.m. Pacific (10:17 UTC): recount photo storage and remove
+  // photos no page uses anymore. Cron triggers are free.
+  "triggers": { "crons": ["17 10 * * *"] },
+
   "observability": { "enabled": true }
 }
