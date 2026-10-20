@@ -4,6 +4,7 @@
 
 | Version | Date | Author | Change |
 |---|---|---|---|
+| 4.3 | 2026-10-19 | Gilbert Martin (with Claude) | AI writing helper restored ("Help me improve this" on the maker short description; Cloudflare Workers AI, free 10,000 neurons a day, about 800 suggestions; 15 per maker per day; table `ai_usage` recreated in migration 0008). The Workers Builds token now includes Account, Workers AI, Edit. |
 | 4.2 | 2026-10-19 | Gilbert Martin (with Claude) | Vendor interest form moved onto the site at /apply (replaces the Google Form, same questions and choices). Every answer is required except the website, with at least one social link; US phone check; spam honeypot and a limit of 5 forms per connection per day. Submissions are saved in D1 (table `maker_applications`, migration 0007), shown in a new Applications tab (New, Invited, Declined, Archived), and emailed to the marketplace inbox through FormSubmit. "Approve and invite" adds the applicant to Maker access and opens a prefilled welcome email. Applicants see an on site confirmation; an automatic confirmation email to applicants is planned after cutover with Resend (free: 3,000 a month, 100 a day). Google Form tab removed from the dashboard. |
 | 4.1 | 2026-10-19 | Gilbert Martin (with Claude) | AI description helper removed for now (table dropped in migration 0006). SEO: the Worker now writes each page's title, description, canonical link, social preview tags, and structured data (LocalBusiness, WebSite, maker ProfilePage, breadcrumbs) into the HTML; unknown pages and makers return a real 404; trailing slashes redirect; robots.txt and sitemap.xml are generated from the database; staging (workers.dev) is marked noindex so only cannerymarket.com is indexed. Added favicon, app icons, and web manifest. Mobile: owner dashboard fits phones, larger tap targets, 12 px minimum text and 16 px form fields on phones, darker gray text for contrast, no layout shift while pages load. Lighthouse (mobile, local): accessibility 100 on all tested pages, performance 93 to 97, layout shift 0. |
 | 4.0 | 2026-10-19 | Gilbert Martin (with Claude) | Photos: every maker photo frame on the site is now 4:3 (work photos square), and after choosing a photo people frame it in that exact shape with drag and zoom, with "show the whole image" for logos. Minimums lowered to 800 x 600 (cover) and 800 x 800 (work). Listings gain a required owner name (shown as "Meet" and the name; optional owner_name import column); the maker portal shows the login email read only. Makers can choose Other and type their own category, which the owner keeps or switches when approving. "Help me improve this" on the short description uses Cloudflare Workers AI (free 10,000 neurons a day, about 800 suggestions; 15 per maker per day; table `ai_usage`, migration 0005). |
@@ -47,7 +48,7 @@ If the Access settings are blank or wrong, the Worker denies every owner and ven
 
 ### Cost
 
-$0 a month on the free plans at this site's traffic.  The only realistic upgrade is the $5 a month Workers Paid plan, if traffic ever outgrows the free tier.
+$0 a month on the free plans at this site's traffic. Workers AI (the maker description helper) is free up to 10,000 neurons a day; past that, requests fail until the next day and nothing is billed on the Free plan.  The only realistic upgrade is the $5 a month Workers Paid plan, if traffic ever outgrows the free tier.
 
 ## One time setup (staging)
 
@@ -56,7 +57,7 @@ Staging runs at the free `cannery-marketplace.<account>.workers.dev` address. Th
 1. **Account access.** In the Cloudflare account owned by thecannerymarketplace@gmail.com, add gilbert.martin@gmail.com under Manage Account, then Members, as Super Administrator.
 2. **Create the database.** Storage and Databases, then D1, then Create database. Name it `cannery-marketplace`. Copy its Database ID into `database_id` in `wrangler.jsonc` and commit.
 2b. **Create the image bucket.** Storage and Databases, then R2 Object Storage. Enable R2 if asked (free tier, a card may be required). Create a bucket named exactly `cannery-marketplace-media`, location Automatic, storage class Standard. Leave public access off.
-3. **Deploy token with database access.** The token Workers Builds creates by default cannot run D1 migrations. Create an API token from the "Edit Cloudflare Workers" template and add the permission Account, D1, Edit. Select that token in the Worker's build settings. Whoever creates the token pastes it directly into Cloudflare, never into chat or code.
+3. **Deploy token with database and AI access.** The token Workers Builds creates by default cannot run D1 migrations or deploy the AI binding. Create an API token from the "Edit Cloudflare Workers" template and add the permissions Account, D1, Edit and Account, Workers AI, Edit. Select that token in the Worker's build settings. Whoever creates the token pastes it directly into Cloudflare, never into chat or code.
 4. **Connect GitHub (GitOps).** Workers and Pages, then Create, then Import a repository, then `gimartinb/cannery-marketplace`.
    * Production branch: `main`
    * Build command: `pnpm run build`

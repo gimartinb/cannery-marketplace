@@ -13,6 +13,7 @@ import {
   createHighlight, deleteGalleryPhoto, deleteHighlight, getGalleryPhoto, getHighlight, listGalleryPhotos, listHighlights,
   listPublicHighlights, reorderGalleryPhotos, updateGalleryPhoto, updateHighlight,
 } from "./db";
+import { improveDescription } from "./aiWriting";
 import { adminProcedure, mergeRouters, publicProcedure, router, vendorProcedure } from "./trpc";
 
 // A photo uploaded through the dashboard, or a maker's existing photo when a maker is promoted.
@@ -87,6 +88,8 @@ export const vendorRouter = router({
     me: vendorProcedure.query(({ ctx }) => ({ email: ctx.email })),
     // Every listing tied to this login email, plus new listings still waiting for approval.
     listings: vendorProcedure.query(({ ctx }) => listMakerListings(ctx.db, ctx.email, ctx.vendorAccount.id)),
+    // "Help me improve this": a suggested short description the maker can use or ignore.
+    improveDescription: vendorProcedure.input(z.object({ text: z.string().trim().min(20, "Write at least 20 characters first").max(800), name: z.string().trim().max(140).default(""), category: z.string().trim().max(100).default("") })).mutation(({ ctx, input }) => improveDescription(ctx.env, ctx.db, ctx.email, input)),
     submit: vendorProcedure.input(makerSubmissionSchema).mutation(async ({ ctx, input }) => {
       // Makers can only change listings tied to their own email. A new listing gets a web address no one else uses.
       // Featured, order, and visibility stay under owner control, whatever the browser sends.

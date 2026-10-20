@@ -1213,3 +1213,10 @@ main { min-height: 100svh; }
 .application-details dd { margin: 0; color: var(--ink); line-height: 1.55; white-space: pre-line; }
 .application-details a { color: var(--moss); font-weight: 700; }
 @media (max-width: 760px) { .application-details > div { grid-template-columns: 1fr; gap: .15rem; } .application-filters { margin-inline: 1rem; } }
+
+/* AI writing helper (maker portal short description) */
+.ai-helper { display: grid; gap: .4rem; margin: -.4rem 0 1.2rem; }
+.ai-helper > .button-plain { justify-self: start; }
+.ai-suggestion { display: grid; gap: .5rem; padding: 1rem 1.1rem; border: 1px solid var(--gold-soft); background: #fbf5e8; }
+.ai-suggestion > p:not(.form-legend) { margin: 0; color: var(--ink); font-size: .92rem; line-height: 1.6; }
+.ai-suggestion .form-legend { display: flex; align-items: center; gap: .35rem; }

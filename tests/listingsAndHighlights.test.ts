@@ -4,6 +4,15 @@ import { checkImageSize } from "../shared/imageRequirements";
 import { describeIssues } from "../shared/friendlyErrors";
 import { ownerVendorSchema } from "../shared/vendorProfile";
 import { pickLiveHighlights } from "../worker/db";
+import { cleanSuggestion } from "../worker/aiWriting";
+
+describe("AI description helper", () => {
+  it("strips labels and quotes from the model reply", () => {
+    expect(cleanSuggestion('Here is the improved description: "Hand built walnut boards made one at a time in Gilroy."')).toBe("Hand built walnut boards made one at a time in Gilroy.");
+    expect(cleanSuggestion("ok")).toBeNull();
+    expect(cleanSuggestion(undefined)).toBeNull();
+  });
+});
 
 const complete = {
   name: "The 45 Workshop", ownerName: "Gilbert Martin", category: "Woodworking", shortBio: "Hand built boards and boxes from local walnut.",
