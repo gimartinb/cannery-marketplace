@@ -110,6 +110,32 @@ export const galleryPhotos = sqliteTable("gallery_photos", {
   createdAt: createdAt(),
 });
 
+// Vendor interest form submissions (replaces the Google Form). Owners review them
+// in the Applications tab and can invite an applicant to the maker portal.
+export const makerApplications = sqliteTable("maker_applications", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  businessName: text("businessName").notNull(),
+  city: text("city").notNull(),
+  websiteUrl: text("websiteUrl"),
+  facebookUrl: text("facebookUrl"),
+  instagramUrl: text("instagramUrl"),
+  otherSocial: text("otherSocial"),
+  tagline: text("tagline").notNull(),
+  productDescription: text("productDescription").notNull(),
+  fullName: text("fullName").notNull(),
+  email: text("email").notNull(),
+  phone: text("phone").notNull(),
+  referredBy: text("referredBy").notNull(),
+  categories: text("categories").notNull(),
+  salesChannels: text("salesChannels").notNull(),
+  status: text("status", { enum: ["new", "invited", "declined", "archived"] }).default("new").notNull(),
+  adminNote: text("adminNote"),
+  // A one way hash of the sender's network address, only to slow down spam.
+  sourceHash: text("sourceHash"),
+  reviewedAt: integer("reviewedAt", { mode: "timestamp" }),
+  createdAt: createdAt(),
+}, (table) => [index("maker_applications_status_idx").on(table.status), index("maker_applications_source_idx").on(table.sourceHash, table.createdAt)]);
+
 export type VendorAccount = typeof vendorAccounts.$inferSelect;
 export type VendorProfile = typeof vendorProfiles.$inferSelect;
 export type VendorSubmission = typeof vendorSubmissions.$inferSelect;

@@ -2,10 +2,12 @@ import { ownerVendorSchema, reviewDecisionSchema } from "../shared/vendorProfile
 import { z } from "zod";
 import { SITE_IMAGE_SLOT_IDS } from "../shared/siteImageSlots";
 import { makerSubmissionSchema } from "../shared/makerListing";
+import { APPLICATION_CATEGORIES, applicationSchema, formatApplicationPhone, SALES_CHANNELS } from "../shared/application";
 import { TRPCError } from "@trpc/server";
 import { deleteSiteImageObject } from "./media";
 import {
   bulkImportVendorProfiles, deleteSiteImage, getSiteImage, listSiteImages, setSiteImageAlt, createVendorSubmission, getPublicVendorProfile, listMakerListings, makerOwnsProfile, freeSlugFor, updateVendorProfileAsOwner, assignListingLogin, bulkUpdateVendorProfiles,
+  APPLICATION_LIMIT_PER_SOURCE_PER_DAY, countRecentApplications, createApplication, getApplication, listApplications, setApplicationStatus,
   DIRECTORY_PAGE_SIZES, getSiteSetting, listAllVendorProfiles, listFeaturedVendorProfiles, listPublicVendorCategories, listPublicVendorPage, listVendorSubmissions,
   reviewVendorSubmission, setSiteSetting, setVendorActive, addMakerInvites, listMakerInvites, removeMakerInvite,
   createHighlight, deleteGalleryPhoto, deleteHighlight, getGalleryPhoto, getHighlight, listGalleryPhotos, listHighlights,
@@ -29,8 +31,35 @@ const highlightInput = z.object({
 
 const giftBoxesEnabled = async (db: Parameters<typeof getSiteSetting>[0]) => (await getSiteSetting(db, "gift_boxes_enabled", "false")) === "true";
 
+/** A one way fingerprint of the sender's network address, used only to slow down spam. */
+async function sourceHash(request: Request) {
+  const address = request.headers.get("CF-Connecting-IP") || "local";
+  const bytes = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(`cannery-applications:${address}`));
+  return Array.from(new Uint8Array(bytes)).slice(0, 16).map((byte) => byte.toString(16).padStart(2, "0")).join("");
+}
+
+const clean = (value: string) => value.trim().replace(/\s+/g, " ");
+
 // Mounted at /api/trpc. Open to everyone.
 export const publicRouter = router({
+  // The vendor interest form on /apply.
+  applications: router({
+    submit: publicProcedure.input(applicationSchema).mutation(async ({ ctx, input }) => {
+      // Bots fill the hidden field; pretend it worked so they move on.
+      if (input.website2) return { id: 0 };
+      const hash = await sourceHash(ctx.request);
+      if ((await countRecentApplications(ctx.db, hash)) >= APPLICATION_LIMIT_PER_SOURCE_PER_DAY) throw new TRPCError({ code: "TOO_MANY_REQUESTS", message: "We received several applications from this connection today. Please try again tomorrow, or email thecannerymarketplace@gmail.com." });
+      const categories = input.categories.filter((item) => (APPLICATION_CATEGORIES as readonly string[]).includes(item)).map((item) => (item === "Other" ? `Other: ${clean(input.categoryOther)}` : item));
+      const salesChannels = input.salesChannels.filter((item) => (SALES_CHANNELS as readonly string[]).includes(item)).map((item) => (item === "Other" ? `Other: ${clean(input.salesOther)}` : item));
+      const id = await createApplication(ctx.db, {
+        businessName: clean(input.businessName), city: clean(input.city), websiteUrl: input.websiteUrl.trim() || null, facebookUrl: input.facebookUrl.trim() || null,
+        instagramUrl: input.instagramUrl.trim() || null, otherSocial: clean(input.otherSocial) || null, tagline: clean(input.tagline), productDescription: input.productDescription.trim(),
+        fullName: clean(input.fullName), email: input.email.trim().toLowerCase(), phone: formatApplicationPhone(input), referredBy: clean(input.referredBy),
+        categories: JSON.stringify(categories), salesChannels: JSON.stringify(salesChannels), sourceHash: hash,
+      });
+      return { id };
+    }),
+  }),
   settings: router({ public: publicProcedure.query(async ({ ctx }) => ({ giftBoxesEnabled: await giftBoxesEnabled(ctx.db) })) }),
   // Owner managed content: home page highlights and the About page gallery.
   home: router({ highlights: publicProcedure.query(({ ctx }) => listPublicHighlights(ctx.db)) }),
@@ -82,6 +111,15 @@ export const adminRouter = router({
     dashboard: adminProcedure.query(async ({ ctx }) => ({ submissions: await listVendorSubmissions(ctx.db), vendors: await listAllVendorProfiles(ctx.db), giftBoxesEnabled: await giftBoxesEnabled(ctx.db) })),
     review: adminProcedure.input(reviewDecisionSchema).mutation(async ({ ctx, input }) => { await reviewVendorSubmission(ctx.db, input.submissionId, input.decision, input.note, input.category); return { success: true }; }),
     setGiftBoxesEnabled: adminProcedure.input(z.object({ enabled: z.boolean() })).mutation(async ({ ctx, input }) => { await setSiteSetting(ctx.db, "gift_boxes_enabled", String(input.enabled)); return { success: true }; }),
+    // Vendor interest form submissions. "invited" also adds the email to the maker portal guest list.
+    applications: adminProcedure.query(({ ctx }) => listApplications(ctx.db)),
+    setApplicationStatus: adminProcedure.input(z.object({ id: z.number().int().positive(), status: z.enum(["new", "invited", "declined", "archived"]), note: z.string().trim().max(1200).default("") })).mutation(async ({ ctx, input }) => {
+      const application = await getApplication(ctx.db, input.id);
+      if (!application) throw new TRPCError({ code: "NOT_FOUND", message: "That application no longer exists. Refresh the page." });
+      if (input.status === "invited") await addMakerInvites(ctx.db, [application.email], ctx.email);
+      await setApplicationStatus(ctx.db, input.id, input.status, input.note);
+      return { success: true, email: application.email };
+    }),
     // Owner support: edit any listing directly. Setting a login email also invites that maker to the portal.
     updateVendor: adminProcedure.input(ownerVendorSchema.extend({ id: z.number().int().positive() })).mutation(async ({ ctx, input }) => {
       const { id, ...values } = input;

@@ -23,6 +23,7 @@ export const STATIC_ROUTES: Record<string, StaticRoute> = {
   "/vendors": { title: "Local maker directory in Gilroy", description: "Meet local makers and artisans at The Cannery Marketplace in Gilroy. Search maker profiles, discover their products, and read the stories behind the work.", index: true, changefreq: "weekly", priority: 0.9 },
   "/about": { title: "About our Gilroy artisan marketplace", description: "Learn how The Cannery Marketplace gives Gilroy makers and artisans a welcoming place to share handcrafted work with the community.", index: true, changefreq: "monthly", priority: 0.7 },
   "/become-a-vendor": { title: "Become a maker at The Cannery Marketplace", description: "Apply to become a vendor at The Cannery Marketplace in Gilroy and follow a simple onboarding process for local makers and artisans.", index: true, changefreq: "monthly", priority: 0.8 },
+  "/apply": { title: "Vendor interest form", description: "Tell The Cannery Marketplace about your handmade products. Our team reviews every vendor interest form from Gilroy area makers and artisans.", index: true, changefreq: "monthly", priority: 0.8 },
   "/contact": { title: "Contact and visit The Cannery Marketplace in Gilroy", description: "Contact The Cannery Marketplace or visit us at 7488 Monterey Road in downtown Gilroy, California.", index: true, changefreq: "monthly", priority: 0.7 },
   "/gifts": { title: "Gift boxes from local Gilroy makers", description: "Shop gift boxes featuring handcrafted goods from makers at The Cannery Marketplace in Gilroy, California.", index: true, changefreq: "monthly", priority: 0.6 },
   "/request-a-quote": { title: "Request a corporate order quote", description: "Request custom pricing for corporate and bulk orders from The Cannery Marketplace.", index: false },
@@ -121,6 +122,7 @@ export async function resolvePage(db: Database, pathname: string): Promise<PageM
   if (pathname === "/contact" || pathname === "/about") jsonLd.push({ ...BUSINESS, image: absolute(socialImage) }, breadcrumbs([["Home", "/"], [pathname === "/contact" ? "Contact" : "About", pathname]]));
   if (pathname === "/vendors") jsonLd.push({ "@type": "CollectionPage", url: `${SITE_URL}/vendors`, name: `Makers at ${SITE_NAME}`, isPartOf: { "@id": `${SITE_URL}/#website` } }, breadcrumbs([["Home", "/"], ["Makers", "/vendors"]]));
   if (pathname === "/become-a-vendor") jsonLd.push(breadcrumbs([["Home", "/"], ["Become a vendor", "/become-a-vendor"]]));
+  if (pathname === "/apply") jsonLd.push(breadcrumbs([["Home", "/"], ["Become a vendor", "/become-a-vendor"], ["Vendor interest form", "/apply"]]));
 
   return {
     ...base, status: 200, title: route.title, description: route.description, canonical: `${SITE_URL}${pathname}`, index, jsonLd,

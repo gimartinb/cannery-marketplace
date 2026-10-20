@@ -1,7 +1,7 @@
 import { and, asc, desc, eq, gt, inArray, isNull, lte, or, sql, type SQL } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { TRPCError } from "@trpc/server";
-import { galleryPhotos, makerInvites, productHighlights, siteImages, siteSettings, vendorAccounts, vendorProfiles, vendorSubmissions } from "../drizzle/schema";
+import { galleryPhotos, makerApplications, makerInvites, productHighlights, siteImages, siteSettings, vendorAccounts, vendorProfiles, vendorSubmissions } from "../drizzle/schema";
 import type { OwnerVendorInput, VendorProfileInput } from "../shared/vendorProfile";
 
 export type Database = ReturnType<typeof createDb>;
@@ -350,4 +350,33 @@ export async function deleteGalleryPhoto(db: Database, id: number) {
 export async function reorderGalleryPhotos(db: Database, ids: number[]) {
   const [first, ...rest] = ids.map((id, index) => db.update(galleryPhotos).set({ displayOrder: index + 1 }).where(eq(galleryPhotos.id, id)));
   if (first) await db.batch([first, ...rest]);
+}
+
+// Vendor interest form submissions.
+export const APPLICATION_LIMIT_PER_SOURCE_PER_DAY = 5;
+
+export async function countRecentApplications(db: Database, sourceHash: string) {
+  const since = new Date(Date.now() - 24 * 60 * 60 * 1000);
+  const [{ total }] = await db.select({ total: sql<number>`count(*)` }).from(makerApplications).where(and(eq(makerApplications.sourceHash, sourceHash), gt(makerApplications.createdAt, since)));
+  return Number(total);
+}
+
+export async function createApplication(db: Database, values: Omit<typeof makerApplications.$inferInsert, "id" | "status" | "createdAt">) {
+  const [row] = await db.insert(makerApplications).values(values).returning({ id: makerApplications.id });
+  return row.id;
+}
+
+export async function listApplications(db: Database) {
+  const rows = await db.select().from(makerApplications).orderBy(desc(makerApplications.createdAt), desc(makerApplications.id));
+  const parse = (value: string) => { try { return JSON.parse(value) as string[]; } catch { return []; } };
+  const invited = rows.length ? new Set((await db.select({ email: makerInvites.email }).from(makerInvites).where(inArray(makerInvites.email, Array.from(new Set(rows.map((row) => row.email))).slice(0, 90)))).map((row) => row.email)) : new Set<string>();
+  return rows.map(({ sourceHash: _hidden, ...row }) => ({ ...row, categories: parse(row.categories), salesChannels: parse(row.salesChannels), hasAccess: invited.has(row.email) }));
+}
+
+export async function getApplication(db: Database, id: number) {
+  return (await db.select().from(makerApplications).where(eq(makerApplications.id, id)).limit(1))[0] ?? null;
+}
+
+export async function setApplicationStatus(db: Database, id: number, status: "new" | "invited" | "declined" | "archived", note: string) {
+  await db.update(makerApplications).set({ status, adminNote: note || null, reviewedAt: status === "new" ? null : new Date() }).where(eq(makerApplications.id, id));
 }

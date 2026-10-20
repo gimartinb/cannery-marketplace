@@ -1185,3 +1185,31 @@
 /* Keeps the footer below the fold while a page loads, so it does not jump (layout shift). */
 main { min-height: 100svh; }
 .admin-main { min-height: 0; }
+
+/* Vendor interest form (/apply) */
+.application-form .application-section { margin: 0 0 1.8rem; padding: 0; border: 0; }
+.application-form .application-section > legend { margin-bottom: 1rem; color: var(--moss); font-family: "Playfair Display", Georgia, serif; font-size: 1.35rem; font-weight: 600; line-height: 1.3; }
+.application-form .form-hint.full { grid-column: 1 / -1; margin: .2rem 0 -.4rem; font-weight: 700; }
+.application-form .form-field select { width: 100%; padding: .9rem 0; border: 0; border-bottom: 1px solid rgba(32,36,29,.3); background: transparent; font: inherit; }
+.choice-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: .5rem .9rem; margin-bottom: .8rem; }
+.choice { display: flex; align-items: center; gap: .6rem; min-height: 44px; padding: .4rem .7rem; border: 1px solid rgba(32,36,29,.18); background: #fbf8f1; color: var(--ink); font-size: .92rem; cursor: pointer; }
+.choice:has(input:checked) { border-color: var(--moss); background: #eef2ea; }
+.choice input { width: 18px; height: 18px; accent-color: var(--moss); flex: 0 0 auto; }
+.application-summary { margin: 0 0 1rem; font-weight: 700; }
+.apply-criteria { display: grid; gap: .7rem; margin: 1.6rem 0 0; padding: 0; list-style: none; }
+.apply-criteria li { display: flex; gap: .6rem; align-items: flex-start; color: var(--ink); line-height: 1.5; }
+.apply-criteria svg { flex: 0 0 auto; margin-top: .25rem; color: var(--gold); }
+
+/* Owner dashboard: Applications */
+.application-filters { display: flex; flex-wrap: wrap; gap: .5rem; margin: 0 2rem 1rem; }
+.application-filters button { display: inline-flex; align-items: center; gap: .45rem; min-height: 40px; padding: .4rem .9rem; border: 1px solid var(--line); border-radius: 999px; background: var(--paper); color: var(--moss); font: inherit; font-size: .85rem; font-weight: 700; cursor: pointer; }
+.application-filters button.active { border-color: var(--moss); background: var(--moss); color: #fffdf8; }
+.application-filters span { min-width: 1.4rem; padding: 0 .35rem; border-radius: 999px; background: rgba(0,0,0,.08); font-size: .75rem; text-align: center; }
+.application-filters button.active span { background: rgba(255,255,255,.2); }
+.application-tagline { margin: 0 0 1rem; color: var(--ink); font-size: 1.05rem; font-style: italic; }
+.application-details { display: grid; gap: .55rem; margin: 0 0 1rem; }
+.application-details > div { display: grid; grid-template-columns: 9rem 1fr; gap: .8rem; }
+.application-details dt { color: #575d52; font-size: .78rem; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; }
+.application-details dd { margin: 0; color: var(--ink); line-height: 1.55; white-space: pre-line; }
+.application-details a { color: var(--moss); font-weight: 700; }
+@media (max-width: 760px) { .application-details > div { grid-template-columns: 1fr; gap: .15rem; } .application-filters { margin-inline: 1rem; } }
