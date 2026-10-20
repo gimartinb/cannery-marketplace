@@ -1,4 +1,5 @@
-import { Check, Loader2, RotateCcw, Sparkles, Star, Trash2, X } from "lucide-react";
+import { Star, Trash2 } from "lucide-react";
+import AiWriteHelper, { type AiWriter } from "@/components/AiWriteHelper";
 import { useState } from "react";
 import ImageUploadButton from "@/components/ImageUploadButton";
 import { notifyError, notifySuccess } from "@/lib/notify";
@@ -39,8 +40,8 @@ type Props = {
   problems?: ListingProblems;
   /** Maker portal: the email they signed in with, shown read only. */
   signedInEmail?: string;
-  /** Maker portal: asks the AI helper for an improved short description. */
-  onImprove?: (input: { text: string; name: string; category: string }) => Promise<string>;
+  /** Free AI writing help for the short description and About the maker. */
+  aiWrite?: AiWriter;
 };
 
 function FieldError({ problems, field }: { problems?: ListingProblems; field: ListingField }) {
@@ -49,21 +50,11 @@ function FieldError({ problems, field }: { problems?: ListingProblems; field: Li
 }
 
 /** The listing form shared by the maker portal and the owner dashboard, so both edit the same fields. */
-export default function ListingFields({ value, onChange, upload, ownerControls, problems, signedInEmail, onImprove }: Props) {
+export default function ListingFields({ value, onChange, upload, ownerControls, problems, signedInEmail, aiWrite }: Props) {
   const [busy, setBusy] = useState<"cover" | "gallery" | null>(null);
-  const [suggestion, setSuggestion] = useState<string | null>(null);
-  const [improving, setImproving] = useState(false);
-  const shortReady = value.shortBio.trim().length >= 20;
-
-  async function improve() {
-    if (!onImprove || !shortReady) return;
-    setImproving(true);
-    try { setSuggestion(await onImprove({ text: value.shortBio, name: value.name, category: value.category })); }
-    catch (error) { notifyError(error, "Writing help is not available right now"); }
-    finally { setImproving(false); }
-  }
   const set = <K extends keyof ListingValues>(key: K, next: ListingValues[K]) => onChange({ ...value, [key]: next });
   const galleryRoom = MAX_LISTING_GALLERY - value.galleryImageUrls.length;
+  const aiContext = { name: value.name, ownerName: value.ownerName || "", category: value.category === "Other" ? "" : value.category, shortBio: value.shortBio, ownerBio: value.ownerBio || "", title: "" };
   const invalid = (field: ListingField) => (problems?.[field] ? { "aria-invalid": true as const, "aria-describedby": `listing-${field}-error` } : {});
   // A category not on the list is shown as "Other" with the typed name in a text box.
   const categoryChoice = !value.category ? "" : isListedCategory(value.category) ? value.category : "Other";
@@ -104,16 +95,9 @@ export default function ListingFields({ value, onChange, upload, ownerControls, 
     <label>Category *<select id="listing-category" value={categoryChoice} onChange={(event) => set("category", event.target.value)} {...invalid("category")}><option value="">Choose a category</option>{MAKER_CATEGORIES.map((category) => <option key={category} value={category}>{category}</option>)}</select>{categoryChoice !== "Other" && <FieldError problems={problems} field="category" />}</label>
     {categoryChoice === "Other" && <label>Your category *<input id="listing-category-other" maxLength={40} value={ownCategory} onChange={(event) => set("category", event.target.value || "Other")} placeholder="Leather goods" {...invalid("category")} /><small className="form-hint">The marketplace reviews new categories and may match yours to one on the list.</small><FieldError problems={problems} field="category" /></label>}
     <label>Short description *<textarea id="listing-shortBio" maxLength={800} rows={3} value={value.shortBio} onChange={(event) => set("shortBio", event.target.value)} {...invalid("shortBio")} /><small className="form-hint">{value.shortBio.trim().length} / 800, at least 20</small><FieldError problems={problems} field="shortBio" /></label>
-    {onImprove && <div className="ai-helper">
-      {!suggestion && <><button className="button-plain compact-button" type="button" disabled={!shortReady || improving} onClick={() => void improve()}>{improving ? <Loader2 size={13} className="animate-spin" /> : <Sparkles size={13} />} {improving ? "Polishing…" : "Help me improve this"}</button><small className="form-hint">{shortReady ? "Suggests a polished version of your words. You choose whether to use it." : "Write at least 20 characters first, then ask for help polishing it."}</small></>}
-      {suggestion && <div className="ai-suggestion" role="status">
-        <p className="form-legend"><Sparkles size={13} /> Suggested description</p>
-        <p>{suggestion}</p>
-        <small className="form-hint">Check that every detail is true before using it. The marketplace still reviews your listing.</small>
-        <div className="review-actions"><button className="button-primary compact-button" type="button" onClick={() => { set("shortBio", suggestion); setSuggestion(null); notifySuccess("Description updated", { description: "You can still edit it." }); }}><Check size={13} /> Use this</button><button className="button-plain compact-button" type="button" disabled={improving} onClick={() => void improve()}>{improving ? <Loader2 size={13} className="animate-spin" /> : <RotateCcw size={13} />} Try again</button><button className="button-plain compact-button" type="button" onClick={() => setSuggestion(null)}><X size={13} /> Keep mine</button></div>
-      </div>}
-    </div>}
+    {aiWrite && <AiWriteHelper field="shortBio" text={value.shortBio} write={aiWrite} context={aiContext} onUse={(text) => set("shortBio", text)} />}
     <label>About the maker *<textarea id="listing-ownerBio" rows={5} maxLength={1800} value={value.ownerBio} onChange={(event) => set("ownerBio", event.target.value)} {...invalid("ownerBio")} /><small className="form-hint">{(value.ownerBio || "").trim().length} / 1,800, at least 40</small><FieldError problems={problems} field="ownerBio" /></label>
+    {aiWrite && <AiWriteHelper field="ownerBio" text={value.ownerBio || ""} write={aiWrite} context={aiContext} onUse={(text) => set("ownerBio", text)} notesHint="How you started, what you love about making it, and where you work" />}
     <label>Contact email (shown to shoppers) *<input id="listing-contactEmail" type="email" value={value.contactEmail} onChange={(event) => set("contactEmail", event.target.value)} {...invalid("contactEmail")} /><FieldError problems={problems} field="contactEmail" /></label>
     <fieldset className="listing-links">
       <legend>Links</legend>

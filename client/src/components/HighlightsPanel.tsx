@@ -1,5 +1,6 @@
 import { ExternalLink, Loader2, Pencil, Plus, Save, Sparkles, Trash2, X } from "lucide-react";
 import { useState } from "react";
+import AiWriteHelper from "@/components/AiWriteHelper";
 import ImageUploadButton from "@/components/ImageUploadButton";
 import { notifyError, notifySuccess } from "@/lib/notify";
 import { trpc } from "@/lib/trpc";
@@ -36,6 +37,7 @@ export default function HighlightsPanel({ vendors }: { vendors: Vendor[] }) {
   const list = trpc.adminPortal.highlights.useQuery();
   const [draft, setDraft] = useState<Draft | null>(null);
   const [uploading, setUploading] = useState(false);
+  const aiWriter = trpc.adminPortal.aiWrite.useMutation();
   const refresh = async () => { await Promise.all([utils.adminPortal.highlights.invalidate(), utils.home.highlights.invalidate()]); };
   const save = trpc.adminPortal.saveHighlight.useMutation({
     onSuccess: async () => { notifySuccess("Highlight saved", { description: draft?.startDate && startOfDay(draft.startDate)! > new Date() ? "It appears on its start date." : "Check the home page to see it.", link: { label: "View home page", href: "/" } }); setDraft(null); await refresh(); },
@@ -81,6 +83,7 @@ export default function HighlightsPanel({ vendors }: { vendors: Vendor[] }) {
       <label>Title<input required minLength={2} maxLength={80} value={draft.title} onChange={(event) => setDraft({ ...draft, title: event.target.value })} placeholder="Hand thrown pottery" /></label>
       <label>Category or tag<input required minLength={2} maxLength={60} value={draft.category} onChange={(event) => setDraft({ ...draft, category: event.target.value })} placeholder="Ceramics, or Seasonal" /></label>
       <label>Short description<textarea required minLength={10} maxLength={220} rows={3} value={draft.description} onChange={(event) => setDraft({ ...draft, description: event.target.value })} placeholder="Small batch vessels shaped for everyday rituals." /><small className="form-hint">{draft.description.trim().length} / 220</small></label>
+      <AiWriteHelper field="highlight" text={draft.description} write={async (request) => (await aiWriter.mutateAsync(request)).suggestion} onUse={(text) => setDraft({ ...draft, description: text.slice(0, 220) })} notesHint="What the card is about, for example a seasonal event or a maker's best seller" context={{ title: draft.title, category: draft.category, name: activeVendors.find((vendor) => vendor.slug === draft.makerSlug)?.name || "", shortBio: activeVendors.find((vendor) => vendor.slug === draft.makerSlug)?.shortBio || "", ownerName: "", ownerBio: "" }} />
       <label>Links to maker (optional)<select value={draft.makerSlug} onChange={(event) => setDraft({ ...draft, makerSlug: event.target.value })}><option value="">No maker link</option>{activeVendors.map((vendor) => <option key={vendor.slug} value={vendor.slug}>{vendor.name}</option>)}</select></label>
       <div className="highlight-dates"><label>Start date (optional)<input type="date" value={draft.startDate} onChange={(event) => setDraft({ ...draft, startDate: event.target.value })} /></label><label>End date (optional)<input type="date" value={draft.endDate} min={draft.startDate || undefined} onChange={(event) => setDraft({ ...draft, endDate: event.target.value })} /></label></div>
       <small className="form-hint">Blank start means it shows right away. Blank end means it stays until you remove it. The card stays up through the whole end date.</small>

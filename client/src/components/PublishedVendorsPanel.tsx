@@ -13,6 +13,7 @@ export default function PublishedVendorsPanel({ vendors, onRefresh }: { vendors:
   const [editing, setEditing] = useState<{ id: number; values: ListingValues } | null>(null);
   const [selected, setSelected] = useState<Set<number>>(new Set());
   const [bulkEmail, setBulkEmail] = useState("");
+  const aiWriter = trpc.adminPortal.aiWrite.useMutation();
   const refreshAll = async () => { await Promise.all([onRefresh(), utils.directory.invalidate(), utils.adminPortal.makerInvites.invalidate()]); };
   const toggle = trpc.adminPortal.setVendorActive.useMutation({
     onSuccess: async (_result, input) => { notifySuccess(input.active ? "Listing is visible on the site" : "Listing hidden from the site"); await refreshAll(); },
@@ -65,7 +66,7 @@ export default function PublishedVendorsPanel({ vendors, onRefresh }: { vendors:
     <div className="admin-section-heading"><div><p className="eyebrow">Approved public content</p><h2>Published vendors</h2><p>Edit any listing on a maker's behalf, hide or show it, and set the login email the maker uses to edit it in the maker portal. Tick several listings to update them together.</p></div></div>
     {editing && <form className="secure-admin-card" onSubmit={(event) => { event.preventDefault(); save.mutate({ id: editing.id, ...editing.values, loginEmail: editing.values.loginEmail || "" }); }}>
       <div className="secure-card-heading"><div><span className="review-status">Owner edit, goes live when saved</span><h3>Edit {editing.values.name || "listing"}</h3></div><button className="button-plain compact-button" type="button" onClick={() => setEditing(null)}><X size={13} /> Close</button></div>
-      <ListingFields ownerControls value={editing.values} onChange={(values) => setEditing({ ...editing, values })} upload={(file) => uploadListingPhoto("/api/admin/upload?purpose=vendor", file)} />
+      <ListingFields ownerControls aiWrite={async (request) => (await aiWriter.mutateAsync(request)).suggestion} value={editing.values} onChange={(values) => setEditing({ ...editing, values })} upload={(file) => uploadListingPhoto("/api/admin/upload?purpose=vendor", file)} />
       <div className="review-actions"><button className="button-primary" type="submit" disabled={save.isPending}>{save.isPending ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />} Save and publish</button><button className="button-plain" type="button" onClick={() => setEditing(null)}>Cancel</button></div>
     </form>}
     {!editing && <>

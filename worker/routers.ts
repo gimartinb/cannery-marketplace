@@ -13,7 +13,8 @@ import {
   createHighlight, deleteGalleryPhoto, deleteHighlight, getGalleryPhoto, getHighlight, listGalleryPhotos, listHighlights,
   listPublicHighlights, reorderGalleryPhotos, updateGalleryPhoto, updateHighlight,
 } from "./db";
-import { improveDescription } from "./aiWriting";
+import { aiWrite } from "./aiWriting";
+import { aiWriteSchema } from "../shared/aiWriting";
 import { adminProcedure, mergeRouters, publicProcedure, router, vendorProcedure } from "./trpc";
 
 // A photo uploaded through the dashboard, or a maker's existing photo when a maker is promoted.
@@ -88,8 +89,8 @@ export const vendorRouter = router({
     me: vendorProcedure.query(({ ctx }) => ({ email: ctx.email })),
     // Every listing tied to this login email, plus new listings still waiting for approval.
     listings: vendorProcedure.query(({ ctx }) => listMakerListings(ctx.db, ctx.email, ctx.vendorAccount.id)),
-    // "Help me improve this": a suggested short description the maker can use or ignore.
-    improveDescription: vendorProcedure.input(z.object({ text: z.string().trim().min(20, "Write at least 20 characters first").max(800), name: z.string().trim().max(140).default(""), category: z.string().trim().max(100).default("") })).mutation(({ ctx, input }) => improveDescription(ctx.env, ctx.db, ctx.email, input)),
+    // AI writing help on listing text: improve what the maker wrote, or write it for them.
+    aiWrite: vendorProcedure.input(aiWriteSchema).mutation(({ ctx, input }) => aiWrite(ctx.env, ctx.db, { email: ctx.email, role: "maker" }, input)),
     submit: vendorProcedure.input(makerSubmissionSchema).mutation(async ({ ctx, input }) => {
       // Makers can only change listings tied to their own email. A new listing gets a web address no one else uses.
       // Featured, order, and visibility stay under owner control, whatever the browser sends.
@@ -114,6 +115,8 @@ export const adminRouter = router({
     dashboard: adminProcedure.query(async ({ ctx }) => ({ submissions: await listVendorSubmissions(ctx.db), vendors: await listAllVendorProfiles(ctx.db), giftBoxesEnabled: await giftBoxesEnabled(ctx.db) })),
     review: adminProcedure.input(reviewDecisionSchema).mutation(async ({ ctx, input }) => { await reviewVendorSubmission(ctx.db, input.submissionId, input.decision, input.note, input.category); return { success: true }; }),
     setGiftBoxesEnabled: adminProcedure.input(z.object({ enabled: z.boolean() })).mutation(async ({ ctx, input }) => { await setSiteSetting(ctx.db, "gift_boxes_enabled", String(input.enabled)); return { success: true }; }),
+    // The same writing help for owners (listing editor and home highlights), with a higher daily limit.
+    aiWrite: adminProcedure.input(aiWriteSchema).mutation(({ ctx, input }) => aiWrite(ctx.env, ctx.db, { email: ctx.email, role: "owner" }, input)),
     // Vendor interest form submissions. "invited" also adds the email to the maker portal guest list.
     applications: adminProcedure.query(({ ctx }) => listApplications(ctx.db)),
     setApplicationStatus: adminProcedure.input(z.object({ id: z.number().int().positive(), status: z.enum(["new", "invited", "declined", "archived"]), note: z.string().trim().max(1200).default("") })).mutation(async ({ ctx, input }) => {

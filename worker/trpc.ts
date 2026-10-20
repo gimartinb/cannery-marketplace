@@ -19,7 +19,7 @@ const t = initTRPC.context<TrpcContext>().create({
   errorFormatter({ shape, error }) {
     const cause = error.cause as { issues?: IssueLike[] } | undefined;
     if (error.code === "BAD_REQUEST" && cause && Array.isArray(cause.issues)) return { ...shape, message: describeIssues(cause.issues) };
-    // Our own friendly 500 messages pass through; anything unexpected is replaced.
+    // Our own friendly writing helper messages pass through; anything unexpected is replaced.
     if (error.code === "INTERNAL_SERVER_ERROR" && !(error.cause === undefined && error.message.startsWith("The writing helper"))) return { ...shape, message: "Something went wrong on our side. Please try again in a moment." };
     return shape;
   },

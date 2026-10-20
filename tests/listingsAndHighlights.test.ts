@@ -4,13 +4,21 @@ import { checkImageSize } from "../shared/imageRequirements";
 import { describeIssues } from "../shared/friendlyErrors";
 import { ownerVendorSchema } from "../shared/vendorProfile";
 import { pickLiveHighlights } from "../worker/db";
-import { cleanSuggestion } from "../worker/aiWriting";
+import { aiWrite, cleanSuggestion } from "../worker/aiWriting";
 
 describe("AI description helper", () => {
   it("strips labels and quotes from the model reply", () => {
     expect(cleanSuggestion('Here is the improved description: "Hand built walnut boards made one at a time in Gilroy."')).toBe("Hand built walnut boards made one at a time in Gilroy.");
     expect(cleanSuggestion("ok")).toBeNull();
     expect(cleanSuggestion(undefined)).toBeNull();
+    expect(cleanSuggestion("A long enough sentence that should be clipped to fit the card.", 30)?.endsWith("…")).toBe(true);
+  });
+  it("asks for a few words before writing from nothing, without using the allowance", async () => {
+    const env = { AI: { run: async () => ({ response: "unused" }) } } as never;
+    const db = {} as never; // never reached: the check happens before any database work
+    const empty = { name: "", ownerName: "", category: "", shortBio: "", ownerBio: "", title: "" };
+    await expect(aiWrite(env, db, { email: "m@example.com", role: "maker" }, { field: "shortBio", mode: "draft", text: "", notes: "", context: empty })).rejects.toThrow(/few words/);
+    await expect(aiWrite(env, db, { email: "m@example.com", role: "maker" }, { field: "shortBio", mode: "improve", text: "short", notes: "", context: empty })).rejects.toThrow(/20 characters/);
   });
 });
 

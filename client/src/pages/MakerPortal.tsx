@@ -17,7 +17,7 @@ export default function MakerPortal() {
   const listings = trpc.vendorPortal.listings.useQuery(undefined, { enabled: session.isSuccess });
   const [editing, setEditingState] = useState<{ values: ListingValues; title: string } | null>(null);
   const [showProblems, setShowProblems] = useState(false);
-  const improve = trpc.vendorPortal.improveDescription.useMutation();
+  const aiWriter = trpc.vendorPortal.aiWrite.useMutation();
   const setEditing = (next: { values: ListingValues; title: string } | null) => { if (!next || next.title !== editing?.title) setShowProblems(false); setEditingState(next); };
   const problems = editing ? listingProblems(editing.values) : {};
 
@@ -76,7 +76,7 @@ export default function MakerPortal() {
       </div>}
       {editing && <div className="maker-portal-grid"><form className="maker-editor-card" noValidate onSubmit={send}>
         <div className="portal-card-heading"><div><p className="eyebrow">{editing.values.profileId ? "Update your listing" : "New listing"}</p><h2>{editing.title}</h2></div><button className="button-plain compact-button" type="button" onClick={() => setEditing(null)}><ArrowLeft size={13} /> All listings</button></div>
-        <ListingFields value={editing.values} signedInEmail={email} onImprove={async (input) => (await improve.mutateAsync(input)).suggestion} problems={showProblems ? problems : undefined} onChange={(values) => setEditingState({ ...editing, values })} upload={(file) => uploadListingPhoto("/api/vendor/upload", file)} />
+        <ListingFields value={editing.values} signedInEmail={email} aiWrite={async (request) => (await aiWriter.mutateAsync(request)).suggestion} problems={showProblems ? problems : undefined} onChange={(values) => setEditingState({ ...editing, values })} upload={(file) => uploadListingPhoto("/api/vendor/upload", file)} />
         <div className="review-time-note"><Clock size={16} /><p>{REVIEW_TIME_NOTE}</p></div>
         <div className="portal-editor-actions"><button className="button-primary" type="submit" disabled={submit.isPending}>{submit.isPending ? <Loader2 size={14} className="animate-spin" /> : <Send size={14} />} Send for review</button><button className="button-plain" type="button" onClick={() => setEditing(null)}>Cancel</button></div>
         <p className="portal-review-note"><ShieldCheck size={14} /> Changes stay private until the marketplace approves them.</p>

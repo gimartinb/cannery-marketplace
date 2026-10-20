@@ -1234,3 +1234,6 @@ main { min-height: 100svh; }
   .admin-sidebar-bottom { padding-top: .3rem; }
   .admin-sidebar-bottom a, .admin-sidebar-bottom button { padding-block: .35rem; min-height: 36px; }
 }
+.ai-helper .review-actions { margin-top: 0; }
+.ai-notes { display: grid; gap: .5rem; padding: .9rem 1rem; border: 1px dashed var(--gold-soft); background: #fffaf0; }
+.ai-notes label { margin-bottom: 0; }
