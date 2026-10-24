@@ -31,6 +31,7 @@ It runs entirely on Cloudflare's free plan, so hosting costs **$0 a month**, wit
 * Maker access: who can sign in, and which listings each email can edit
 * Edit pages: every page's words and photos in one place, in page order (including home highlights with start and end dates and the About gallery), with drafts, preview, publish, history, Restore original, and AI help
 * Gifts and corporate (hidden until turned on): gift boxes with checkout links from Square or any point of sale, and corporate and custom gift requests with quotes and invoice numbers
+* Emails: invites, decisions, and replies open a Preview, then Send window from editable templates, sent from hello@cannerymarket.com through Resend, with automatic thank yous and a sent log
 * Spreadsheet import for many makers at once
 * A "Free plan usage" card showing AI use, photo storage, and uploads
 

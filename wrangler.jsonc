@@ -45,7 +45,11 @@
     // While it is empty every admin and vendor request is denied, which is the safe default.
     "ACCESS_TEAM_DOMAIN": "https://cannery.cloudflareaccess.com",
     "ACCESS_AUD": "41bb51742615818bc70d7589c7f06b47101e5deb0092296bd2ff484ffe315259,d28c9eae01c9aeae9eb0a36c8bf22409ea797ec870b0d612052155ac1f7333bf,bf301d5292396c1fdf1cbadda5016790c8faf05ffd925ba6278c737224ee1d7a",
-    "ADMIN_EMAILS": "gilbert.martin@gmail.com,thecannerymarketplace@gmail.com"
+    "ADMIN_EMAILS": "gilbert.martin@gmail.com,thecannerymarketplace@gmail.com",
+    // Emails the site sends (through Resend). The API key is a secret: RESEND_API_KEY.
+    // Replies go to the marketplace Gmail inbox.
+    "EMAIL_FROM": "The Cannery Marketplace <hello@cannerymarket.com>",
+    "EMAIL_REPLY_TO": "thecannerymarketplace@gmail.com"
   },
 
   // Nightly at 3:17 a.m. Pacific (10:17 UTC): recount photo storage and remove

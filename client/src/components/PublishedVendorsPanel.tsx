@@ -2,8 +2,8 @@ import { Mail, Send, Trash2, UserPlus, CheckSquare, ExternalLink, Eye, EyeOff, L
 import { useMemo, useState } from "react";
 import ListingFields, { toListingValues, uploadListingPhoto, type ListingValues } from "@/components/ListingFields";
 import { notifyError, notifySuccess } from "@/lib/notify";
-import { welcomeEmailLink } from "@/lib/makerEmails";
 import { trpc } from "@/lib/trpc";
+import { useEmailComposer } from "@/components/EmailComposer";
 
 type Vendor = Parameters<typeof toListingValues>[0] & { id: number; loginEmail: string | null };
 
@@ -17,10 +17,13 @@ export default function PublishedVendorsPanel({ vendors, onRefresh }: { vendors:
   const aiWriter = trpc.adminPortal.aiWrite.useMutation();
   // One step invite from a listing row: ties the email to the listing and gives it maker portal access.
   const [inviting, setInviting] = useState<{ id: number; email: string } | null>(null);
+  const compose = useEmailComposer();
+  const welcome = (email: string, business: string, maker: string | null | undefined, id: number) => compose({ template: "makerWelcome", to: email, about: `listing:${id}`, values: { firstName: (maker || "").split(" ")[0] || "there", business, email, note: "" } });
   const invite = trpc.adminPortal.assignListing.useMutation({
     onSuccess: async (row, input) => {
       const vendor = vendors.find((item) => item.id === input.profileId);
-      notifySuccess(`${row.name} is ready for ${input.email}`, { description: "They can sign in to the maker portal now. Send the welcome email so they know how.", link: { label: "Send welcome email", href: welcomeEmailLink({ email: input.email, businessName: row.name, fullName: vendor?.ownerName || "" }) } });
+      notifySuccess(`${row.name} is ready for ${input.email}`, { description: "They can sign in to the maker portal now. Check and send the welcome email." });
+      welcome(input.email, row.name, vendor?.ownerName, input.profileId);
       setInviting(null);
       await refreshAll();
     },
@@ -123,7 +126,7 @@ export default function PublishedVendorsPanel({ vendors, onRefresh }: { vendors:
         <div className="review-actions">
           <label className="toggle-label"><input type="checkbox" checked={vendor.active} disabled={toggle.isPending} onChange={(event) => toggle.mutate({ id: vendor.id, active: event.target.checked })} /><span className="fake-toggle" /> {vendor.active ? "Public" : "Hidden"}</label>
           {vendor.loginEmail
-            ? <a className="button-plain" href={welcomeEmailLink({ email: vendor.loginEmail, businessName: vendor.name, fullName: vendor.ownerName || "" })}><Mail size={14} /> Welcome email</a>
+            ? <button className="button-plain" type="button" onClick={() => welcome(vendor.loginEmail!, vendor.name, vendor.ownerName, vendor.id)}><Mail size={14} /> Welcome email</button>
             : <button className="button-primary" type="button" onClick={() => setInviting({ id: vendor.id, email: vendor.contactEmail || "" })}><UserPlus size={14} /> Invite maker</button>}
           <button className="button-plain" type="button" onClick={() => setEditing({ id: vendor.id, values: toListingValues(vendor, vendor.id) })}><Pencil size={14} /> Edit</button>
           {vendor.active && <a className="button-plain" href={`/vendors/${vendor.slug}`} target="_blank" rel="noreferrer"><ExternalLink size={14} /> View</a>}

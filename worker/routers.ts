@@ -14,6 +14,8 @@ import {
   listPublicHighlights, reorderGalleryPhotos, updateGalleryPhoto, updateHighlight,
 } from "./db";
 import { aiWrite } from "./aiWriting";
+import { EMAIL_DAILY_LIMIT, emailReady, listEmailLog, listEmailTemplates, resetEmailTemplate, saveEmailTemplate, sendAutomaticEmail, sendEmail, sentToday } from "./email";
+import { EMAIL_TEMPLATE_IDS, emailTemplateInput, sendEmailInput } from "../shared/emailTemplates";
 import { discardImageDraft, draftOriginalImage, listImageDrafts, previewSiteImages, publishSiteImages, saveImageDraftAlt } from "./siteImages";
 import { discardSiteTextDraft, listSiteTextForOwners, previewSiteText, publishedSiteText, publishSiteText, restoreOriginalSiteText, saveSiteTextDraft } from "./siteText";
 import { countRecentGiftRequests, createGiftRequest, deleteGiftBox, getCommerceSettings, GIFT_REQUEST_LIMIT_PER_SOURCE_PER_DAY, listGiftBoxChoices, listGiftBoxes, listGiftRequests, listPublicGiftBoxes, saveGiftBox, setCommerceSettings, squareApiReady, updateGiftRequest } from "./gifts";
@@ -65,6 +67,7 @@ export const publicRouter = router({
         fullName: clean(input.fullName), email: input.email.trim().toLowerCase(), phone: formatApplicationPhone(input), referredBy: clean(input.referredBy),
         categories: JSON.stringify(categories), salesChannels: JSON.stringify(salesChannels), sourceHash: hash,
       });
+      await sendAutomaticEmail(ctx.env, ctx.db, "applicationReceived", input.email.trim().toLowerCase(), { firstName: clean(input.fullName).split(" ")[0], business: clean(input.businessName) });
       return { id };
     }),
   }),
@@ -94,6 +97,7 @@ export const publicRouter = router({
         preferredCategories: JSON.stringify(input.customBox ? input.preferredCategories.filter((item) => (GIFT_CATEGORIES as readonly string[]).includes(item)) : []),
         preferredMakers: input.customBox ? clean(input.preferredMakers) || null : null, message: input.message.trim(), sourceHash: hash,
       });
+      await sendAutomaticEmail(ctx.env, ctx.db, "giftRequestReceived", input.email.trim().toLowerCase(), { firstName: clean(input.contactName).split(" ")[0], company: clean(input.company), quantity: Number(input.quantity) });
       return { id };
     }),
   }),
@@ -259,6 +263,13 @@ export const adminRouter = router({
     saveCommerceSettings: adminProcedure.input(commerceSettingsSchema).mutation(async ({ ctx, input }) => { await setCommerceSettings(ctx.db, input); return { success: true }; }),
     giftRequests: adminProcedure.query(({ ctx }) => listGiftRequests(ctx.db)),
     updateGiftRequest: adminProcedure.input(z.object({ id: z.number().int().positive(), status: z.enum(GIFT_REQUEST_STATUSES), adminNote: z.string().trim().max(1200).default(""), quoteAmount: z.string().trim().max(40).default(""), externalOrderId: z.string().trim().max(64).default("") })).mutation(async ({ ctx, input }) => { const { id, ...change } = input; await updateGiftRequest(ctx.db, id, change); return { success: true }; }),
+    // Emails the site sends for the owners (Preview, then Send). See worker/email.ts.
+    emailSetup: adminProcedure.query(async ({ ctx }) => ({ ready: emailReady(ctx.env), from: ctx.env.EMAIL_FROM ?? "", replyTo: ctx.env.EMAIL_REPLY_TO ?? "", sentToday: await sentToday(ctx.db), dailyLimit: EMAIL_DAILY_LIMIT })),
+    emailTemplates: adminProcedure.query(({ ctx }) => listEmailTemplates(ctx.db)),
+    saveEmailTemplate: adminProcedure.input(emailTemplateInput).mutation(async ({ ctx, input }) => { await saveEmailTemplate(ctx.db, input.id, input.subject, input.body, ctx.email); return { success: true }; }),
+    resetEmailTemplate: adminProcedure.input(z.object({ id: z.enum(EMAIL_TEMPLATE_IDS) })).mutation(async ({ ctx, input }) => { await resetEmailTemplate(ctx.db, input.id); return { success: true }; }),
+    sendEmail: adminProcedure.input(sendEmailInput).mutation(({ ctx, input }) => sendEmail(ctx.env, ctx.db, { ...input, sentBy: ctx.email })),
+    emailLog: adminProcedure.query(({ ctx }) => listEmailLog(ctx.db)),
     bulkImport: adminProcedure.input(z.object({ vendors: z.array(ownerVendorSchema).min(1).max(500) })).mutation(({ ctx, input }) => bulkImportVendorProfiles(ctx.db, input.vendors, ctx.email)),
   }),
 });

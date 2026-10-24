@@ -5,6 +5,7 @@ import ImageUploadButton from "@/components/ImageUploadButton";
 import { notifyError, notifySuccess } from "@/lib/notify";
 import { trpc } from "@/lib/trpc";
 import { CHECKOUT_PROVIDERS, DEFAULT_COMMERCE, GIFT_REQUEST_STATUSES, type CommerceSettings, type GiftBoxInput } from "@shared/gifts";
+import { useEmailComposer } from "@/components/EmailComposer";
 
 type Box = GiftBoxInput & { id: number; slug: string };
 const EMPTY_BOX: GiftBoxInput = { name: "", price: "", description: "", details: "", imageUrl: "", checkoutUrl: "", externalItemId: "", externalVariationId: "", corporateOnly: false, active: true, displayOrder: 100 };
@@ -85,6 +86,7 @@ function BoxEditor({ box, provider, onDone }: { box: GiftBoxInput; provider: Com
 function RequestsList() {
   const utils = trpc.useUtils();
   const list = trpc.adminPortal.giftRequests.useQuery();
+  const compose = useEmailComposer();
   const [edits, setEdits] = useState<Record<number, { status: (typeof GIFT_REQUEST_STATUSES)[number]; adminNote: string; quoteAmount: string; externalOrderId: string }>>({});
   const update = trpc.adminPortal.updateGiftRequest.useMutation({ onSuccess: async () => { notifySuccess("Request updated"); await utils.adminPortal.giftRequests.invalidate(); }, onError: (error) => notifyError(error, "Request not updated") });
   const rows = list.data ?? [];
@@ -93,7 +95,7 @@ function RequestsList() {
   return <div className="secure-review-list">{rows.map((row) => {
     const edit = edits[row.id] ?? { status: row.status, adminNote: row.adminNote ?? "", quoteAmount: row.quoteAmount ?? "", externalOrderId: row.externalOrderId ?? "" };
     const setEdit = (change: Partial<typeof edit>) => setEdits((current) => ({ ...current, [row.id]: { ...edit, ...change } }));
-    const reply = `mailto:${encodeURIComponent(row.email)}?subject=${encodeURIComponent(`Your gift request with The Cannery Marketplace`)}&body=${encodeURIComponent(`Hi ${row.contactName.split(" ")[0]},\n\nThank you for your request for ${row.quantity} gifts for ${row.company}.\n\n${edit.quoteAmount ? `Our quote: ${edit.quoteAmount}\n\n` : ""}The Cannery Marketplace`)}`;
+    const replyEmail = () => compose({ template: "giftReply", to: row.email, about: `gift:${row.id}`, values: { firstName: row.contactName.split(" ")[0] || "there", company: row.company, quantity: row.quantity, quote: edit.quoteAmount ? `Our quote: ${edit.quoteAmount}` : "", note: "" } });
     return <article className="secure-admin-card application-card" key={row.id}>
       <div className="secure-card-heading"><div><span className={`listing-status listing-status-${row.status === "new" ? "pending" : row.status === "won" ? "published" : "muted"}`}>{STATUS_TEXT[row.status]}</span><h3>{row.company}</h3><p>{row.contactName} · {row.quantity} gifts · {row.budgetPerGift} each · received {new Date(row.createdAt).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" })}</p></div></div>
       <dl className="application-details">
@@ -112,7 +114,7 @@ function RequestsList() {
         <label>Square invoice or order number<input value={edit.externalOrderId} maxLength={64} placeholder="From Square, once invoiced" onChange={(event) => setEdit({ externalOrderId: event.target.value })} /></label>
       </div>
       <label>Private note<textarea rows={2} value={edit.adminNote} maxLength={1200} onChange={(event) => setEdit({ adminNote: event.target.value })} /></label>
-      <div className="review-actions"><button className="button-primary" type="button" disabled={update.isPending} onClick={() => update.mutate({ id: row.id, ...edit })}><Save size={14} /> Save</button><a className="button-plain" href={reply}><Mail size={14} /> Reply by email</a></div>
+      <div className="review-actions"><button className="button-primary" type="button" disabled={update.isPending} onClick={() => update.mutate({ id: row.id, ...edit })}><Save size={14} /> Save</button><button className="button-plain" type="button" onClick={replyEmail}><Mail size={14} /> Reply by email</button></div>
     </article>;
   })}</div>;
 }

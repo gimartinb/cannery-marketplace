@@ -10,6 +10,12 @@ export interface Env {
   ACCESS_AUD: string;
   /** Comma separated emails allowed into the owner dashboard. */
   ADMIN_EMAILS: string;
+  /** Resend API key for the emails the site sends (secret, set with `wrangler secret put RESEND_API_KEY`). Without it, sending is off. */
+  RESEND_API_KEY?: string;
+  /** Sender, for example "The Cannery Marketplace <hello@cannerymarket.com>". The domain must be verified in Resend. */
+  EMAIL_FROM?: string;
+  /** Where replies go (the marketplace Gmail inbox). */
+  EMAIL_REPLY_TO?: string;
   /**
    * Phase 2 only (not used yet): a Square access token for connecting gift boxes and
    * corporate invoices to Square. Add it with `wrangler secret put SQUARE_ACCESS_TOKEN`,

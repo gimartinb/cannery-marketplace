@@ -233,3 +233,26 @@ export const giftRequests = sqliteTable("gift_requests", {
   createdAt: createdAt(),
   updatedAt: updatedAt(),
 }, (table) => [index("gift_requests_status_idx").on(table.status), index("gift_requests_source_idx").on(table.sourceHash, table.createdAt)]);
+
+// Owner edits to the email templates in shared/emailTemplates.ts (no row = the original wording).
+export const emailTemplates = sqliteTable("email_templates", {
+  id: text("id").primaryKey(),
+  subject: text("subject").notNull(),
+  body: text("body").notNull(),
+  updatedBy: text("updatedBy"),
+  updatedAt: updatedAt(),
+});
+
+// Every email the site sent (or tried to), for the owners' sent log and the daily limit.
+export const emailLog = sqliteTable("email_log", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  template: text("template").notNull(),
+  to: text("to").notNull(),
+  subject: text("subject").notNull(),
+  status: text("status", { enum: ["sent", "failed"] }).notNull(),
+  error: text("error"),
+  providerId: text("providerId"),
+  about: text("about"),
+  sentBy: text("sentBy"),
+  createdAt: createdAt(),
+}, (table) => [index("email_log_created_idx").on(table.createdAt)]);

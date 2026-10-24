@@ -1,9 +1,9 @@
 import { Archive, ExternalLink, Inbox, Loader2, Mail, RotateCcw, UserCheck, X } from "lucide-react";
 import { useState } from "react";
 import { notifyError, notifySuccess } from "@/lib/notify";
-import { declineEmailLink, replyEmailLink, welcomeEmailLink } from "@/lib/makerEmails";
 import { trpc } from "@/lib/trpc";
 import type { ApplicationStatus } from "@shared/application";
+import { useEmailComposer } from "@/components/EmailComposer";
 
 const FILTERS: Array<{ id: ApplicationStatus | "all"; label: string }> = [
   { id: "new", label: "New" },
@@ -14,11 +14,7 @@ const FILTERS: Array<{ id: ApplicationStatus | "all"; label: string }> = [
 ];
 const STATUS_TEXT: Record<ApplicationStatus, string> = { new: "New", invited: "Invited to maker portal", declined: "Declined", archived: "Archived" };
 
-/** Prefilled emails, sent from the owner's own email app (see lib/makerEmails.ts). */
-function emailLink(application: { fullName: string; email: string; businessName: string }, kind: "invite" | "decline" | "reply", note: string, listingReady = true) {
-  if (kind === "invite") return welcomeEmailLink(application, note, listingReady);
-  return kind === "decline" ? declineEmailLink(application, note) : replyEmailLink(application, note);
-}
+const TEMPLATE = { invite: "makerWelcome", decline: "applicationDeclined", reply: "applicationReply" } as const;
 
 /** Owner dashboard tab: maker applications submitted on /apply. */
 export default function ApplicationsPanel() {
@@ -26,11 +22,14 @@ export default function ApplicationsPanel() {
   const list = trpc.adminPortal.applications.useQuery();
   const [filter, setFilter] = useState<ApplicationStatus | "all">("new");
   const [notes, setNotes] = useState<Record<number, string>>({});
+  const compose = useEmailComposer();
+  // Preview, then Send (see EmailComposer). Falls back to the owner's own email app.
+  const email = (application: { id: number; fullName: string; email: string; businessName: string }, kind: keyof typeof TEMPLATE, note: string) => compose({ template: TEMPLATE[kind], to: application.email, about: `application:${application.id}`, values: { firstName: application.fullName.split(" ")[0] || "there", business: application.businessName, email: application.email, note } });
   const update = trpc.adminPortal.setApplicationStatus.useMutation({
     onSuccess: async (result, input) => {
       const application = list.data?.find((item) => item.id === input.id);
-      if (application && input.status === "invited") notifySuccess(`${application.businessName} invited`, { description: `${application.email} can now sign in to the maker portal${result.listingStarted ? ", and their listing is started from the application" : ""}. Send them the welcome email so they know how.`, link: { label: "Send welcome email", href: emailLink(application, "invite", input.note ?? "", true) } });
-      else if (application && input.status === "declined") notifySuccess("Marked as declined", { description: "Let them know with a short email.", link: { label: "Email the applicant", href: emailLink(application, "decline", input.note ?? "") } });
+      if (application && input.status === "invited") { notifySuccess(`${application.businessName} invited`, { description: `${application.email} can now sign in to the maker portal${result.listingStarted ? ", and their listing is started from the application" : ""}. Next, check and send the welcome email.` }); email(application, "invite", input.note ?? ""); }
+      else if (application && input.status === "declined") { notifySuccess("Marked as declined", { description: "Check the short email, then send it." }); email(application, "decline", input.note ?? ""); }
       else notifySuccess(input.status === "archived" ? "Application archived" : "Moved back to New");
       await Promise.all([utils.adminPortal.applications.invalidate(), utils.adminPortal.makerInvites.invalidate()]);
     },
@@ -42,7 +41,7 @@ export default function ApplicationsPanel() {
   const shown = filter === "all" ? rows : rows.filter((row) => row.status === filter);
 
   return <section className="admin-content">
-    <div className="admin-section-heading"><div><p className="eyebrow">Maker applications</p><h2>Applications</h2><p>Applications submitted on the site's "Become a vendor" page. Invite a maker to give them maker portal access, then send the welcome email so they know how to sign in.</p></div><a className="button-plain" href="/apply" target="_blank" rel="noreferrer"><ExternalLink size={14} /> View the form</a></div>
+    <div className="admin-section-heading"><div><p className="eyebrow">Maker applications</p><h2>Applications</h2><p>Applications submitted on the site's "Become a vendor" page. Approve and invite gives them maker portal access and opens the welcome email to check and send.</p></div><a className="button-plain" href="/apply" target="_blank" rel="noreferrer"><ExternalLink size={14} /> View the form</a></div>
     <div className="application-filters" role="tablist" aria-label="Filter applications">{FILTERS.map((item) => <button key={item.id} type="button" role="tab" aria-selected={filter === item.id} className={filter === item.id ? "active" : ""} onClick={() => setFilter(item.id)}>{item.label} <span>{counts[item.id]}</span></button>)}</div>
     <div className="secure-review-list">
       {list.isLoading ? <div className="admin-empty"><Loader2 className="animate-spin" /></div> : list.error ? <div className="admin-empty"><h3>Applications did not load</h3><p>{list.error.message}</p></div> : shown.length ? shown.map((item) => <article className="secure-admin-card application-card" key={item.id}>
@@ -63,8 +62,9 @@ export default function ApplicationsPanel() {
         <label>Note (optional, included in the email)<textarea value={notes[item.id] ?? ""} onChange={(event) => setNotes({ ...notes, [item.id]: event.target.value })} placeholder="Anything you want to tell them" /></label>
         <div className="review-actions">
           {item.status !== "invited" && <button className="button-primary" type="button" disabled={update.isPending} onClick={() => update.mutate({ id: item.id, status: "invited", note: notes[item.id] || "" })}><UserCheck size={14} /> Approve and invite</button>}
-          {item.status === "invited" && <a className="button-primary" href={emailLink(item, "invite", notes[item.id] || "")}><Mail size={14} /> Send welcome email</a>}
-          <a className="button-plain" href={emailLink(item, "reply", notes[item.id] || "")}><Mail size={14} /> Email them</a>
+          {item.status === "invited" && <button className="button-primary" type="button" onClick={() => email(item, "invite", notes[item.id] || "")}><Mail size={14} /> Send welcome email</button>}
+          {item.status === "declined" && <button className="button-plain" type="button" onClick={() => email(item, "decline", notes[item.id] || "")}><Mail size={14} /> Send decline email</button>}
+          <button className="button-plain" type="button" onClick={() => email(item, "reply", notes[item.id] || "")}><Mail size={14} /> Email them</button>
           {item.status === "new" && <button className="danger-button" type="button" disabled={update.isPending} onClick={() => update.mutate({ id: item.id, status: "declined", note: notes[item.id] || "" })}><X size={14} /> Decline</button>}
           {item.status !== "archived" && item.status !== "new" && <button className="button-plain" type="button" disabled={update.isPending} onClick={() => update.mutate({ id: item.id, status: "archived", note: item.adminNote || "" })}><Archive size={14} /> Archive</button>}
           {item.status !== "new" && <button className="button-plain" type="button" disabled={update.isPending} onClick={() => update.mutate({ id: item.id, status: "new", note: item.adminNote || "" })}><RotateCcw size={14} /> Move to New</button>}

@@ -1,8 +1,9 @@
-import { Copy, Link2, Loader2, Trash2, UserPlus, X } from "lucide-react";
+import { Copy, Link2, Loader2, Mail, Trash2, UserPlus, X } from "lucide-react";
 import { useState } from "react";
 import { notifyError, notifySuccess } from "@/lib/notify";
 import { welcomeText } from "@/lib/makerEmails";
 import { trpc } from "@/lib/trpc";
+import { useEmailComposer } from "@/components/EmailComposer";
 
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 type Listing = { id: number; name: string; slug: string; loginEmail: string | null };
@@ -25,6 +26,7 @@ export default function MakerAccessPanel({ vendors, onChanged }: { vendors: List
     },
     onError: (error) => notifyError(error, "Listing not connected"),
   });
+  const compose = useEmailComposer();
   const remove = trpc.adminPortal.removeMakerInvite.useMutation({ onSuccess: async (_result, input) => { notifySuccess(`${input.email} can no longer sign in`, { description: "Their listings stay on the site." }); await refresh(); }, onError: (error) => notifyError(error, "Access not removed") });
   // Same wording as the welcome email (lib/makerEmails.ts), for pasting into a text or email.
   const inviteText = welcomeText({ email: "the email address we invited" }, "", false);
@@ -39,8 +41,11 @@ export default function MakerAccessPanel({ vendors, onChanged }: { vendors: List
     const result = await add.mutateAsync({ emails: entries }).catch(() => null);
     if (!result) return;
     setText("");
+    const listing = vendors.find((vendor) => String(vendor.id) === listingId);
     if (listingId) { await assign.mutateAsync({ profileId: Number(listingId), email: entries[0] }).catch(() => null); setListingId(""); }
-    else { notifySuccess(`${result.added} email${result.added === 1 ? "" : "s"} can now sign in to the maker portal`, { description: "Connect each one to their listing below." }); await refresh(); }
+    else { notifySuccess(`${result.added} email${result.added === 1 ? "" : "s"} can now sign in to the maker portal`, { description: entries.length === 1 ? "Check and send the welcome email." : "Connect each one to their listing below, then send each a welcome email." }); await refresh(); }
+    // One maker at a time: open the welcome email to check and send.
+    if (entries.length === 1) compose({ template: "makerWelcome", to: entries[0], about: listing ? `listing:${listing.id}` : "maker-access", values: { firstName: "there", business: listing?.name || "your business", email: entries[0], note: "" } });
   }
 
   const unconnected = vendors.filter((vendor) => !vendor.loginEmail);
@@ -61,6 +66,7 @@ export default function MakerAccessPanel({ vendors, onChanged }: { vendors: List
         <div className="listing-chips">{invite.listings.length ? invite.listings.map((listing) => <span className="listing-chip" key={listing.id}>{listing.name}<button type="button" aria-label={`Disconnect ${listing.name}`} disabled={assign.isPending} onClick={() => { if (window.confirm(`Disconnect ${listing.name} from ${invite.email}? The listing stays on the site.`)) assign.mutate({ profileId: listing.id, email: "" }); }}><X size={12} /></button></span>) : <span className="listing-chip empty">No listings connected</span>}</div>
         <label className="connect-listing"><Link2 size={13} /><select value="" disabled={assign.isPending} onChange={(event) => { if (event.target.value) assign.mutate({ profileId: Number(event.target.value), email: invite.email }); }} aria-label={`Connect a listing to ${invite.email}`}><option value="">Connect a listing…</option>{vendors.filter((vendor) => vendor.loginEmail !== invite.email).map((vendor) => <option key={vendor.id} value={vendor.id}>{vendor.name}{vendor.loginEmail ? ` (moves from ${vendor.loginEmail})` : ""}</option>)}</select></label>
       </div>
+      <button className="button-plain" type="button" onClick={() => compose({ template: "makerWelcome", to: invite.email, about: "maker-access", values: { firstName: "there", business: invite.listings[0]?.name || "your business", email: invite.email, note: "" } })}><Mail size={14} /> Welcome email</button>
       <button className="danger-button" type="button" disabled={remove.isPending} onClick={() => { if (window.confirm(`Remove maker portal access for ${invite.email}? Their listings stay on the site.`)) remove.mutate({ email: invite.email }); }}><Trash2 size={14} /> Remove access</button>
     </div>) : <div className="admin-empty"><h3>No makers invited yet</h3><p>Add a maker's email above to let them into the maker portal.</p></div>}</div>
   </section>;
