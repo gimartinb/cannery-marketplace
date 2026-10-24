@@ -15,7 +15,7 @@ It runs entirely on Cloudflare's free plan, so hosting costs **$0 a month**, wit
 * A profile page for every maker: photos, story, owner, and social links
 * About page with an "Inside the Cannery" photo gallery
 * Contact form that keeps visitors on the site
-* Vendor interest form at `/apply`, which replaces the old Google Form
+* Maker application at `/apply`, which replaces the old Google Form
 
 **For makers** (`/maker-portal`)
 * Sign in with a one time code sent by email, with no passwords
@@ -25,7 +25,7 @@ It runs entirely on Cloudflare's free plan, so hosting costs **$0 a month**, wit
 * Every change is reviewed by the owners before it goes live (up to 72 hours)
 
 **For the owners** (`/admin`)
-* Applications: review vendor interest forms, then approve and invite in one click
+* Applications: review maker applications, then approve and invite in one click
 * Review queue: approve, request changes, or reject maker submissions
 * Published vendors: edit any listing, bulk assign login emails, show or hide, feature
 * Maker access: who can sign in, and which listings each email can edit

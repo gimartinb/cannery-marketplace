@@ -352,7 +352,7 @@ export async function reorderGalleryPhotos(db: Database, ids: number[]) {
   if (first) await db.batch([first, ...rest]);
 }
 
-// Vendor interest form submissions.
+// Maker application submissions.
 export const APPLICATION_LIMIT_PER_SOURCE_PER_DAY = 5;
 
 export async function countRecentApplications(db: Database, sourceHash: string) {
@@ -382,7 +382,7 @@ export async function setApplicationStatus(db: Database, id: number, status: "ne
 }
 
 // Owners inviting an applicant: start the maker's listing for them.
-// Vendor interest form categories mapped to the maker portal's category list.
+// Maker application categories mapped to the maker portal's category list.
 const APPLICATION_TO_LISTING_CATEGORY: Record<string, string> = {
   "Art": "Paper & Art", "Stationery & Books": "Paper & Art", "Apparel & Accessories": "Wearables", "Baked Goods & Sweets": "Coffee & Bakery",
   "Bath & Body": "Candles & Bath", "Candles & Wax Melts": "Candles & Bath", "Self Care": "Candles & Bath", "Children & Kids": "Kids & Baby",

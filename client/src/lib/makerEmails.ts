@@ -21,10 +21,10 @@ export function welcomeEmailLink(maker: { email: string; businessName?: string; 
 
 export function declineEmailLink(applicant: { email: string; businessName: string; fullName: string }, note = "") {
   const first = applicant.fullName.split(" ")[0] || "there";
-  return mailto(applicant.email, `Your vendor interest form: ${applicant.businessName}`, `Hi ${first},\n\nThank you for sharing ${applicant.businessName} with The Cannery Marketplace. We reviewed your vendor interest form, and we are not able to offer a space right now.\n\n${note ? `${note}\n\n` : ""}We keep every form on file and may reach out if that changes.\n\n${SIGNATURE}`);
+  return mailto(applicant.email, `Your maker application: ${applicant.businessName}`, `Hi ${first},\n\nThank you for sharing ${applicant.businessName} with The Cannery Marketplace. We reviewed your maker application, and we are not able to offer a space right now.\n\n${note ? `${note}\n\n` : ""}We keep every application on file and may reach out if that changes.\n\n${SIGNATURE}`);
 }
 
 export function replyEmailLink(applicant: { email: string; businessName: string; fullName: string }, note = "") {
   const first = applicant.fullName.split(" ")[0] || "there";
-  return mailto(applicant.email, `Your vendor interest form: ${applicant.businessName}`, `Hi ${first},\n\nThank you for your vendor interest form for ${applicant.businessName}.\n\n${note ? `${note}\n\n` : ""}${SIGNATURE}`);
+  return mailto(applicant.email, `Your maker application: ${applicant.businessName}`, `Hi ${first},\n\nThank you for your maker application for ${applicant.businessName}.\n\n${note ? `${note}\n\n` : ""}${SIGNATURE}`);
 }

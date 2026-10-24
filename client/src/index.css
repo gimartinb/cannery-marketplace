@@ -1186,7 +1186,7 @@
 main { min-height: 100svh; }
 .admin-main { min-height: 0; }
 
-/* Vendor interest form (/apply) */
+/* Maker application (/apply) */
 .application-form .application-section { margin: 0 0 1.8rem; padding: 0; border: 0; }
 .application-form .application-section > legend { margin-bottom: 1rem; color: var(--moss); font-family: "Playfair Display", Georgia, serif; font-size: 1.35rem; font-weight: 600; line-height: 1.3; }
 .application-form .form-hint.full { grid-column: 1 / -1; margin: .2rem 0 -.4rem; font-weight: 700; }
@@ -1199,6 +1199,8 @@ main { min-height: 100svh; }
 .apply-criteria { display: grid; gap: .7rem; margin: 1.6rem 0 0; padding: 0; list-style: none; }
 .apply-criteria li { display: flex; gap: .6rem; align-items: flex-start; color: var(--ink); line-height: 1.5; }
 .apply-criteria svg { flex: 0 0 auto; margin-top: .25rem; color: var(--gold); }
+.apply-note { margin: 1.2rem 0 0; max-width: 42ch; color: var(--muted-foreground); line-height: 1.65; }
+.apply-criteria + .apply-note { margin-top: 1.6rem; }
 
 /* Owner dashboard: Applications */
 .application-filters { display: flex; flex-wrap: wrap; gap: .5rem; margin: 0 2rem 1rem; }

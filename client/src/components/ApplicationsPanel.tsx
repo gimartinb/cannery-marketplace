@@ -20,7 +20,7 @@ function emailLink(application: { fullName: string; email: string; businessName:
   return kind === "decline" ? declineEmailLink(application, note) : replyEmailLink(application, note);
 }
 
-/** Owner dashboard tab: vendor interest forms submitted on /apply. */
+/** Owner dashboard tab: maker applications submitted on /apply. */
 export default function ApplicationsPanel() {
   const utils = trpc.useUtils();
   const list = trpc.adminPortal.applications.useQuery();
@@ -42,13 +42,14 @@ export default function ApplicationsPanel() {
   const shown = filter === "all" ? rows : rows.filter((row) => row.status === filter);
 
   return <section className="admin-content">
-    <div className="admin-section-heading"><div><p className="eyebrow">Vendor interest forms</p><h2>Applications</h2><p>Forms submitted on the site's "Become a vendor" page. Invite a maker to give them maker portal access, then send the welcome email so they know how to sign in.</p></div><a className="button-plain" href="/apply" target="_blank" rel="noreferrer"><ExternalLink size={14} /> View the form</a></div>
+    <div className="admin-section-heading"><div><p className="eyebrow">Maker applications</p><h2>Applications</h2><p>Applications submitted on the site's "Become a vendor" page. Invite a maker to give them maker portal access, then send the welcome email so they know how to sign in.</p></div><a className="button-plain" href="/apply" target="_blank" rel="noreferrer"><ExternalLink size={14} /> View the form</a></div>
     <div className="application-filters" role="tablist" aria-label="Filter applications">{FILTERS.map((item) => <button key={item.id} type="button" role="tab" aria-selected={filter === item.id} className={filter === item.id ? "active" : ""} onClick={() => setFilter(item.id)}>{item.label} <span>{counts[item.id]}</span></button>)}</div>
     <div className="secure-review-list">
       {list.isLoading ? <div className="admin-empty"><Loader2 className="animate-spin" /></div> : list.error ? <div className="admin-empty"><h3>Applications did not load</h3><p>{list.error.message}</p></div> : shown.length ? shown.map((item) => <article className="secure-admin-card application-card" key={item.id}>
-        <div className="secure-card-heading"><div><span className={`listing-status listing-status-${item.status === "new" ? "pending" : item.status === "invited" ? "published" : "muted"}`}>{STATUS_TEXT[item.status]}</span><h3>{item.businessName}</h3><p>{item.fullName} · {item.city} · received {new Date(item.createdAt).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" })}</p></div></div>
+        <div className="secure-card-heading"><div><span className={`listing-status listing-status-${item.status === "new" ? "pending" : item.status === "invited" ? "published" : "muted"}`}>{STATUS_TEXT[item.status]}</span><h3>{item.businessName}</h3><p>{item.fullName} · received {new Date(item.createdAt).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" })}</p></div></div>
         <p className="application-tagline">{item.tagline}</p>
         <dl className="application-details">
+          <div><dt>Address</dt><dd>{item.address}</dd></div>
           <div><dt>Product</dt><dd>{item.productDescription}</dd></div>
           <div><dt>Categories</dt><dd>{item.categories.join(", ")}</dd></div>
           <div><dt>Sells at</dt><dd>{item.salesChannels.join(", ")}</dd></div>
@@ -68,7 +69,7 @@ export default function ApplicationsPanel() {
           {item.status !== "archived" && item.status !== "new" && <button className="button-plain" type="button" disabled={update.isPending} onClick={() => update.mutate({ id: item.id, status: "archived", note: item.adminNote || "" })}><Archive size={14} /> Archive</button>}
           {item.status !== "new" && <button className="button-plain" type="button" disabled={update.isPending} onClick={() => update.mutate({ id: item.id, status: "new", note: item.adminNote || "" })}><RotateCcw size={14} /> Move to New</button>}
         </div>
-      </article>) : <div className="admin-empty"><Inbox size={20} /><h3>{filter === "new" ? "No new applications" : "Nothing here"}</h3><p>{filter === "new" ? "New vendor interest forms will appear here. You also get an email for each one." : "Try another filter."}</p></div>}
+      </article>) : <div className="admin-empty"><Inbox size={20} /><h3>{filter === "new" ? "No new applications" : "Nothing here"}</h3><p>{filter === "new" ? "New maker applications will appear here. You also get an email for each one." : "Try another filter."}</p></div>}
     </div>
   </section>;
 }

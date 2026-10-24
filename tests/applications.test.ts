@@ -3,7 +3,7 @@ import { applicationProblems, applicationSchema, EMPTY_APPLICATION, formatApplic
 
 const complete = {
   ...EMPTY_APPLICATION,
-  businessName: "The Forty-Five Workshop", city: "Gilroy", instagramUrl: "https://instagram.com/the45workshop",
+  businessName: "The Forty-Five Workshop", address: "100 Main St, Gilroy, CA 95020", instagramUrl: "https://instagram.com/the45workshop",
   tagline: "Hand built walnut boards and boxes.", productDescription: "Cutting boards, serving trays, and keepsake boxes made from local walnut.",
   fullName: "Gilbert Martin", email: "maker@example.com", areaCode: "408", localNumber: "555-1234", referredBy: "QR code in the store",
   categories: ["Home Decor"], salesChannels: ["Craft Shows", "Etsy"],
@@ -17,7 +17,7 @@ describe("vendor interest form", () => {
   });
   it("requires every answer except the website and social links", () => {
     const problems = applicationProblems({ ...EMPTY_APPLICATION });
-    expect(Object.keys(problems).sort()).toEqual(["businessName", "categories", "city", "email", "fullName", "phone", "productDescription", "referredBy", "salesChannels", "tagline"].sort());
+    expect(Object.keys(problems).sort()).toEqual(["businessName", "address", "categories", "email", "fullName", "phone", "productDescription", "referredBy", "salesChannels", "tagline"].sort());
   });
   it("asks for details when Other is chosen", () => {
     const problems = applicationProblems({ ...complete, categories: ["Other"], salesChannels: ["Other"] });

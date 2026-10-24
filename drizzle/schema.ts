@@ -123,7 +123,7 @@ export const aiUsage = sqliteTable("ai_usage", {
 export const makerApplications = sqliteTable("maker_applications", {
   id: integer("id").primaryKey({ autoIncrement: true }),
   businessName: text("businessName").notNull(),
-  city: text("city").notNull(),
+  address: text("address").notNull(),
   websiteUrl: text("websiteUrl"),
   facebookUrl: text("facebookUrl"),
   instagramUrl: text("instagramUrl"),

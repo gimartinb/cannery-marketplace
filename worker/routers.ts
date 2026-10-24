@@ -46,7 +46,7 @@ const clean = (value: string) => value.trim().replace(/\s+/g, " ");
 
 // Mounted at /api/trpc. Open to everyone.
 export const publicRouter = router({
-  // The vendor interest form on /apply.
+  // The maker application on /apply.
   applications: router({
     submit: publicProcedure.input(applicationSchema).mutation(async ({ ctx, input }) => {
       // Bots fill the hidden field; pretend it worked so they move on.
@@ -56,7 +56,7 @@ export const publicRouter = router({
       const categories = input.categories.filter((item) => (APPLICATION_CATEGORIES as readonly string[]).includes(item)).map((item) => (item === "Other" ? `Other: ${clean(input.categoryOther)}` : item));
       const salesChannels = input.salesChannels.filter((item) => (SALES_CHANNELS as readonly string[]).includes(item)).map((item) => (item === "Other" ? `Other: ${clean(input.salesOther)}` : item));
       const id = await createApplication(ctx.db, {
-        businessName: clean(input.businessName), city: clean(input.city), websiteUrl: normalizeLink("website", input.websiteUrl) || null, facebookUrl: normalizeLink("facebook", input.facebookUrl) || null,
+        businessName: clean(input.businessName), address: clean(input.address), websiteUrl: normalizeLink("website", input.websiteUrl) || null, facebookUrl: normalizeLink("facebook", input.facebookUrl) || null,
         instagramUrl: normalizeLink("instagram", input.instagramUrl) || null, otherSocial: clean(input.otherSocial) || null, tagline: clean(input.tagline), productDescription: input.productDescription.trim(),
         fullName: clean(input.fullName), email: input.email.trim().toLowerCase(), phone: formatApplicationPhone(input), referredBy: clean(input.referredBy),
         categories: JSON.stringify(categories), salesChannels: JSON.stringify(salesChannels), sourceHash: hash,
@@ -123,7 +123,7 @@ export const adminRouter = router({
     runStorageCheck: adminProcedure.mutation(({ ctx }) => runStorageMaintenance(ctx.env, { removeUnused: true })),
     // The same writing help for owners (listing editor and home highlights), with a higher daily limit.
     aiWrite: adminProcedure.input(aiWriteSchema).mutation(({ ctx, input }) => aiWrite(ctx.env, ctx.db, { email: ctx.email, role: "owner" }, input)),
-    // Vendor interest form submissions. "invited" also adds the email to the maker portal guest list.
+    // Maker application submissions. "invited" also adds the email to the maker portal guest list.
     applications: adminProcedure.query(({ ctx }) => listApplications(ctx.db)),
     setApplicationStatus: adminProcedure.input(z.object({ id: z.number().int().positive(), status: z.enum(["new", "invited", "declined", "archived"]), note: z.string().trim().max(1200).default("") })).mutation(async ({ ctx, input }) => {
       const application = await getApplication(ctx.db, input.id);

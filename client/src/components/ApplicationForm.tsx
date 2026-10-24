@@ -43,11 +43,11 @@ export default function ApplicationForm() {
         method: "POST",
         headers: { "Content-Type": "application/json", Accept: "application/json" },
         body: JSON.stringify({
-          _subject: `New vendor application: ${values.businessName.trim()}`,
+          _subject: `New maker application: ${values.businessName.trim()}`,
           _template: "table",
           _replyto: values.email.trim(),
           Business: values.businessName.trim(),
-          City: values.city.trim(),
+          Address: values.address.trim(),
           "Full name": values.fullName.trim(),
           Email: values.email.trim(),
           Phone: formatApplicationPhone(values),
@@ -66,14 +66,14 @@ export default function ApplicationForm() {
 
   return <>
     <form className="contact-form application-form" onSubmit={send} noValidate>
-      <h2>Vendor interest form</h2>
+      <h2>The Cannery Marketplace Maker Application</h2>
       <p>Fields marked with an asterisk are required. It takes about five minutes.</p>
       <input type="text" name="website2" value={honey} onChange={(event) => setHoney(event.target.value)} style={{ display: "none" }} tabIndex={-1} autoComplete="off" aria-hidden="true" />
 
       <fieldset className="application-section"><legend>About your business</legend>
         <div className="form-grid">
           <div className="form-field full"><label htmlFor="apply-businessName">Name of your business *</label><input id="apply-businessName" maxLength={140} autoComplete="organization" value={values.businessName} onChange={(event) => set("businessName", event.target.value)} {...invalid("businessName")} />{error("businessName")}</div>
-          <div className="form-field full"><label htmlFor="apply-city">City *</label><input id="apply-city" maxLength={80} autoComplete="address-level2" placeholder="Gilroy" value={values.city} onChange={(event) => set("city", event.target.value)} {...invalid("city")} />{error("city")}</div>
+          <div className="form-field full"><label htmlFor="apply-address">Address *</label><input id="apply-address" maxLength={200} autoComplete="street-address" placeholder="Street, city, state, ZIP" value={values.address} onChange={(event) => set("address", event.target.value)} {...invalid("address")} />{error("address")}</div>
           <div className="form-field full"><label htmlFor="apply-websiteUrl">Website (optional)</label><input id="apply-websiteUrl" inputMode="url" placeholder="yourshop.com" value={values.websiteUrl} onChange={(event) => set("websiteUrl", event.target.value)} {...invalid("websiteUrl")} />{error("websiteUrl")}</div>
           <p className="form-hint full">Social media is optional. Type your @handle or paste the full link.</p>
           <div className="form-field"><label htmlFor="apply-instagramUrl">Instagram</label><input id="apply-instagramUrl" placeholder="@yourshop" value={values.instagramUrl} onChange={(event) => set("instagramUrl", event.target.value)} {...invalid("instagramUrl")} />{error("instagramUrl")}</div>
@@ -113,15 +113,15 @@ export default function ApplicationForm() {
       </fieldset>
 
       {showProblems && Object.keys(problems).length > 0 && <p className="form-error application-summary" role="alert">Please fix the {Object.keys(problems).length === 1 ? "item" : `${Object.keys(problems).length} items`} marked above.</p>}
-      <button className="button-primary" type="submit" disabled={submit.isPending}>{submit.isPending ? <><Loader2 size={15} className="animate-spin" /> Sending…</> : <>Send my interest form <ArrowRight size={15} /></>}</button>
-      <p className="form-note">This is not an application for a guaranteed space. Our team reviews every form and will contact you if your work is a good fit. Please do not include payment information.</p>
+      <button className="button-primary" type="submit" disabled={submit.isPending}>{submit.isPending ? <><Loader2 size={15} className="animate-spin" /> Sending…</> : <>Send my application <ArrowRight size={15} /></>}</button>
+      <p className="form-note">Completing the application does not guarantee a space in the marketplace. Our team reviews every application and will contact you if your work is a good fit. Please do not include payment information.</p>
     </form>
 
     <Dialog open={result !== null} onOpenChange={(open) => { if (!open) setResult(null); }}>
       <DialogContent>
         <DialogHeader>
           <DialogTitle style={{ display: "flex", alignItems: "center", gap: ".5rem" }}>{result?.kind === "success" ? <><CheckCircle2 size={20} color="var(--gold)" /> Thank you{result.name ? `, ${result.name}` : ""}</> : <><TriangleAlert size={20} /> Form not sent</>}</DialogTitle>
-          <DialogDescription>{result?.kind === "success" ? "We received your vendor interest form. Our team reviews every submission and will contact you by email if your work is a good fit for our shelves." : result?.kind === "error" ? result.message : ""}</DialogDescription>
+          <DialogDescription>{result?.kind === "success" ? "We received your maker application. Our team reviews every submission and will contact you by email if your work is a good fit for our shelves." : result?.kind === "error" ? result.message : ""}</DialogDescription>
         </DialogHeader>
         <DialogFooter>{result?.kind === "success" ? <Link className="button-primary" href="/vendors" onClick={() => setResult(null)}>Meet our makers</Link> : <button className="button-primary" type="button" onClick={() => setResult(null)}>Close</button>}</DialogFooter>
       </DialogContent>

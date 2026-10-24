@@ -1,8 +1,8 @@
 import { z } from "zod";
 import { normalizeLink, type LinkKind } from "./socialLinks";
 
-// The vendor interest form (replaces the Google Form). The questions and
-// answer choices match the marketplace's original form.
+// The maker application (replaces the Google Form). The questions and
+// answer choices match the marketplace's Google Form.
 
 export const APPLICATION_CATEGORIES = [
   "Art",
@@ -28,7 +28,7 @@ export type ApplicationStatus = (typeof APPLICATION_STATUSES)[number];
 
 export type ApplicationValues = {
   businessName: string;
-  city: string;
+  address: string;
   websiteUrl: string;
   facebookUrl: string;
   instagramUrl: string;
@@ -47,7 +47,7 @@ export type ApplicationValues = {
 };
 
 export const EMPTY_APPLICATION: ApplicationValues = {
-  businessName: "", city: "", websiteUrl: "", facebookUrl: "", instagramUrl: "", otherSocial: "", tagline: "", productDescription: "",
+  businessName: "", address: "", websiteUrl: "", facebookUrl: "", instagramUrl: "", otherSocial: "", tagline: "", productDescription: "",
   fullName: "", email: "", areaCode: "", localNumber: "", referredBy: "", categories: [], categoryOther: "", salesChannels: [], salesOther: "",
 };
 
@@ -82,9 +82,9 @@ export function applicationProblems(values: ApplicationValues): ApplicationProbl
   if (business.length < 2) problems.businessName = "Enter the name of your business.";
   else if (business.length > 140) problems.businessName = "Keep the business name under 140 characters.";
 
-  const city = text(values.city);
-  if (city.length < 2) problems.city = "Enter the city where you make your products.";
-  else if (city.length > 80) problems.city = "Keep the city under 80 characters.";
+  const address = text(values.address);
+  if (address.length < 5) problems.address = "Enter your business address.";
+  else if (address.length > 200) problems.address = "Keep the address under 200 characters.";
 
   const website = linkProblem(values.websiteUrl, "website", "website");
   if (website) problems.websiteUrl = website;
@@ -138,7 +138,7 @@ export function applicationProblems(values: ApplicationValues): ApplicationProbl
   return problems;
 }
 
-export const APPLICATION_FIELD_ORDER: ApplicationField[] = ["businessName", "city", "websiteUrl", "facebookUrl", "instagramUrl", "otherSocial", "social", "tagline", "productDescription", "fullName", "email", "phone", "areaCode", "localNumber", "referredBy", "categories", "categoryOther", "salesChannels", "salesOther"];
+export const APPLICATION_FIELD_ORDER: ApplicationField[] = ["businessName", "address", "websiteUrl", "facebookUrl", "instagramUrl", "otherSocial", "social", "tagline", "productDescription", "fullName", "email", "phone", "areaCode", "localNumber", "referredBy", "categories", "categoryOther", "salesChannels", "salesOther"];
 
 export function formatApplicationPhone(values: Pick<ApplicationValues, "areaCode" | "localNumber">) {
   const area = digits(values.areaCode);
@@ -148,7 +148,7 @@ export function formatApplicationPhone(values: Pick<ApplicationValues, "areaCode
 
 /** Server side: the same rules, plus size limits on every field. */
 export const applicationSchema = z.object({
-  businessName: z.string().max(140), city: z.string().max(80), websiteUrl: z.string().max(300), facebookUrl: z.string().max(300), instagramUrl: z.string().max(300),
+  businessName: z.string().max(140), address: z.string().max(200), websiteUrl: z.string().max(300), facebookUrl: z.string().max(300), instagramUrl: z.string().max(300),
   otherSocial: z.string().max(300), tagline: z.string().max(160), productDescription: z.string().max(1500), fullName: z.string().max(100), email: z.string().max(254),
   areaCode: z.string().max(5), localNumber: z.string().max(10), referredBy: z.string().max(200),
   categories: z.array(z.string().max(40)).max(APPLICATION_CATEGORIES.length), categoryOther: z.string().max(80),
