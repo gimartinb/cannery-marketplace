@@ -6,7 +6,7 @@ import { APPLICATION_CATEGORIES, applicationSchema, formatApplicationPhone, SALE
 import { TRPCError } from "@trpc/server";
 import { deleteSiteImageObject } from "./media";
 import {
-  bulkImportVendorProfiles, deleteSiteImage, getSiteImage, listSiteImages, setSiteImageAlt, createVendorSubmission, getPublicVendorProfile, listMakerListings, makerOwnsProfile, freeSlugFor, updateVendorProfileAsOwner, assignListingLogin, bulkUpdateVendorProfiles, deleteVendorProfiles,
+  bulkImportVendorProfiles, listSiteImages, createVendorSubmission, getPublicVendorProfile, listMakerListings, makerOwnsProfile, freeSlugFor, updateVendorProfileAsOwner, assignListingLogin, bulkUpdateVendorProfiles, deleteVendorProfiles,
   APPLICATION_LIMIT_PER_SOURCE_PER_DAY, countRecentApplications, createApplication, getApplication, listApplications, setApplicationStatus, startListingFromApplication,
   DIRECTORY_PAGE_SIZES, getSiteSetting, listAllVendorProfiles, listFeaturedVendorProfiles, listPublicVendorCategories, listPublicVendorPage, listVendorSubmissions,
   reviewVendorSubmission, setSiteSetting, setVendorActive, addMakerInvites, listMakerInvites, removeMakerInvite,
@@ -14,6 +14,7 @@ import {
   listPublicHighlights, reorderGalleryPhotos, updateGalleryPhoto, updateHighlight,
 } from "./db";
 import { aiWrite } from "./aiWriting";
+import { discardImageDraft, draftOriginalImage, listImageDrafts, previewSiteImages, publishSiteImages, saveImageDraftAlt } from "./siteImages";
 import { discardSiteTextDraft, listSiteTextForOwners, previewSiteText, publishedSiteText, publishSiteText, restoreOriginalSiteText, saveSiteTextDraft } from "./siteText";
 import { countRecentGiftRequests, createGiftRequest, deleteGiftBox, getCommerceSettings, GIFT_REQUEST_LIMIT_PER_SOURCE_PER_DAY, listGiftBoxChoices, listGiftBoxes, listGiftRequests, listPublicGiftBoxes, saveGiftBox, setCommerceSettings, squareApiReady, updateGiftRequest } from "./gifts";
 import { BRANDING_OPTIONS, commerceSettingsSchema, GIFT_CATEGORIES, GIFT_REQUEST_STATUSES, giftBoxSchema, giftRequestSchema } from "../shared/gifts";
@@ -187,15 +188,18 @@ export const adminRouter = router({
     deleteVendors: adminProcedure.input(z.object({ ids: z.array(z.number().int().positive()).min(1, "Select at least one listing").max(500) })).mutation(({ ctx, input }) => deleteVendorProfiles(ctx.db, input.ids)),
     setVendorActive: adminProcedure.input(z.object({ id: z.number().int().positive(), active: z.boolean() })).mutation(async ({ ctx, input }) => { await setVendorActive(ctx.db, input.id, input.active); return { success: true }; }),
     // Uploads use POST /api/admin/upload?slot=... (raw bytes, see media.ts). These edit or undo them.
-    setSiteImageAlt: adminProcedure.input(z.object({ id: z.enum(SITE_IMAGE_SLOT_IDS), alt: z.string().trim().max(300) })).mutation(async ({ ctx, input }) => {
-      if (!(await setSiteImageAlt(ctx.db, input.id, input.alt))) throw new TRPCError({ code: "NOT_FOUND", message: "Upload a replacement image before editing its description." });
-      return { success: true };
-    }),
-    resetSiteImage: adminProcedure.input(z.object({ id: z.enum(SITE_IMAGE_SLOT_IDS) })).mutation(async ({ ctx, input }) => {
-      const current = await getSiteImage(ctx.db, input.id);
-      await deleteSiteImage(ctx.db, input.id);
-      await deleteSiteImageObject(ctx.env, current?.url);
-      return { success: true };
+    // Image spots use Draft then Publish, like site text. Uploads arrive as drafts (see media.ts).
+    siteImageDrafts: adminProcedure.query(({ ctx }) => listImageDrafts(ctx.db)),
+    siteImagesPreview: adminProcedure.query(({ ctx }) => previewSiteImages(ctx.db)),
+    setSiteImageAlt: adminProcedure.input(z.object({ id: z.enum(SITE_IMAGE_SLOT_IDS), alt: z.string().trim().max(300) })).mutation(async ({ ctx, input }) => { await saveImageDraftAlt(ctx.db, input.id, input.alt, ctx.email); return { success: true }; }),
+    resetSiteImage: adminProcedure.input(z.object({ id: z.enum(SITE_IMAGE_SLOT_IDS) })).mutation(async ({ ctx, input }) => { await draftOriginalImage(ctx.env, ctx.db, input.id, ctx.email); return { success: true }; }),
+    discardSiteImageDraft: adminProcedure.input(z.object({ id: z.enum(SITE_IMAGE_SLOT_IDS) })).mutation(async ({ ctx, input }) => { await discardImageDraft(ctx.env, ctx.db, input.id); return { success: true }; }),
+    publishSiteImages: adminProcedure.input(z.object({ ids: z.array(z.enum(SITE_IMAGE_SLOT_IDS)).max(20) })).mutation(({ ctx, input }) => publishSiteImages(ctx.env, ctx.db, input.ids)),
+    // One button for every page: publishes all text and image drafts together.
+    publishAllPageDrafts: adminProcedure.mutation(async ({ ctx }) => {
+      const text = await publishSiteText(ctx.db, "all", ctx.email);
+      const images = await publishSiteImages(ctx.env, ctx.db, "all");
+      return { text: text.published, images: images.published };
     }),
     // Maker portal guest list. Owners paste emails here; no Cloudflare dashboard needed.
     makerInvites: adminProcedure.query(({ ctx }) => listMakerInvites(ctx.db)),

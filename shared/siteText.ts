@@ -114,6 +114,11 @@ export const SITE_TEXT: SiteTextBlock[] = [
     ["list.search", "Directory: search box hint", "button", "Search makers"],
     ["empty.title", "No results: heading", "heading", "No makers found"],
     ["empty.body", "No results: text", "item", "Try a different name, category, or keyword."],
+    ["featured.eyebrow", "Featured spotlight: small label", "eyebrow", "Featured makers"],
+    ["featured.title", "Featured spotlight: heading", "heading", "In the *spotlight.*"],
+    ["featured.body", "Featured spotlight: text", "item", "Hand picked by our team. Meet the makers we are most excited about right now."],
+    ["featured.link", "Featured spotlight: button", "button", "Meet the maker"],
+    ["card.featured", "Maker card: featured badge", "button", "Featured"],
     ["card.link", "Maker card: link", "button", "View profile"],
   ]),
   ...page("profile", [

@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 import type { SiteImageSlotId } from "@shared/siteImageSlots";
 import { trpc } from "@/lib/trpc";
+import { useOwnerPreview } from "@/lib/siteText";
 
 export type SiteImage = { id: SiteImageSlotId; label: string; description: string; url: string; alt: string; caption: string; recommended: string; defaultUrl: string; customized: boolean };
 
@@ -16,19 +17,26 @@ const defaults: SiteImageDefault[] = [
   { id: "social-sharing", label: "Social sharing image", description: "The image used when pages are shared on social networks.", defaultUrl: "/images/cannery-interior.jpg", alt: "The Cannery Marketplace interior in Gilroy, California", caption: "The Cannery Marketplace, Gilroy, California", recommended: "Landscape, 1.91:1 (1200 x 630 px)" },
 ];
 
+/** Built-in image details (label, default file, shape), for the owner portal. */
+export const siteImageDefaults = defaults;
+
 /** The built-in images only, with no owner replacements applied. */
 export const defaultSiteImages: SiteImage[] = defaults.map((image) => ({ ...image, url: image.defaultUrl, customized: false }));
 
 /** Every image spot, with the owner's replacement applied where one exists. Shows defaults while loading. */
 export function useSiteImages(): SiteImage[] {
   const { data } = trpc.siteImages.list.useQuery(undefined, { staleTime: 5 * 60_000 });
+  // While an owner previews drafts, show the draft images too.
+  const preview = useOwnerPreview();
+  const drafts = trpc.adminPortal.siteImagesPreview.useQuery(undefined, { enabled: preview, retry: false });
+  const rows = preview && drafts.data ? drafts.data : data;
   return useMemo(() => {
-    const overrides = new Map((data || []).map((row) => [row.id, row]));
+    const overrides = new Map((rows || []).map((row) => [row.id, row]));
     return defaults.map((image) => {
       const override = overrides.get(image.id);
       return override ? { ...image, url: override.url, alt: override.alt || image.alt, customized: true } : { ...image, url: image.defaultUrl, customized: false };
     });
-  }, [data]);
+  }, [rows]);
 }
 
 /** One image spot, with the owner's replacement applied. */

@@ -11,7 +11,7 @@ It runs entirely on Cloudflare's free plan, so hosting costs **$0 a month**, wit
 
 **For shoppers**
 * Home page with featured makers and scheduled "Find something with a story" highlights
-* Maker directory with search, category filter, and 10, 25, or 50 makers per page
+* Maker directory with an "In the spotlight" section for featured makers, search, category filter, and 10, 25, or 50 makers per page
 * A profile page for every maker: photos, story, owner, and social links
 * About page with an "Inside the Cannery" photo gallery
 * Contact form that keeps visitors on the site
@@ -29,8 +29,7 @@ It runs entirely on Cloudflare's free plan, so hosting costs **$0 a month**, wit
 * Review queue: each update shows exactly what changed (added and removed words, new and removed photos) before you approve, request changes, or reject
 * Published vendors: edit any listing, bulk assign login emails, show or hide, feature
 * Maker access: who can sign in, and which listings each email can edit
-* Site text: edit any heading, paragraph, button, hours, or contact detail with drafts, preview, publish, history, Restore original, and AI help
-* Site images, home highlights with start and end dates, photo gallery
+* Edit pages: every page's words and photos in one place, in page order (including home highlights with start and end dates and the About gallery), with drafts, preview, publish, history, Restore original, and AI help
 * Gifts and corporate (hidden until turned on): gift boxes with checkout links from Square or any point of sale, and corporate and custom gift requests with quotes and invoice numbers
 * Spreadsheet import for many makers at once
 * A "Free plan usage" card showing AI use, photo storage, and uploads

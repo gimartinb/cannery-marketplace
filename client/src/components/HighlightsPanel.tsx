@@ -32,7 +32,7 @@ function statuses(rows: Row[], now = new Date()) {
 }
 
 /** Owner dashboard tab: the "Find something with a story" cards on the home page. */
-export default function HighlightsPanel({ vendors }: { vendors: Vendor[] }) {
+export default function HighlightsPanel({ vendors, embedded = false }: { vendors: Vendor[]; embedded?: boolean }) {
   const utils = trpc.useUtils();
   const list = trpc.adminPortal.highlights.useQuery();
   const [draft, setDraft] = useState<Draft | null>(null);
@@ -76,7 +76,7 @@ export default function HighlightsPanel({ vendors }: { vendors: Vendor[] }) {
     save.mutate({ id: draft.id, title: draft.title, description: draft.description, category: draft.category, makerSlug: draft.makerSlug || null, imageUrl: draft.imageUrl || null, displayOrder: draft.displayOrder, startsAt: startOfDay(draft.startDate), endsAt: afterDay(draft.endDate) });
   }
 
-  return <section className="admin-content"><div className="admin-section-heading"><div><p className="eyebrow">Home page</p><h2>Home highlights</h2><p>The "Find something with a story" section shows up to {SHOWN} cards. Promote a maker from your list or write your own card. Give a card start and end dates and it appears and disappears on its own. When more than {SHOWN} are live, the {SHOWN} newest show.</p></div>{!draft && <button className="button-primary" type="button" onClick={() => setDraft({ ...EMPTY, displayOrder: rows.length + 1 })}><Plus size={14} /> Write a custom card</button>}</div>
+  return <section className={embedded ? "embedded-panel" : "admin-content"}><div className="admin-section-heading"><div><p className="eyebrow">Home page</p><h2>Home highlights</h2><p>The "Find something with a story" section shows up to {SHOWN} cards. Promote a maker from your list or write your own card. Give a card start and end dates and it appears and disappears on its own. When more than {SHOWN} are live, the {SHOWN} newest show.</p></div>{!draft && <button className="button-primary" type="button" onClick={() => setDraft({ ...EMPTY, displayOrder: rows.length + 1 })}><Plus size={14} /> Write a custom card</button>}</div>
     {!draft && activeVendors.length > 0 && <div className="secure-admin-card promote-card"><Sparkles size={18} /><label>Promote a maker<select value="" onChange={(event) => promote(event.target.value)}><option value="">Choose a maker to fill in a card…</option>{activeVendors.map((vendor) => <option key={vendor.slug} value={vendor.slug}>{vendor.name} · {vendor.category}</option>)}</select></label><small className="form-hint">Uses the maker's name, category, description, and cover photo. You can change any of it before saving.</small></div>}
     {draft && <form className="secure-admin-card" onSubmit={submit}>
       <div className="secure-card-heading"><div><h3>{draft.id ? "Edit highlight" : draft.makerSlug ? "Promote a maker" : "New custom card"}</h3></div><button className="button-plain compact-button" type="button" onClick={() => setDraft(null)}><X size={13} /> Close</button></div>

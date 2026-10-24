@@ -8,7 +8,7 @@ import { describeRequirement } from "@shared/imageRequirements";
 const MAX = 12;
 
 /** Owner dashboard tab: the About page "Inside the Cannery" gallery (up to 12 photos). */
-export default function GalleryPanel() {
+export default function GalleryPanel({ embedded = false }: { embedded?: boolean }) {
   const utils = trpc.useUtils();
   const gallery = trpc.gallery.list.useQuery();
   const [uploading, setUploading] = useState(false);
@@ -47,7 +47,7 @@ export default function GalleryPanel() {
     reorder.mutate({ ids });
   }
 
-  return <section className="admin-content"><div className="admin-section-heading"><div><p className="eyebrow">About page</p><h2>Photo gallery</h2><p>Up to {MAX} photos in the "Inside the Cannery" section of the About page, shown in this order. The section is hidden when the gallery is empty. {photos.length} of {MAX} used. Each photo needs {describeRequirement("gallery")}.</p></div>
+  return <section className={embedded ? "embedded-panel" : "admin-content"}><div className="admin-section-heading"><div><p className="eyebrow">About page</p><h2>Photo gallery</h2><p>Up to {MAX} photos in the "Inside the Cannery" section of the About page, shown in this order. The section is hidden when the gallery is empty. {photos.length} of {MAX} used. Each photo needs {describeRequirement("gallery")}.</p></div>
     <div className="review-actions">{remaining > 0 && <ImageUploadButton spot="gallery" multiple busy={uploading} onFiles={addPhotos} className="button-primary">Add photos</ImageUploadButton>}<a className="button-plain" href="/about" target="_blank" rel="noreferrer"><ExternalLink size={14} /> View About page</a></div></div>
     <div className="secure-review-list">{gallery.isLoading ? <div className="admin-empty"><Loader2 className="animate-spin" /></div> : photos.length ? photos.map((photo, index) => <GalleryPhotoCard key={photo.id} photo={photo} first={index === 0} last={index === photos.length - 1} onMove={(direction) => move(index, direction)} moving={reorder.isPending} onChanged={refresh} />) : <div className="admin-empty"><h3>No photos yet</h3><p>Add photos of the marketplace to show a gallery on the About page.</p></div>}</div>
   </section>;

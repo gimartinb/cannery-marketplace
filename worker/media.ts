@@ -1,6 +1,7 @@
 import { isSiteImageSlot } from "../shared/siteImageSlots";
+import { saveImageDraftUpload } from "./siteImages";
 import { getAccessIdentity, isAdminEmail } from "./access";
-import { addGalleryPhoto, countGalleryPhotos, createDb, getOrCreateVendorAccount, getSiteImage, isInvitedMaker, MAX_GALLERY_PHOTOS, setSiteImageUrl } from "./db";
+import { addGalleryPhoto, countGalleryPhotos, createDb, getOrCreateVendorAccount, isInvitedMaker, MAX_GALLERY_PHOTOS } from "./db";
 import type { Env } from "./env";
 import { deleteStoredObject, recordUpload, storageRoomProblem } from "./usage";
 
@@ -68,7 +69,7 @@ export async function handleVendorUpload(request: Request, env: Env): Promise<Re
 
 /**
  * POST /api/admin/upload  (owners only). Body: the raw image bytes.
- *   ?slot=<site image spot>  replaces that spot's image and removes the previous upload
+ *   ?slot=<site image spot>  saves a draft replacement for that spot (published from Edit pages)
  *   ?purpose=highlight       stores a home highlight image and returns its URL (saved with the highlight)
  *   ?purpose=gift            stores a gift box photo and returns its URL (saved with the box)
  *   ?purpose=gallery&alt=... adds a photo to the About page gallery (up to 12)
@@ -110,13 +111,12 @@ export async function handleSiteImageUpload(request: Request, env: Env): Promise
   const upload = validateImageUpload(request);
   if (upload instanceof Response) return upload;
 
-  const previous = await getSiteImage(db, slot);
   const key = `site/${slot}_${randomSuffix()}.${upload.extension}`;
   { const refused = await storeObject(env, key, upload); if (refused) return refused; }
   const url = `/media/${key}`;
-  await setSiteImageUrl(db, slot, url);
-  await deleteSiteImageObject(env, previous?.url);
-  return json({ key, url });
+  // Saved as a draft. Visitors see it after an owner publishes (Edit pages).
+  await saveImageDraftUpload(env, db, slot, url, identity.email);
+  return json({ key, url, draft: true });
 }
 
 /**

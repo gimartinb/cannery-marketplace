@@ -75,6 +75,16 @@ export const siteImages = sqliteTable("site_images", {
   updatedAt: updatedAt(),
 });
 
+// An owner's unpublished change to an image spot (Edit pages, Draft then Publish).
+// url null means "back to the original image" once published.
+export const siteImageDrafts = sqliteTable("site_image_drafts", {
+  id: text("id").primaryKey(),
+  url: text("url"),
+  alt: text("alt"),
+  draftBy: text("draftBy"),
+  updatedAt: updatedAt(),
+});
+
 // The guest list for the maker portal. Cloudflare Access lets anyone request an
 // email code; only these emails (plus the owners) can then use the portal.
 export const makerInvites = sqliteTable("maker_invites", {

@@ -1,4 +1,4 @@
-import { ArrowRight, Loader2, Search, Sparkles, X } from "lucide-react";
+import { ArrowRight, Award, Loader2, Search, X } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "wouter";
 import PageMeta from "@/components/PageMeta";
@@ -33,6 +33,10 @@ export default function Vendors() {
   );
   const visibleVendors = useMemo(() => (directory.data?.pages || []).flatMap((page) => page.items).map(publishedVendorToView), [directory.data]);
   const total = directory.data?.pages[0]?.total ?? 0;
+  // Featured makers get their own spotlight above the directory (the same makers as the home page).
+  const featuredQuery = trpc.directory.featured.useQuery(undefined, { staleTime: 5 * 60_000 });
+  const spotlight = useMemo(() => (featuredQuery.data || []).map(publishedVendorToView), [featuredQuery.data]);
+  const browsing = !debouncedSearch && category === "All makers";
   const remaining = Math.max(0, total - visibleVendors.length);
 
   return (
@@ -47,6 +51,29 @@ export default function Vendors() {
           </div>
         </section>
 
+        {browsing && spotlight.length > 0 && <section className="maker-spotlight" aria-labelledby="spotlight-title">
+          <div className="site-container">
+            <div className="maker-spotlight-heading">
+              <div><p className="eyebrow"><Award size={14} /> <Txt k="makers.featured.eyebrow" /></p><h2 className="display" id="spotlight-title"><Txt k="makers.featured.title" /></h2></div>
+              <p><Txt k="makers.featured.body" /></p>
+            </div>
+            <div className={`maker-spotlight-grid count-${spotlight.length}`}>
+              {spotlight.map((vendor) => <article className="spotlight-card" key={vendor.slug}>
+                <Link href={`/vendors/${vendor.slug}`} className={`spotlight-photo vendor-tone-${vendor.tone}`} aria-label={`Meet ${vendor.name}`}>
+                  {vendor.photoUrl ? <img src={vendor.photoUrl} alt={`${vendor.name}, a ${vendor.category} maker at The Cannery Marketplace`} width="800" height="600" loading="lazy" decoding="async" /> : <span className="vendor-initials">{vendor.initials}</span>}
+                  <span className="spotlight-ribbon"><Award size={13} /> <Txt k="makers.card.featured" /></span>
+                </Link>
+                <div className="spotlight-copy">
+                  <span className="spotlight-category">{vendor.category}</span>
+                  <h3><Link href={`/vendors/${vendor.slug}`}>{vendor.name}</Link></h3>
+                  <p>{vendor.bio}</p>
+                  <Link className="button-primary spotlight-button" href={`/vendors/${vendor.slug}`}><Txt k="makers.featured.link" /> <ArrowRight size={14} /></Link>
+                </div>
+              </article>)}
+            </div>
+          </div>
+        </section>}
+
         <section className="directory-section">
           <div className="site-container">
             <div className="directory-toolbar">
@@ -58,14 +85,15 @@ export default function Vendors() {
             </div>
 
             {directory.isLoading ? <div className="directory-empty"><Loader2 size={19} className="animate-spin" /><h3>Loading makers…</h3></div> : visibleVendors.length > 0 ? <div className="vendor-grid">
-              {visibleVendors.map((vendor, index) => (
-                <article className={`vendor-card ${index === 0 ? "vendor-card-featured" : ""}`} key={vendor.slug}>
+              {visibleVendors.map((vendor) => (
+                <article className={`vendor-card${vendor.featured ? " is-featured" : ""}`} key={vendor.slug}>
                   <Link href={`/vendors/${vendor.slug}`} className={`vendor-placeholder vendor-tone-${vendor.tone}`} aria-label={`View ${vendor.name} profile`}>
+                    {vendor.featured && <span className="vendor-card-ribbon"><Award size={12} /> <Txt k="makers.card.featured" /></span>}
                     {vendor.photoUrl && <img className="vendor-photo" src={vendor.photoUrl} alt={`${vendor.name}, a ${vendor.category} maker at The Cannery Marketplace`} width="800" height="800" loading="lazy" decoding="async" />}
                                         <span className="vendor-initials">{vendor.initials}</span>
                                       </Link>
                   <div className="vendor-card-copy">
-                    <div className="vendor-card-meta"><span>{vendor.category}</span>{vendor.featured && <span className="featured-label"><Sparkles size={12} /> Featured</span>}</div>
+                    <div className="vendor-card-meta"><span>{vendor.category}</span></div>
                     <h3><Link href={`/vendors/${vendor.slug}`}>{vendor.name}</Link></h3>
                     <p>{vendor.bio}</p>
                     <Link className="text-link" href={`/vendors/${vendor.slug}`}><Txt k="makers.card.link" /> <ArrowRight size={15} /></Link>
