@@ -65,8 +65,8 @@ export function textToHtml(text: string) {
  * the daily limit is reached, or the email service refuses.
  */
 export async function sendEmail(env: Env, db: Database, message: { template: EmailTemplateId; to: string; subject: string; body: string; about?: string; sentBy: string }) {
-  if (!emailReady(env)) throw new TRPCError({ code: "PRECONDITION_FAILED", message: "Sending email from the site is not set up yet. Use Open in my email app for now." });
-  if ((await sentToday(db)) >= EMAIL_DAILY_LIMIT) throw new TRPCError({ code: "TOO_MANY_REQUESTS", message: `The site has sent ${EMAIL_DAILY_LIMIT} emails in the last day, the free plan's safe limit. Use Open in my email app, or try again tomorrow.` });
+  if (!emailReady(env)) throw new TRPCError({ code: "PRECONDITION_FAILED", message: "Sending email from the site is not set up yet. Use Open in Gmail for now." });
+  if ((await sentToday(db)) >= EMAIL_DAILY_LIMIT) throw new TRPCError({ code: "TOO_MANY_REQUESTS", message: `The site has sent ${EMAIL_DAILY_LIMIT} emails in the last day, the free plan's safe limit. Use Open in Gmail, or try again tomorrow.` });
   const log = { template: message.template, to: message.to, subject: message.subject, about: message.about || null, sentBy: message.sentBy };
   let response: Response;
   try {

@@ -22,6 +22,9 @@ const ComposerContext = createContext<(request: EmailRequest) => void>(() => und
 /** Opens the Preview, then Send window from anywhere in the owner portal. */
 export function useEmailComposer() { return useContext(ComposerContext); }
 
+// Opens Gmail's compose window in the browser, signed in as the marketplace inbox when that account is open.
+const GMAIL_ACCOUNT = "thecannerymarketplace@gmail.com";
+const gmailLink = (draft: Draft) => `https://mail.google.com/mail/?view=cm&fs=1&authuser=${encodeURIComponent(GMAIL_ACCOUNT)}&to=${encodeURIComponent(draft.to)}&su=${encodeURIComponent(draft.subject)}&body=${encodeURIComponent(draft.body)}`;
 const mailto = (draft: Draft) => `mailto:${encodeURIComponent(draft.to)}?subject=${encodeURIComponent(draft.subject)}&body=${encodeURIComponent(draft.body)}`;
 
 /** Shared values every template can use. */
@@ -77,7 +80,7 @@ export function EmailComposerProvider({ children }: { children: ReactNode }) {
       <DialogContent className="email-composer">
         <DialogHeader>
           <DialogTitle style={{ display: "flex", alignItems: "center", gap: ".5rem" }}><Mail size={18} /> {label}</DialogTitle>
-          <DialogDescription>Check the message and change anything you like. {ready ? `It is sent from ${setup.data?.from}, and replies go to ${setup.data?.replyTo || "the marketplace inbox"}.` : "Sending from the site is not set up yet, so use Open in my email app."}</DialogDescription>
+          <DialogDescription>Check the message and change anything you like. {ready ? `It is sent from ${setup.data?.from}, and replies go to ${setup.data?.replyTo || "the marketplace inbox"}.` : "Sending from the site is not set up yet, so use Open in Gmail or Open in my email app."}</DialogDescription>
         </DialogHeader>
         {draft && <div className="email-composer-fields">
           <label>To<input type="email" value={draft.to} onChange={(event) => setDraft({ ...draft, to: event.target.value })} /></label>
@@ -86,7 +89,8 @@ export function EmailComposerProvider({ children }: { children: ReactNode }) {
           {ready && setup.data && <small className="form-hint">{setup.data.sentToday} of {setup.data.dailyLimit} emails sent in the last day.</small>}
         </div>}
         <DialogFooter className="email-composer-actions">
-          {draft && <a className="button-plain" href={mailto(draft)} onClick={() => { draft.onSent?.(); setDraft(null); }}><ExternalLink size={14} /> Open in my email app</a>}
+          {draft && <a className="button-plain" href={gmailLink(draft)} target="_blank" rel="noopener noreferrer" onClick={() => { draft.onSent?.(); setDraft(null); }}><ExternalLink size={14} /> Open in Gmail</a>}
+          {draft && <a className="button-plain" href={mailto(draft)} onClick={() => { draft.onSent?.(); setDraft(null); }}><Mail size={14} /> Open in my email app</a>}
           <button className="button-primary" type="button" disabled={!ready || send.isPending || !draft?.to || !draft?.subject.trim() || !draft?.body.trim()} onClick={() => void sendNow()}>{send.isPending ? <><Loader2 size={14} className="animate-spin" /> Sending…</> : <><Send size={14} /> Send</>}</button>
         </DialogFooter>
       </DialogContent>
