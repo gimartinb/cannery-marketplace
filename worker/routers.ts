@@ -6,7 +6,7 @@ import { APPLICATION_CATEGORIES, applicationSchema, formatApplicationPhone, SALE
 import { TRPCError } from "@trpc/server";
 import { deleteSiteImageObject } from "./media";
 import {
-  bulkImportVendorProfiles, deleteSiteImage, getSiteImage, listSiteImages, setSiteImageAlt, createVendorSubmission, getPublicVendorProfile, listMakerListings, makerOwnsProfile, freeSlugFor, updateVendorProfileAsOwner, assignListingLogin, bulkUpdateVendorProfiles,
+  bulkImportVendorProfiles, deleteSiteImage, getSiteImage, listSiteImages, setSiteImageAlt, createVendorSubmission, getPublicVendorProfile, listMakerListings, makerOwnsProfile, freeSlugFor, updateVendorProfileAsOwner, assignListingLogin, bulkUpdateVendorProfiles, deleteVendorProfiles,
   APPLICATION_LIMIT_PER_SOURCE_PER_DAY, countRecentApplications, createApplication, getApplication, listApplications, setApplicationStatus, startListingFromApplication,
   DIRECTORY_PAGE_SIZES, getSiteSetting, listAllVendorProfiles, listFeaturedVendorProfiles, listPublicVendorCategories, listPublicVendorPage, listVendorSubmissions,
   reviewVendorSubmission, setSiteSetting, setVendorActive, addMakerInvites, listMakerInvites, removeMakerInvite,
@@ -152,6 +152,8 @@ export const adminRouter = router({
       const { ids, ...change } = input;
       return bulkUpdateVendorProfiles(ctx.db, ids, change, ctx.email);
     }),
+    // Permanent delete of one or many listings (the dashboard asks for confirmation first).
+    deleteVendors: adminProcedure.input(z.object({ ids: z.array(z.number().int().positive()).min(1, "Select at least one listing").max(500) })).mutation(({ ctx, input }) => deleteVendorProfiles(ctx.db, input.ids)),
     setVendorActive: adminProcedure.input(z.object({ id: z.number().int().positive(), active: z.boolean() })).mutation(async ({ ctx, input }) => { await setVendorActive(ctx.db, input.id, input.active); return { success: true }; }),
     // Uploads use POST /api/admin/upload?slot=... (raw bytes, see media.ts). These edit or undo them.
     setSiteImageAlt: adminProcedure.input(z.object({ id: z.enum(SITE_IMAGE_SLOT_IDS), alt: z.string().trim().max(300) })).mutation(async ({ ctx, input }) => {

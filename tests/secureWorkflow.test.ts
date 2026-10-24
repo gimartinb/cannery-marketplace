@@ -105,6 +105,7 @@ describe("endpoint separation", () => {
 
   it("rejects admin and vendor calls without an Access token", async () => {
     await expect(adminRouter.createCaller(ctx()).adminPortal.dashboard()).rejects.toMatchObject({ code: "UNAUTHORIZED" });
+    await expect(adminRouter.createCaller(ctx()).adminPortal.deleteVendors({ ids: [1] })).rejects.toMatchObject({ code: "UNAUTHORIZED" });
     await expect(vendorRouter.createCaller(ctx()).vendorPortal.listings()).rejects.toMatchObject({ code: "UNAUTHORIZED" });
   });
   it("rejects a verified email that is not on the owner list", async () => {
@@ -159,3 +160,4 @@ describe("the downloadable template", () => {
     expect(preview.rows[0].vendor?.instagramUrl).toBe("https://instagram.com/examplemaker");
   });
 });
+

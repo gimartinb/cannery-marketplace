@@ -1,4 +1,4 @@
-import { Mail, Send, UserPlus, CheckSquare, ExternalLink, Eye, EyeOff, Loader2, Pencil, Save, Search, Star, StarOff, UserCheck, UserMinus, X } from "lucide-react";
+import { Mail, Send, Trash2, UserPlus, CheckSquare, ExternalLink, Eye, EyeOff, Loader2, Pencil, Save, Search, Star, StarOff, UserCheck, UserMinus, X } from "lucide-react";
 import { useMemo, useState } from "react";
 import ListingFields, { toListingValues, uploadListingPhoto, type ListingValues } from "@/components/ListingFields";
 import { notifyError, notifySuccess } from "@/lib/notify";
@@ -54,6 +54,22 @@ export default function PublishedVendorsPanel({ vendors, onRefresh }: { vendors:
     onError: (error) => notifyError(error, "Listings not updated"),
   });
 
+  const remove = trpc.adminPortal.deleteVendors.useMutation({
+    onSuccess: async (result) => {
+      notifySuccess(`${result.deleted} listing${result.deleted === 1 ? "" : "s"} deleted`, { description: result.listings.map((item) => item.name).join(", ") });
+      setSelected(new Set()); setEditing(null);
+      await refreshAll();
+    },
+    onError: (error) => notifyError(error, "Listings not deleted"),
+  });
+  /** Asks first, naming every listing, because deleting cannot be undone. */
+  function confirmDelete(ids: number[]) {
+    const names = vendors.filter((vendor) => ids.includes(vendor.id)).map((vendor) => vendor.name);
+    const list = names.slice(0, 12).join("\n") + (names.length > 12 ? `\n…and ${names.length - 12} more` : "");
+    const message = `Permanently delete ${names.length === 1 ? "this listing" : `these ${names.length} listings`}?\n\n${list}\n\nThis cannot be undone. To keep a listing but take it off the site, use Hide instead.`;
+    if (window.confirm(message)) remove.mutate({ ids });
+  }
+
   const shown = useMemo(() => {
     const term = query.trim().toLowerCase();
     return term ? vendors.filter((vendor) => [vendor.name, vendor.category, vendor.slug, vendor.loginEmail || ""].some((field) => field.toLowerCase().includes(term))) : vendors;
@@ -90,6 +106,7 @@ export default function PublishedVendorsPanel({ vendors, onRefresh }: { vendors:
           <button className="button-plain" type="button" disabled={bulk.isPending} onClick={() => bulk.mutate({ ids, active: false })}><EyeOff size={14} /> Hide from site</button>
           <button className="button-plain" type="button" disabled={bulk.isPending} onClick={() => bulk.mutate({ ids, featured: true })}><Star size={14} /> Feature</button>
           <button className="button-plain" type="button" disabled={bulk.isPending} onClick={() => bulk.mutate({ ids, featured: false })}><StarOff size={14} /> Unfeature</button>
+          <button className="danger-button" type="button" disabled={remove.isPending} onClick={() => confirmDelete(ids)}><Trash2 size={14} /> Delete {selected.size === 1 ? "listing" : `${selected.size} listings`}</button>
           <button className="danger-button" type="button" disabled={bulk.isPending} onClick={() => { if (window.confirm(`Remove the login email from ${selected.size} listing${selected.size === 1 ? "" : "s"}? The listings stay on the site, but no maker can edit them until you assign an email.`)) bulk.mutate({ ids, loginEmail: "" }); }}><UserMinus size={14} /> Remove login email</button>
         </div>
       </div>}
@@ -110,6 +127,7 @@ export default function PublishedVendorsPanel({ vendors, onRefresh }: { vendors:
             : <button className="button-primary" type="button" onClick={() => setInviting({ id: vendor.id, email: vendor.contactEmail || "" })}><UserPlus size={14} /> Invite maker</button>}
           <button className="button-plain" type="button" onClick={() => setEditing({ id: vendor.id, values: toListingValues(vendor, vendor.id) })}><Pencil size={14} /> Edit</button>
           {vendor.active && <a className="button-plain" href={`/vendors/${vendor.slug}`} target="_blank" rel="noreferrer"><ExternalLink size={14} /> View</a>}
+          <button className="danger-button" type="button" disabled={remove.isPending} onClick={() => confirmDelete([vendor.id])} aria-label={`Delete ${vendor.name}`}><Trash2 size={14} /> Delete</button>
         </div>
       </div>) : <div className="admin-empty"><h3>{vendors.length ? "No listings match your search" : "No listings yet"}</h3><p>{vendors.length ? "Try a different word." : "Approve a maker submission or use the Vendor import tab."}</p></div>}</div>
     </>}

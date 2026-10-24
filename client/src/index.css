@@ -1257,3 +1257,5 @@ main { min-height: 100svh; }
 .row-invite label { display: grid; gap: .3rem; color: #575d52; font-size: .75rem; font-weight: 800; }
 .row-invite input { min-height: 2.5rem; padding: .4rem .65rem; border: 1px solid var(--line); background: #fff; font: inherit; font-size: .9rem; font-weight: 400; }
 .row-invite .review-actions { margin-top: 0; }
+/* Published vendors rows hold several actions; keep them compact. */
+.selectable-table .review-actions :is(.button-plain, .button-primary, .danger-button) { min-height: 2.4rem; padding: .5rem .85rem; }

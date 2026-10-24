@@ -415,3 +415,27 @@ export async function startListingFromApplication(db: Database, application: typ
   });
   return { created: true };
 }
+
+/**
+ * Owners permanently deleting listings. Also removes their pending or past
+ * submissions so they do not come back on approval. Photos are left for the
+ * nightly storage job, which removes ones nothing uses after a week. Maker
+ * portal access is kept, since the same email may own other listings.
+ */
+export async function deleteVendorProfiles(db: Database, ids: number[]) {
+  const unique = Array.from(new Set(ids));
+  const removed: Array<{ id: number; name: string; slug: string }> = [];
+  for (let start = 0; start < unique.length; start += 90) {
+    const chunk = unique.slice(start, start + 90);
+    const rows = await db.select({ id: vendorProfiles.id, name: vendorProfiles.name, slug: vendorProfiles.slug }).from(vendorProfiles).where(inArray(vendorProfiles.id, chunk));
+    if (!rows.length) continue;
+    await db.batch([
+      db.delete(vendorSubmissions).where(inArray(vendorSubmissions.profileId, rows.map((row) => row.id))),
+      db.delete(vendorSubmissions).where(inArray(vendorSubmissions.slug, rows.map((row) => row.slug))),
+      db.delete(vendorProfiles).where(inArray(vendorProfiles.id, rows.map((row) => row.id))),
+    ]);
+    removed.push(...rows);
+  }
+  if (!removed.length) throw new TRPCError({ code: "NOT_FOUND", message: "Those listings were already deleted. Refresh the page." });
+  return { deleted: removed.length, listings: removed };
+}
