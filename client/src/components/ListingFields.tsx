@@ -79,7 +79,7 @@ export default function ListingFields({ value, onChange, upload, ownerControls, 
 
   return <div className="listing-fields">
     {ownerControls && <fieldset className="listing-owner-controls">
-      <legend>Owner settings</legend>
+      <legend>Marketplace settings (owners only)</legend>
       <label>Login email (the maker signs in with this to edit the listing)<input type="email" value={value.loginEmail || ""} onChange={(event) => set("loginEmail", event.target.value)} placeholder="maker@example.com" /></label>
       <small className="form-hint">Saving adds this email to Maker access automatically. Leave blank if no maker should edit it.</small>
       <div className="listing-owner-row">
@@ -90,8 +90,8 @@ export default function ListingFields({ value, onChange, upload, ownerControls, 
     </fieldset>}
     <p className="form-hint">{ownerControls ? "Asterisks mark what makers must fill in. As an owner you can save a listing with gaps and finish it later." : "Fields marked with an asterisk are required."}</p>
     {signedInEmail && <p className="signed-in-email">Your login email: <strong>{signedInEmail}</strong>. This is how you sign in. It is not shown on your public page.</p>}
-    <label>Business or maker name *<input id="listing-name" maxLength={140} value={value.name} onChange={(event) => set("name", event.target.value)} {...invalid("name")} /><FieldError problems={problems} field="name" /></label>
-    <label>Owner's full name *<input id="listing-ownerName" maxLength={120} autoComplete="name" value={value.ownerName || ""} onChange={(event) => set("ownerName", event.target.value)} placeholder="Gilbert Martin" {...invalid("ownerName")} /><small className="form-hint">Shown on your page as "Meet" and your name.</small><FieldError problems={problems} field="ownerName" /></label>
+    <label>Business name *<input id="listing-name" maxLength={140} value={value.name} onChange={(event) => set("name", event.target.value)} {...invalid("name")} /><FieldError problems={problems} field="name" /></label>
+    <label>Maker's full name *<input id="listing-ownerName" maxLength={120} autoComplete="name" value={value.ownerName || ""} onChange={(event) => set("ownerName", event.target.value)} placeholder="Gilbert Martin" {...invalid("ownerName")} /><small className="form-hint">The person behind the work. Shown on the profile as "Meet" and this name.</small><FieldError problems={problems} field="ownerName" /></label>
     <label>Category *<select id="listing-category" value={categoryChoice} onChange={(event) => set("category", event.target.value)} {...invalid("category")}><option value="">Choose a category</option>{MAKER_CATEGORIES.map((category) => <option key={category} value={category}>{category}</option>)}</select>{categoryChoice !== "Other" && <FieldError problems={problems} field="category" />}</label>
     {categoryChoice === "Other" && <label>Your category *<input id="listing-category-other" maxLength={40} value={ownCategory} onChange={(event) => set("category", event.target.value || "Other")} placeholder="Leather goods" {...invalid("category")} /><small className="form-hint">The marketplace reviews new categories and may match yours to one on the list.</small><FieldError problems={problems} field="category" /></label>}
     <label>Short description *<textarea id="listing-shortBio" maxLength={800} rows={3} value={value.shortBio} onChange={(event) => set("shortBio", event.target.value)} {...invalid("shortBio")} /><small className="form-hint">{value.shortBio.trim().length} / 800, at least 20</small><FieldError problems={problems} field="shortBio" /></label>

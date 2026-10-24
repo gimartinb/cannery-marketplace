@@ -36,11 +36,11 @@ const EMAIL = /^[^\s@]+@[^\s@.]+(\.[^\s@.]+)+$/;
 export function listingProblems(values: VendorProfileInput): ListingProblems {
   const problems: ListingProblems = {};
   const name = values.name.trim();
-  if (name.length < 2) problems.name = "Enter your business or maker name.";
+  if (name.length < 2) problems.name = "Enter the business name (or the name you sell under).";
   else if (name.length > 140) problems.name = "Keep the name under 140 characters.";
 
   const owner = (values.ownerName || "").trim().replace(/\s+/g, " ");
-  if (!owner) problems.ownerName = "Enter the owner's full name.";
+  if (!owner) problems.ownerName = "Enter the maker's full name.";
   else if (owner.split(" ").length < 2) problems.ownerName = "Enter a first and last name.";
   else if (!/^[\p{L}][\p{L}' .-]*[\p{L}.]$/u.test(owner)) problems.ownerName = "Use letters, spaces, apostrophes, periods, or hyphens.";
 

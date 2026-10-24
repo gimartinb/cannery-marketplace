@@ -13,12 +13,12 @@ const TEMPLATE_URL = "/downloads/Vendor-Bulk-Import-Template.xlsx";
 // does not know are listed and ignored rather than rejected.
 type ImportField = "name" | "slug" | "category" | "shortBio" | "ownerBio" | "ownerName" | "contactEmail" | "loginEmail" | "websiteUrl" | "instagramUrl" | "facebookUrl" | "tiktokUrl" | "coverImageUrl" | "galleryImageUrls" | "featured" | "displayOrder" | "active";
 const COLUMN_ALIASES: Record<ImportField, string[]> = {
-  name: ["name", "business_name", "maker_name", "vendor_name", "business"],
+  name: ["name", "business_name", "vendor_name", "business"],
   slug: ["slug", "web_address", "url_name"],
   category: ["category"],
   shortBio: ["short_bio", "short_description", "description", "bio"],
   ownerBio: ["owner_bio", "about_the_maker", "about", "story"],
-  ownerName: ["owner_name", "owner", "owner_full_name", "full_name"],
+  ownerName: ["maker_full_name", "makers_full_name", "maker_name", "owner_name", "owner", "owner_full_name", "full_name"],
   contactEmail: ["contact_email", "email", "public_email"],
   loginEmail: ["login_email", "maker_login_email", "portal_email"],
   websiteUrl: ["website_url", "website", "site"],

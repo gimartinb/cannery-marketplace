@@ -2,7 +2,8 @@
 // instead of raw messages like "shortBio: String must contain at least 20 character(s)".
 
 const FIELD_LABELS: Record<string, string> = {
-  name: "Maker name",
+  name: "Business name",
+  ownerName: "Maker's full name",
   slug: "Web address name",
   category: "Category",
   shortBio: "Short description",

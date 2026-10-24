@@ -17,7 +17,7 @@ type FieldRule = { what: string; length: string; maxChars: number; maxTokens: nu
 
 const FIELDS: Record<AiField, FieldRule> = {
   shortBio: { what: "the short description on a maker's listing, shown on their card and profile", length: "one to three sentences, under 450 characters", maxChars: 800, maxTokens: 200, voice: "Match the point of view the maker used (I, we, or the business name). When drafting, write about the business in the third person." },
-  ownerBio: { what: "the \"About the maker\" story on a maker's profile page, about the person behind the business", length: "two short paragraphs, under 900 characters in total", maxChars: 1800, maxTokens: 330, voice: "Write in the third person using the owner's first name when it is given, unless the original uses I or we, in which case keep that." },
+  ownerBio: { what: "the \"About the maker\" story on a maker's profile page, about the person behind the business", length: "two short paragraphs, under 900 characters in total", maxChars: 1800, maxTokens: 330, voice: "Write in the third person using the maker's first name when it is given, unless the original uses I or we, in which case keep that." },
   highlight: { what: "the short description on a home page highlight card", length: "one or two sentences, under 200 characters", maxChars: 220, maxTokens: 110, voice: "Write in the third person, warm and inviting." },
 };
 
@@ -69,7 +69,7 @@ export async function aiWrite(env: Env, db: Database, who: { email: string; role
   const context = input.context;
   const details = [
     context.name && `Business name: ${context.name}`,
-    context.ownerName && `Owner: ${context.ownerName}`,
+    context.ownerName && `Maker: ${context.ownerName}`,
     context.category && `Category: ${context.category}`,
     input.field !== "shortBio" && context.shortBio && `Short description: ${context.shortBio}`,
     input.field !== "ownerBio" && context.ownerBio && `About the maker: ${context.ownerBio}`,
