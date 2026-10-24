@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { normalizeLink, type LinkKind } from "./socialLinks";
 
 // The vendor interest form (replaces the Google Form). The questions and
 // answer choices match the marketplace's original form.
@@ -56,21 +57,21 @@ export type ApplicationProblems = Partial<Record<ApplicationField, string>>;
 const digits = (value: string) => value.replace(/\D/g, "");
 const EMAIL = /^[^\s@]+@[^\s@.]+(\.[^\s@.]+)+$/;
 
-function linkProblem(value: string, label: string, hosts?: string[]) {
-  const text = value.trim();
+function linkProblem(value: string, label: string, kind: LinkKind, hosts?: string[]) {
+  const text = normalizeLink(kind, value);
   if (!text) return undefined;
-  if (!/^https?:\/\//i.test(text)) return `Enter the full ${label} link, starting with https://`;
+  if (!/^https?:\/\//i.test(text)) return kind === "website" ? "Enter a web address, like yourshop.com" : `Enter your ${label} @handle or link.`;
   try {
     const host = new URL(text).hostname.toLowerCase().replace(/^www\./, "");
-    if (hosts && !hosts.some((allowed) => host === allowed || host.endsWith(`.${allowed}`))) return `Enter a ${label} link (${hosts[0]}).`;
+    if (hosts && !hosts.some((allowed) => host === allowed || host.endsWith(`.${allowed}`))) return `Enter your ${label} @handle or a ${hosts[0]} link.`;
   } catch { return `Enter a valid ${label} link.`; }
   if (text.length > 300) return "Keep the link under 300 characters.";
   return undefined;
 }
 
 /**
- * Every answer is required except the website and "other social media"; at least
- * one social link (Facebook, Instagram, or other) is required. Runs in the browser
+ * Every answer is required except the website and social media links, which can be
+ * full links or @handles. Runs in the browser
  * for instant feedback and on the server so it cannot be skipped.
  */
 export function applicationProblems(values: ApplicationValues): ApplicationProblems {
@@ -85,14 +86,13 @@ export function applicationProblems(values: ApplicationValues): ApplicationProbl
   if (city.length < 2) problems.city = "Enter the city where you make your products.";
   else if (city.length > 80) problems.city = "Keep the city under 80 characters.";
 
-  const website = linkProblem(values.websiteUrl, "website");
+  const website = linkProblem(values.websiteUrl, "website", "website");
   if (website) problems.websiteUrl = website;
-  const facebook = linkProblem(values.facebookUrl, "Facebook", ["facebook.com", "fb.com"]);
+  const facebook = linkProblem(values.facebookUrl, "Facebook", "facebook", ["facebook.com", "fb.com"]);
   if (facebook) problems.facebookUrl = facebook;
-  const instagram = linkProblem(values.instagramUrl, "Instagram", ["instagram.com"]);
+  const instagram = linkProblem(values.instagramUrl, "Instagram", "instagram", ["instagram.com"]);
   if (instagram) problems.instagramUrl = instagram;
   if (text(values.otherSocial).length > 300) problems.otherSocial = "Keep this under 300 characters.";
-  if (![values.facebookUrl, values.instagramUrl, values.otherSocial].some((value) => value.trim())) problems.social = "Add at least one social media link: Facebook, Instagram, or another platform.";
 
   const tagline = text(values.tagline);
   if (!tagline) problems.tagline = "Describe your business in one short sentence.";

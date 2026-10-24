@@ -30,7 +30,7 @@ const EMAIL = /^[^\s@]+@[^\s@.]+(\.[^\s@.]+)+$/;
 
 /**
  * Everything a maker must fill in before sending a listing for review: every field
- * except the website is required, and at least one social link. The same rules run
+ * except the website and social links is required. The same rules run
  * in the browser (instant feedback) and on the server (so they cannot be skipped).
  */
 export function listingProblems(values: VendorProfileInput): ListingProblems {
@@ -70,7 +70,6 @@ export function listingProblems(values: VendorProfileInput): ListingProblems {
     const field = issue.path[0];
     if (field === "websiteUrl" || field === "instagramUrl" || field === "facebookUrl" || field === "tiktokUrl") problems[field] ??= issue.message.endsWith(".") ? issue.message : `${issue.message}.`;
   }
-  if (![values.instagramUrl, values.facebookUrl, values.tiktokUrl].some((link) => (link || "").trim())) problems.social = "Add at least one social link: Instagram, Facebook, or TikTok.";
 
   if (!values.coverImageUrl) problems.coverImageUrl = "Add a cover photo.";
   if (!values.galleryImageUrls.length) problems.galleryImageUrls = "Add at least one photo of your work.";

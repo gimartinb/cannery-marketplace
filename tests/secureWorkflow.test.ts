@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import * as XLSX from "xlsx";
 import { exportJWK, generateKeyPair, SignJWT } from "jose";
 import { vendorProfileSchema } from "../shared/vendorProfile";
-import { parseVendorWorkbook } from "../client/src/components/VendorImportPanel";
+import { parseVendorWorkbook, readVendorWorkbook } from "../client/src/components/VendorImportPanel";
 import { checkAccess, getAccessIdentity, isAdminEmail } from "../worker/access";
 import { adminRouter, publicRouter, vendorRouter } from "../worker/routers";
 import type { Env } from "../worker/env";
@@ -118,5 +118,44 @@ describe("endpoint separation", () => {
   it("keeps admin and vendor procedures out of the public endpoint", () => {
     const publicPaths = Object.keys(publicRouter._def.procedures);
     expect(publicPaths.some((path) => path.startsWith("adminPortal.") || path.startsWith("vendorPortal."))).toBe(false);
+  });
+});
+
+describe("vendor import template versions", () => {
+  const book = (rows: unknown[][]) => { const sheet = XLSX.utils.aoa_to_sheet(rows); const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, sheet, "Vendor Import"); return XLSX.write(wb, { type: "array", bookType: "xlsx" }) as ArrayBuffer; };
+  const bio = "Hand built walnut boards and keepsake boxes.";
+
+  it("still imports the original template (no owner_name or login_email)", () => {
+    const rows = parseVendorWorkbook(book([["name*", "slug", "category*", "short_bio*", "owner_bio", "contact_email*", "website_url", "instagram_url", "facebook_url", "tiktok_url", "cover_image_url", "gallery_image_urls", "featured", "display_order", "active"], ["Old Format Maker", "", "Woodworking", bio, "", "old@example.com", "", "", "", "", "", "", "No", 10, "Yes"]]), []);
+    expect(rows[0].errors).toEqual([]);
+    expect(rows[0].vendor?.loginEmail).toBe("");
+  });
+
+  it("reads newer files in any column order and case, with handles, and skips unknown columns", () => {
+    const preview = readVendorWorkbook(book([["Notes", "Login Email", "Instagram", "Short Description", "Category*", "NAME", "Owner Name", "Website"], ["call Tuesday", "new@example.com", "@newmaker", bio, "Woodworking", "New Format Maker", "Ana Lopez", "newmaker.com"]]), []);
+    expect(preview.ignoredColumns).toEqual(["Notes"]);
+    const vendor = preview.rows[0].vendor!;
+    expect(preview.rows[0].errors).toEqual([]);
+    expect(vendor.contactEmail).toBe("new@example.com");
+    expect(vendor.loginEmail).toBe("new@example.com");
+    expect(vendor.instagramUrl).toBe("https://instagram.com/newmaker");
+    expect(vendor.websiteUrl).toBe("https://newmaker.com");
+    expect(vendor.ownerName).toBe("Ana Lopez");
+  });
+
+  it("explains which required columns are missing", () => {
+    expect(parseVendorWorkbook(book([["name", "email"], ["Missing Bits", "a@example.com"]]), [])[0].errors[0]).toMatch(/category, short_bio/);
+  });
+});
+
+describe("the downloadable template", () => {
+  it("imports its own example row without problems", async () => {
+    const { readFileSync } = await import("node:fs");
+    const file = readFileSync(new URL("../client/public/downloads/Vendor-Bulk-Import-Template.xlsx", import.meta.url));
+    const preview = readVendorWorkbook(file.buffer.slice(file.byteOffset, file.byteOffset + file.byteLength), []);
+    expect(preview.ignoredColumns).toEqual([]);
+    expect(preview.rows).toHaveLength(1);
+    expect(preview.rows[0].errors).toEqual([]);
+    expect(preview.rows[0].vendor?.instagramUrl).toBe("https://instagram.com/examplemaker");
   });
 });

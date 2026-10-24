@@ -1,13 +1,18 @@
 import { z } from "zod";
+import { normalizeLink, type LinkKind } from "./socialLinks";
 
 // Uploaded images live at /media/<key>. /manus-storage/<key> is kept for images saved on the old site.
 const storedImagePath = z.string().trim().max(700).regex(/^\/(media|manus-storage)\/[A-Za-z0-9._\/-]+$/, "Invalid image path");
-const optionalHttpUrl = z.string().trim().max(500).refine((value) => !value || /^https?:\/\//i.test(value), "Use a full http:// or https:// URL");
-function socialUrl(label: string, hosts: string[]) {
-  return optionalHttpUrl.refine((value) => {
+const optionalHttpUrl = z.string().trim().max(500).refine((value) => !value || /^https?:\/\//i.test(value), "Enter a full web address, like the45workshop.com");
+/** Accepts a full link, a bare domain, or a social handle like @shopname, and stores a full link. */
+function linkField(kind: LinkKind) {
+  return z.string().trim().max(500).transform((value) => normalizeLink(kind, value));
+}
+function socialUrl(label: string, hosts: string[], kind: LinkKind) {
+  return linkField(kind).pipe(optionalHttpUrl).refine((value) => {
     if (!value) return true;
     try { const host = new URL(value).hostname.toLowerCase().replace(/^www\./, ""); return hosts.some((allowed) => host === allowed || host.endsWith(`.${allowed}`)); } catch { return false; }
-  }, `Enter a valid ${label} URL`);
+  }, `Enter your ${label} link or @handle`);
 }
 
 export const vendorProfileSchema = z.object({
@@ -19,10 +24,10 @@ export const vendorProfileSchema = z.object({
   ownerBio: z.string().trim().max(1800).optional().default(""),
   ownerName: z.string().trim().max(120).optional().default(""),
   contactEmail: z.string().trim().email().max(320),
-  websiteUrl: optionalHttpUrl.optional().default(""),
-  instagramUrl: socialUrl("Instagram", ["instagram.com"]).optional().default(""),
-  facebookUrl: socialUrl("Facebook", ["facebook.com", "fb.com"]).optional().default(""),
-  tiktokUrl: socialUrl("TikTok", ["tiktok.com"]).optional().default(""),
+  websiteUrl: linkField("website").pipe(optionalHttpUrl).optional().default(""),
+  instagramUrl: socialUrl("Instagram", ["instagram.com"], "instagram").optional().default(""),
+  facebookUrl: socialUrl("Facebook", ["facebook.com", "fb.com"], "facebook").optional().default(""),
+  tiktokUrl: socialUrl("TikTok", ["tiktok.com"], "tiktok").optional().default(""),
   coverImageUrl: optionalHttpUrl.or(storedImagePath).optional().default(""),
   galleryImageUrls: z.array(optionalHttpUrl.or(storedImagePath)).max(5).default([]),
   featured: z.boolean().default(false),

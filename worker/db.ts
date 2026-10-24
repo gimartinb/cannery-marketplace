@@ -380,3 +380,38 @@ export async function getApplication(db: Database, id: number) {
 export async function setApplicationStatus(db: Database, id: number, status: "new" | "invited" | "declined" | "archived", note: string) {
   await db.update(makerApplications).set({ status, adminNote: note || null, reviewedAt: status === "new" ? null : new Date() }).where(eq(makerApplications.id, id));
 }
+
+// Owners inviting an applicant: start the maker's listing for them.
+// Vendor interest form categories mapped to the maker portal's category list.
+const APPLICATION_TO_LISTING_CATEGORY: Record<string, string> = {
+  "Art": "Paper & Art", "Stationery & Books": "Paper & Art", "Apparel & Accessories": "Wearables", "Baked Goods & Sweets": "Coffee & Bakery",
+  "Bath & Body": "Candles & Bath", "Candles & Wax Melts": "Candles & Bath", "Self Care": "Candles & Bath", "Children & Kids": "Kids & Baby",
+  "Floral Products": "Plants & Floral", "Food Products": "Food & Pantry", "Home Decor": "Home & Gifts", "Jewelry": "Jewelry",
+};
+
+/**
+ * Creates a draft listing from an application, tied to the applicant's email, so
+ * the first time they sign in their space already has their business filled in.
+ * Skips it when that email already has a listing or a draft for the same business
+ * (a maker with one listing can still be invited for a second business).
+ */
+export async function startListingFromApplication(db: Database, application: typeof makerApplications.$inferSelect) {
+  const email = application.email.toLowerCase();
+  await db.insert(vendorAccounts).values({ email }).onConflictDoNothing();
+  const account = (await db.select({ id: vendorAccounts.id }).from(vendorAccounts).where(eq(vendorAccounts.email, email)).limit(1))[0];
+  if (!account) return { created: false };
+  const slugBase = slugify(application.businessName);
+  const existingProfile = (await db.select({ id: vendorProfiles.id }).from(vendorProfiles).where(and(eq(vendorProfiles.loginEmail, email), sql`${vendorProfiles.slug} LIKE ${`${slugBase}%`}`)).limit(1))[0];
+  const existingDraft = (await db.select({ id: vendorSubmissions.id }).from(vendorSubmissions).where(and(eq(vendorSubmissions.accountId, account.id), sql`${vendorSubmissions.slug} LIKE ${`${slugBase}%`}`)).limit(1))[0];
+  if (existingProfile || existingDraft) return { created: false };
+  let categories: string[] = [];
+  try { categories = JSON.parse(application.categories); } catch { categories = []; }
+  const category = categories.map((item) => APPLICATION_TO_LISTING_CATEGORY[item]).find(Boolean) || "";
+  await db.insert(vendorSubmissions).values({
+    accountId: account.id, profileId: null, status: "draft", adminNote: null, reviewedAt: null,
+    name: application.businessName, slug: await freeSlugFor(db, application.businessName), category, shortBio: application.tagline,
+    ownerBio: null, ownerName: application.fullName, contactEmail: email, websiteUrl: application.websiteUrl, instagramUrl: application.instagramUrl,
+    facebookUrl: application.facebookUrl, tiktokUrl: null, coverImageUrl: null, galleryImageUrls: "[]", featured: false, displayOrder: 100, active: true,
+  });
+  return { created: true };
+}

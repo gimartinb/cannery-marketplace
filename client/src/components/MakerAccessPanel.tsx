@@ -1,6 +1,7 @@
 import { Copy, Link2, Loader2, Trash2, UserPlus, X } from "lucide-react";
 import { useState } from "react";
 import { notifyError, notifySuccess } from "@/lib/notify";
+import { welcomeText } from "@/lib/makerEmails";
 import { trpc } from "@/lib/trpc";
 
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -25,8 +26,8 @@ export default function MakerAccessPanel({ vendors, onChanged }: { vendors: List
     onError: (error) => notifyError(error, "Listing not connected"),
   });
   const remove = trpc.adminPortal.removeMakerInvite.useMutation({ onSuccess: async (_result, input) => { notifySuccess(`${input.email} can no longer sign in`, { description: "Their listings stay on the site." }); await refresh(); }, onError: (error) => notifyError(error, "Access not removed") });
-  const portalUrl = `${window.location.origin}/maker-portal`;
-  const inviteText = `Hi! You're invited to manage your maker listing at The Cannery Marketplace. Go to ${portalUrl}, enter this email address, and we'll email you a one time code to sign in. No password needed.`;
+  // Same wording as the welcome email (lib/makerEmails.ts), for pasting into a text or email.
+  const inviteText = welcomeText({ email: "the email address we invited" }, "", false);
 
   async function submit(event: React.FormEvent) {
     event.preventDefault();

@@ -34,10 +34,10 @@ describe("maker listing rules", () => {
     expect(listingProblems(complete)).toEqual({});
     expect(makerSubmissionSchema.safeParse(complete).success).toBe(true);
   });
-  it("requires every field except the website, and at least one social link", () => {
+  it("requires every field except the website and social links", () => {
     const problems = listingProblems({ ...complete, ownerName: "Gilbert", category: "Other", ownerBio: "", instagramUrl: "", coverImageUrl: "", galleryImageUrls: [] });
-    expect(Object.keys(problems).sort()).toEqual(["category", "coverImageUrl", "galleryImageUrls", "ownerBio", "ownerName", "social"]);
-    expect(makerSubmissionSchema.safeParse({ ...complete, instagramUrl: "" }).success).toBe(false);
+    expect(Object.keys(problems).sort()).toEqual(["category", "coverImageUrl", "galleryImageUrls", "ownerBio", "ownerName"]);
+    expect(makerSubmissionSchema.safeParse({ ...complete, instagramUrl: "" }).success).toBe(true);
   });
   it("accepts a maker's own category typed after choosing Other", () => {
     expect(listingProblems({ ...complete, category: "Leather Goods" })).toEqual({});
@@ -45,6 +45,13 @@ describe("maker listing rules", () => {
   });
   it("rejects a social link on the wrong site", () => {
     expect(listingProblems({ ...complete, instagramUrl: "https://example.com/me" }).instagramUrl).toMatch(/Instagram/);
+  });
+  it("accepts @handles and bare web addresses and stores full links", () => {
+    const parsed = makerSubmissionSchema.parse({ ...complete, websiteUrl: "the45workshop.com", instagramUrl: "@the45workshop", facebookUrl: "facebook.com/the45workshop", tiktokUrl: "@the45" });
+    expect(parsed.websiteUrl).toBe("https://the45workshop.com");
+    expect(parsed.instagramUrl).toBe("https://instagram.com/the45workshop");
+    expect(parsed.facebookUrl).toBe("https://facebook.com/the45workshop");
+    expect(parsed.tiktokUrl).toBe("https://tiktok.com/@the45");
   });
 });
 

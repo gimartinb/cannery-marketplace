@@ -1,7 +1,8 @@
-import { CheckSquare, ExternalLink, Eye, EyeOff, Loader2, Pencil, Save, Search, Star, StarOff, UserCheck, UserMinus, X } from "lucide-react";
+import { Mail, Send, UserPlus, CheckSquare, ExternalLink, Eye, EyeOff, Loader2, Pencil, Save, Search, Star, StarOff, UserCheck, UserMinus, X } from "lucide-react";
 import { useMemo, useState } from "react";
 import ListingFields, { toListingValues, uploadListingPhoto, type ListingValues } from "@/components/ListingFields";
 import { notifyError, notifySuccess } from "@/lib/notify";
+import { welcomeEmailLink } from "@/lib/makerEmails";
 import { trpc } from "@/lib/trpc";
 
 type Vendor = Parameters<typeof toListingValues>[0] & { id: number; loginEmail: string | null };
@@ -14,6 +15,17 @@ export default function PublishedVendorsPanel({ vendors, onRefresh }: { vendors:
   const [selected, setSelected] = useState<Set<number>>(new Set());
   const [bulkEmail, setBulkEmail] = useState("");
   const aiWriter = trpc.adminPortal.aiWrite.useMutation();
+  // One step invite from a listing row: ties the email to the listing and gives it maker portal access.
+  const [inviting, setInviting] = useState<{ id: number; email: string } | null>(null);
+  const invite = trpc.adminPortal.assignListing.useMutation({
+    onSuccess: async (row, input) => {
+      const vendor = vendors.find((item) => item.id === input.profileId);
+      notifySuccess(`${row.name} is ready for ${input.email}`, { description: "They can sign in to the maker portal now. Send the welcome email so they know how.", link: { label: "Send welcome email", href: welcomeEmailLink({ email: input.email, businessName: row.name, fullName: vendor?.ownerName || "" }) } });
+      setInviting(null);
+      await refreshAll();
+    },
+    onError: (error) => notifyError(error, "Maker not invited"),
+  });
   const refreshAll = async () => { await Promise.all([onRefresh(), utils.directory.invalidate(), utils.adminPortal.makerInvites.invalidate()]); };
   const toggle = trpc.adminPortal.setVendorActive.useMutation({
     onSuccess: async (_result, input) => { notifySuccess(input.active ? "Listing is visible on the site" : "Listing hidden from the site"); await refreshAll(); },
@@ -86,9 +98,16 @@ export default function PublishedVendorsPanel({ vendors, onRefresh }: { vendors:
       <div className="secure-vendor-table selectable-table">{shown.length ? shown.map((vendor) => <div key={vendor.id} className={selected.has(vendor.id) ? "is-selected" : undefined}>
         <input type="checkbox" className="row-select" checked={selected.has(vendor.id)} onChange={() => toggleOne(vendor.id)} aria-label={`Select ${vendor.name}`} />
         <span>{vendor.coverImageUrl ? <img src={vendor.coverImageUrl} alt="" /> : vendor.name.slice(0, 2).toUpperCase()}</span>
-        <div><strong>{vendor.name}</strong><small>{vendor.category} · /vendors/{vendor.slug}</small><small className={vendor.loginEmail ? "login-email" : "login-email missing"}><UserCheck size={12} /> {vendor.loginEmail ? `Login: ${vendor.loginEmail}` : "No login email yet"}</small></div>
+        <div><strong>{vendor.name}</strong><small>{vendor.category} · /vendors/{vendor.slug}</small><small className={vendor.loginEmail ? "login-email" : "login-email missing"}><UserCheck size={12} /> {vendor.loginEmail ? `Login: ${vendor.loginEmail}` : "No login email yet"}</small>
+          {inviting?.id === vendor.id && <form className="row-invite" onSubmit={(event) => { event.preventDefault(); const email = inviting.email.trim().toLowerCase(); if (!/^[^\s@]+@[^\s@.]+(\.[^\s@.]+)+$/.test(email)) { notifyError("Enter a valid email address, like name@example.com.", "Check the email"); return; } invite.mutate({ profileId: vendor.id, email }); }}>
+            <label>Maker's email<input type="email" autoFocus value={inviting.email} onChange={(event) => setInviting({ ...inviting, email: event.target.value })} placeholder="maker@example.com" /></label>
+            <div className="review-actions"><button className="button-primary compact-button" type="submit" disabled={invite.isPending}>{invite.isPending ? <Loader2 size={13} className="animate-spin" /> : <Send size={13} />} Invite</button><button className="button-plain compact-button" type="button" onClick={() => setInviting(null)}>Cancel</button></div>
+          </form>}</div>
         <div className="review-actions">
           <label className="toggle-label"><input type="checkbox" checked={vendor.active} disabled={toggle.isPending} onChange={(event) => toggle.mutate({ id: vendor.id, active: event.target.checked })} /><span className="fake-toggle" /> {vendor.active ? "Public" : "Hidden"}</label>
+          {vendor.loginEmail
+            ? <a className="button-plain" href={welcomeEmailLink({ email: vendor.loginEmail, businessName: vendor.name, fullName: vendor.ownerName || "" })}><Mail size={14} /> Welcome email</a>
+            : <button className="button-primary" type="button" onClick={() => setInviting({ id: vendor.id, email: vendor.contactEmail || "" })}><UserPlus size={14} /> Invite maker</button>}
           <button className="button-plain" type="button" onClick={() => setEditing({ id: vendor.id, values: toListingValues(vendor, vendor.id) })}><Pencil size={14} /> Edit</button>
           {vendor.active && <a className="button-plain" href={`/vendors/${vendor.slug}`} target="_blank" rel="noreferrer"><ExternalLink size={14} /> View</a>}
         </div>

@@ -7,7 +7,7 @@ import { TRPCError } from "@trpc/server";
 import { deleteSiteImageObject } from "./media";
 import {
   bulkImportVendorProfiles, deleteSiteImage, getSiteImage, listSiteImages, setSiteImageAlt, createVendorSubmission, getPublicVendorProfile, listMakerListings, makerOwnsProfile, freeSlugFor, updateVendorProfileAsOwner, assignListingLogin, bulkUpdateVendorProfiles,
-  APPLICATION_LIMIT_PER_SOURCE_PER_DAY, countRecentApplications, createApplication, getApplication, listApplications, setApplicationStatus,
+  APPLICATION_LIMIT_PER_SOURCE_PER_DAY, countRecentApplications, createApplication, getApplication, listApplications, setApplicationStatus, startListingFromApplication,
   DIRECTORY_PAGE_SIZES, getSiteSetting, listAllVendorProfiles, listFeaturedVendorProfiles, listPublicVendorCategories, listPublicVendorPage, listVendorSubmissions,
   reviewVendorSubmission, setSiteSetting, setVendorActive, addMakerInvites, listMakerInvites, removeMakerInvite,
   createHighlight, deleteGalleryPhoto, deleteHighlight, getGalleryPhoto, getHighlight, listGalleryPhotos, listHighlights,
@@ -16,6 +16,7 @@ import {
 import { aiWrite } from "./aiWriting";
 import { runStorageMaintenance, usageSummary } from "./usage";
 import { aiWriteSchema } from "../shared/aiWriting";
+import { normalizeLink } from "../shared/socialLinks";
 import { adminProcedure, mergeRouters, publicProcedure, router, vendorProcedure } from "./trpc";
 
 // A photo uploaded through the dashboard, or a maker's existing photo when a maker is promoted.
@@ -55,8 +56,8 @@ export const publicRouter = router({
       const categories = input.categories.filter((item) => (APPLICATION_CATEGORIES as readonly string[]).includes(item)).map((item) => (item === "Other" ? `Other: ${clean(input.categoryOther)}` : item));
       const salesChannels = input.salesChannels.filter((item) => (SALES_CHANNELS as readonly string[]).includes(item)).map((item) => (item === "Other" ? `Other: ${clean(input.salesOther)}` : item));
       const id = await createApplication(ctx.db, {
-        businessName: clean(input.businessName), city: clean(input.city), websiteUrl: input.websiteUrl.trim() || null, facebookUrl: input.facebookUrl.trim() || null,
-        instagramUrl: input.instagramUrl.trim() || null, otherSocial: clean(input.otherSocial) || null, tagline: clean(input.tagline), productDescription: input.productDescription.trim(),
+        businessName: clean(input.businessName), city: clean(input.city), websiteUrl: normalizeLink("website", input.websiteUrl) || null, facebookUrl: normalizeLink("facebook", input.facebookUrl) || null,
+        instagramUrl: normalizeLink("instagram", input.instagramUrl) || null, otherSocial: clean(input.otherSocial) || null, tagline: clean(input.tagline), productDescription: input.productDescription.trim(),
         fullName: clean(input.fullName), email: input.email.trim().toLowerCase(), phone: formatApplicationPhone(input), referredBy: clean(input.referredBy),
         categories: JSON.stringify(categories), salesChannels: JSON.stringify(salesChannels), sourceHash: hash,
       });
@@ -127,9 +128,14 @@ export const adminRouter = router({
     setApplicationStatus: adminProcedure.input(z.object({ id: z.number().int().positive(), status: z.enum(["new", "invited", "declined", "archived"]), note: z.string().trim().max(1200).default("") })).mutation(async ({ ctx, input }) => {
       const application = await getApplication(ctx.db, input.id);
       if (!application) throw new TRPCError({ code: "NOT_FOUND", message: "That application no longer exists. Refresh the page." });
-      if (input.status === "invited") await addMakerInvites(ctx.db, [application.email], ctx.email);
+      // Inviting gives the applicant maker portal access and starts their listing for them.
+      let listingStarted = false;
+      if (input.status === "invited") {
+        await addMakerInvites(ctx.db, [application.email], ctx.email);
+        listingStarted = (await startListingFromApplication(ctx.db, application)).created;
+      }
       await setApplicationStatus(ctx.db, input.id, input.status, input.note);
-      return { success: true, email: application.email };
+      return { success: true, email: application.email, listingStarted };
     }),
     // Owner support: edit any listing directly. Setting a login email also invites that maker to the portal.
     updateVendor: adminProcedure.input(ownerVendorSchema.extend({ id: z.number().int().positive() })).mutation(async ({ ctx, input }) => {

@@ -15,9 +15,9 @@ describe("vendor interest form", () => {
     expect(applicationSchema.safeParse(complete).success).toBe(true);
     expect(formatApplicationPhone(complete)).toBe("(408) 555-1234");
   });
-  it("requires every answer except the website, with at least one social link", () => {
+  it("requires every answer except the website and social links", () => {
     const problems = applicationProblems({ ...EMPTY_APPLICATION });
-    expect(Object.keys(problems).sort()).toEqual(["businessName", "categories", "city", "email", "fullName", "phone", "productDescription", "referredBy", "salesChannels", "social", "tagline"].sort());
+    expect(Object.keys(problems).sort()).toEqual(["businessName", "categories", "city", "email", "fullName", "phone", "productDescription", "referredBy", "salesChannels", "tagline"].sort());
   });
   it("asks for details when Other is chosen", () => {
     const problems = applicationProblems({ ...complete, categories: ["Other"], salesChannels: ["Other"] });
@@ -26,6 +26,7 @@ describe("vendor interest form", () => {
   });
   it("checks link sites and US phone numbers", () => {
     expect(applicationProblems({ ...complete, instagramUrl: "https://example.com/me" }).instagramUrl).toMatch(/Instagram/);
+    expect(applicationProblems({ ...complete, instagramUrl: "@the45workshop", facebookUrl: "the45workshop", websiteUrl: "the45workshop.com" })).toEqual({});
     expect(applicationProblems({ ...complete, areaCode: "108" }).areaCode).toMatch(/area code/);
   });
 });

@@ -1251,3 +1251,9 @@ main { min-height: 100svh; }
 .usage-meter span { display: block; height: 100%; border-radius: inherit; background: var(--moss); }
 .usage-meter.usage-warn span { background: var(--gold); }
 .usage-meter.usage-danger span { background: #ae4b32; }
+
+/* Published vendors: one step "Invite maker" in a row */
+.row-invite { display: grid; gap: .5rem; margin-top: .6rem; padding: .8rem; border: 1px dashed var(--gold-soft); background: #fffaf0; }
+.row-invite label { display: grid; gap: .3rem; color: #575d52; font-size: .75rem; font-weight: 800; }
+.row-invite input { min-height: 2.5rem; padding: .4rem .65rem; border: 1px solid var(--line); background: #fff; font: inherit; font-size: .9rem; font-weight: 400; }
+.row-invite .review-actions { margin-top: 0; }

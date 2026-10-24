@@ -4,6 +4,7 @@
 
 | Version | Date | Author | Change |
 |---|---|---|---|
+| 4.7 | 2026-10-23 | Gilbert Martin (with Claude) | Website and social links are optional for makers (listings and the vendor interest form), and @handles or bare web addresses are accepted and saved as full links. Inviting is one step: "Approve and invite" on an application now also starts the maker's listing from their answers (draft tied to their email), and each listing row in Published vendors has "Invite maker" (email prefilled) or "Welcome email". One shared welcome message explains how to sign in. Import template version 3: columns matched by name in any order or letter case, older templates still import, unknown columns are skipped and listed, a blank contact email falls back to the login email, and the instructions sheet is updated. |
 | 4.6 | 2026-10-20 | Gilbert Martin (with Claude) | Added README.md (project overview, layout, local setup, deploys, free tier summary; points here for details) and `pnpm dev:offline`, which runs the site locally without a Cloudflare login (everything except the AI writing help). |
 | 4.5 | 2026-10-19 | Gilbert Martin (with Claude) | Free tier guardrails. Workers AI: a site wide daily budget on top of the per person limits (makers pause at 70% of the free 10,000 neurons, owners at 85%), measured from the token counts each request reports. R2 photos: every upload is counted, uploads pause at 9 GB stored or 900,000 uploads in a month, photos are deleted when replaced or removed, and a free nightly job (3:17 a.m. Pacific) recounts storage and removes photos nothing has used for a week. A "Free plan usage" card on the dashboard Overview shows all three, with a Check storage now button. A Cloudflare budget alert emails the owners if any usage based charge appears. |
 | 4.4 | 2026-10-19 | Gilbert Martin (with Claude) | AI writing help on every listing text field: "Improve my writing" polishes what is there, and "Write it for me" drafts from the listing details plus a few optional notes. Available to makers (short description and About the maker, 25 a day) and owners (listing editor and home highlight descriptions, 60 a day). It only uses facts it is given, and people always see the suggestion before using it. Not offered on the vendor interest form, so applications stay in the applicant's own words. |
@@ -88,6 +89,8 @@ Every listing has one login email. The maker who signs in with that email sees a
 * Maker access tab: add the email, and pick the listing in "Connect to a listing", or use "Connect a listing" on an existing email.
 * Published vendors tab: Edit, then Login email. To assign several at once, tick the listings, type the email in the bulk bar, and click Assign email.
 * Vendor import spreadsheet: the optional `login_email` column.
+* Applications tab: "Approve and invite" also starts the maker's listing from their application.
+* Published vendors: "Invite maker" on any listing without a login email.
 
 Setting a login email also adds it to Maker access. Maker changes go to the Review queue, where owners approve, request changes, or reject, and can open a prefilled email to the maker. Approval can take up to 72 hours, which the portal tells makers.
 

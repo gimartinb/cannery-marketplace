@@ -1,6 +1,7 @@
 import { Archive, ExternalLink, Inbox, Loader2, Mail, RotateCcw, UserCheck, X } from "lucide-react";
 import { useState } from "react";
 import { notifyError, notifySuccess } from "@/lib/notify";
+import { declineEmailLink, replyEmailLink, welcomeEmailLink } from "@/lib/makerEmails";
 import { trpc } from "@/lib/trpc";
 import type { ApplicationStatus } from "@shared/application";
 
@@ -13,17 +14,10 @@ const FILTERS: Array<{ id: ApplicationStatus | "all"; label: string }> = [
 ];
 const STATUS_TEXT: Record<ApplicationStatus, string> = { new: "New", invited: "Invited to maker portal", declined: "Declined", archived: "Archived" };
 
-/** A prefilled email from the owner's own email app, so replies come back to the marketplace inbox. */
-function emailLink(application: { fullName: string; email: string; businessName: string }, kind: "invite" | "decline" | "reply", note: string) {
-  const first = application.fullName.split(" ")[0] || "there";
-  const portal = `${window.location.origin}/maker-portal`;
-  const subject = kind === "invite" ? `Welcome to The Cannery Marketplace, ${application.businessName}` : `Your vendor interest form: ${application.businessName}`;
-  const body = kind === "invite"
-    ? `Hi ${first},\n\nThank you for your interest in The Cannery Marketplace. We would love to have ${application.businessName} on our shelves.\n\n${note ? `${note}\n\n` : ""}Next step: create your maker listing at ${portal}\nSign in with this email address (${application.email}). We will email you a one time code, so there is no password to remember. Every listing is reviewed before it goes live, which can take up to 72 hours.\n\nThe Cannery Marketplace\n7488 Monterey Road, Gilroy\n(408) 337-1620`
-    : kind === "decline"
-      ? `Hi ${first},\n\nThank you for sharing ${application.businessName} with The Cannery Marketplace. We reviewed your vendor interest form, and we are not able to offer a space right now.\n\n${note ? `${note}\n\n` : ""}We keep every form on file and may reach out if that changes.\n\nThe Cannery Marketplace`
-      : `Hi ${first},\n\nThank you for your vendor interest form for ${application.businessName}.\n\n${note ? `${note}\n\n` : ""}The Cannery Marketplace`;
-  return `mailto:${encodeURIComponent(application.email)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+/** Prefilled emails, sent from the owner's own email app (see lib/makerEmails.ts). */
+function emailLink(application: { fullName: string; email: string; businessName: string }, kind: "invite" | "decline" | "reply", note: string, listingReady = true) {
+  if (kind === "invite") return welcomeEmailLink(application, note, listingReady);
+  return kind === "decline" ? declineEmailLink(application, note) : replyEmailLink(application, note);
 }
 
 /** Owner dashboard tab: vendor interest forms submitted on /apply. */
@@ -33,9 +27,9 @@ export default function ApplicationsPanel() {
   const [filter, setFilter] = useState<ApplicationStatus | "all">("new");
   const [notes, setNotes] = useState<Record<number, string>>({});
   const update = trpc.adminPortal.setApplicationStatus.useMutation({
-    onSuccess: async (_result, input) => {
+    onSuccess: async (result, input) => {
       const application = list.data?.find((item) => item.id === input.id);
-      if (application && input.status === "invited") notifySuccess(`${application.businessName} invited`, { description: `${application.email} can now sign in to the maker portal. Send them the welcome email.`, link: { label: "Email the maker", href: emailLink(application, "invite", input.note ?? "") } });
+      if (application && input.status === "invited") notifySuccess(`${application.businessName} invited`, { description: `${application.email} can now sign in to the maker portal${result.listingStarted ? ", and their listing is started from the application" : ""}. Send them the welcome email so they know how.`, link: { label: "Send welcome email", href: emailLink(application, "invite", input.note ?? "", true) } });
       else if (application && input.status === "declined") notifySuccess("Marked as declined", { description: "Let them know with a short email.", link: { label: "Email the applicant", href: emailLink(application, "decline", input.note ?? "") } });
       else notifySuccess(input.status === "archived" ? "Application archived" : "Moved back to New");
       await Promise.all([utils.adminPortal.applications.invalidate(), utils.adminPortal.makerInvites.invalidate()]);

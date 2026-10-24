@@ -101,14 +101,13 @@ export default function ListingFields({ value, onChange, upload, ownerControls, 
     <label>Contact email (shown to shoppers) *<input id="listing-contactEmail" type="email" value={value.contactEmail} onChange={(event) => set("contactEmail", event.target.value)} {...invalid("contactEmail")} /><FieldError problems={problems} field="contactEmail" /></label>
     <fieldset className="listing-links">
       <legend>Links</legend>
-      <label>Website (optional)<input id="listing-websiteUrl" type="url" value={value.websiteUrl} onChange={(event) => set("websiteUrl", event.target.value)} placeholder="https://…" {...invalid("websiteUrl")} /><FieldError problems={problems} field="websiteUrl" /></label>
-      <p className="form-hint">Add at least one social link *</p>
+      <label>Website (optional)<input id="listing-websiteUrl" value={value.websiteUrl} onChange={(event) => set("websiteUrl", event.target.value)} placeholder="yourshop.com" {...invalid("websiteUrl")} /><FieldError problems={problems} field="websiteUrl" /></label>
+      <p className="form-hint">Social links are optional. Type your @handle or paste the full link.</p>
       <div className="portal-social-grid">
-        <label>Instagram<input id="listing-instagramUrl" type="url" value={value.instagramUrl} onChange={(event) => set("instagramUrl", event.target.value)} placeholder="https://instagram.com/…" {...invalid("instagramUrl")} /><FieldError problems={problems} field="instagramUrl" /></label>
-        <label>Facebook<input id="listing-facebookUrl" type="url" value={value.facebookUrl} onChange={(event) => set("facebookUrl", event.target.value)} placeholder="https://facebook.com/…" {...invalid("facebookUrl")} /><FieldError problems={problems} field="facebookUrl" /></label>
-        <label>TikTok<input id="listing-tiktokUrl" type="url" value={value.tiktokUrl} onChange={(event) => set("tiktokUrl", event.target.value)} placeholder="https://tiktok.com/@…" {...invalid("tiktokUrl")} /><FieldError problems={problems} field="tiktokUrl" /></label>
+        <label>Instagram<input id="listing-instagramUrl" value={value.instagramUrl} onChange={(event) => set("instagramUrl", event.target.value)} placeholder="@yourshop" {...invalid("instagramUrl")} /><FieldError problems={problems} field="instagramUrl" /></label>
+        <label>Facebook<input id="listing-facebookUrl" value={value.facebookUrl} onChange={(event) => set("facebookUrl", event.target.value)} placeholder="@yourshop" {...invalid("facebookUrl")} /><FieldError problems={problems} field="facebookUrl" /></label>
+        <label>TikTok<input id="listing-tiktokUrl" value={value.tiktokUrl} onChange={(event) => set("tiktokUrl", event.target.value)} placeholder="@yourshop" {...invalid("tiktokUrl")} /><FieldError problems={problems} field="tiktokUrl" /></label>
       </div>
-      <FieldError problems={problems} field="social" />
     </fieldset>
     <div className="maker-media-editor">
       <p className="form-legend">Photos *</p>
