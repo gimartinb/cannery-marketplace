@@ -14,6 +14,9 @@ import {
   listPublicHighlights, reorderGalleryPhotos, updateGalleryPhoto, updateHighlight,
 } from "./db";
 import { aiWrite } from "./aiWriting";
+import { discardSiteTextDraft, listSiteTextForOwners, previewSiteText, publishedSiteText, publishSiteText, restoreOriginalSiteText, saveSiteTextDraft } from "./siteText";
+import { countRecentGiftRequests, createGiftRequest, deleteGiftBox, getCommerceSettings, GIFT_REQUEST_LIMIT_PER_SOURCE_PER_DAY, listGiftBoxChoices, listGiftBoxes, listGiftRequests, listPublicGiftBoxes, saveGiftBox, setCommerceSettings, squareApiReady, updateGiftRequest } from "./gifts";
+import { BRANDING_OPTIONS, commerceSettingsSchema, GIFT_CATEGORIES, GIFT_REQUEST_STATUSES, giftBoxSchema, giftRequestSchema } from "../shared/gifts";
 import { runStorageMaintenance, usageSummary } from "./usage";
 import { aiWriteSchema } from "../shared/aiWriting";
 import { normalizeLink } from "../shared/socialLinks";
@@ -64,7 +67,35 @@ export const publicRouter = router({
       return { id };
     }),
   }),
-  settings: router({ public: publicProcedure.query(async ({ ctx }) => ({ giftBoxesEnabled: await giftBoxesEnabled(ctx.db) })) }),
+  settings: router({
+    public: publicProcedure.query(async ({ ctx }) => ({ giftBoxesEnabled: await giftBoxesEnabled(ctx.db) })),
+    // Published site text (only wording the owners changed). Pages also get this in the HTML.
+    siteText: publicProcedure.query(({ ctx }) => publishedSiteText(ctx.db)),
+  }),
+  // Gift boxes and corporate requests. Everything is hidden while gift boxes are turned off.
+  gifts: router({
+    catalog: publicProcedure.query(async ({ ctx }) => (await giftBoxesEnabled(ctx.db)) ? { enabled: true as const, ...(await listPublicGiftBoxes(ctx.db)) } : { enabled: false as const, providerName: "", pickupNote: "", boxes: [] }),
+    boxChoices: publicProcedure.query(async ({ ctx }) => (await giftBoxesEnabled(ctx.db)) ? listGiftBoxChoices(ctx.db) : []),
+    requestQuote: publicProcedure.input(giftRequestSchema).mutation(async ({ ctx, input }) => {
+      if (input.website2) return { id: 0 };
+      if (!(await giftBoxesEnabled(ctx.db))) throw new TRPCError({ code: "FORBIDDEN", message: "Gift requests are paused right now. Please email thecannerymarketplace@gmail.com." });
+      const hash = await sourceHash(ctx.request);
+      if ((await countRecentGiftRequests(ctx.db, hash)) >= GIFT_REQUEST_LIMIT_PER_SOURCE_PER_DAY) throw new TRPCError({ code: "TOO_MANY_REQUESTS", message: "We received several requests from this connection today. Please email thecannerymarketplace@gmail.com." });
+      const digits = input.phone.replace(/\D/g, "").replace(/^1(?=\d{10}$)/, "");
+      const id = await createGiftRequest(ctx.db, {
+        company: clean(input.company), contactName: clean(input.contactName), email: input.email.trim().toLowerCase(),
+        phone: digits ? `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6)}` : null,
+        quantity: Number(input.quantity), budgetPerGift: input.budgetPerGift, neededBy: input.neededBy || null, deliveryMethod: input.deliveryMethod,
+        destinations: clean(input.destinations) || null,
+        branding: JSON.stringify(input.branding.filter((item) => (BRANDING_OPTIONS as readonly string[]).includes(item))),
+        cardMessage: input.branding.includes("Custom card message") ? input.cardMessage.trim() || null : null, logoLink: input.logoLink.trim() || null,
+        startingBox: input.startingBox.trim() || null, customBox: input.customBox,
+        preferredCategories: JSON.stringify(input.customBox ? input.preferredCategories.filter((item) => (GIFT_CATEGORIES as readonly string[]).includes(item)) : []),
+        preferredMakers: input.customBox ? clean(input.preferredMakers) || null : null, message: input.message.trim(), sourceHash: hash,
+      });
+      return { id };
+    }),
+  }),
   // Owner managed content: home page highlights and the About page gallery.
   home: router({ highlights: publicProcedure.query(({ ctx }) => listPublicHighlights(ctx.db)) }),
   gallery: router({ list: publicProcedure.query(({ ctx }) => listGalleryPhotos(ctx.db)) }),
@@ -198,6 +229,32 @@ export const adminRouter = router({
       return { success: true };
     }),
     reorderGallery: adminProcedure.input(z.object({ ids: z.array(z.number().int().positive()).max(50) })).mutation(async ({ ctx, input }) => { await reorderGalleryPhotos(ctx.db, input.ids); return { success: true }; }),
+    // Site text editor: drafts, preview, publish, history, restore original.
+    siteText: adminProcedure.query(({ ctx }) => listSiteTextForOwners(ctx.db)),
+    siteTextPreview: adminProcedure.query(({ ctx }) => previewSiteText(ctx.db)),
+    saveSiteTextDraft: adminProcedure.input(z.object({ key: z.string().max(80), text: z.string().max(2400) })).mutation(({ ctx, input }) => saveSiteTextDraft(ctx.db, input.key, input.text, ctx.email)),
+    discardSiteTextDraft: adminProcedure.input(z.object({ key: z.string().max(80) })).mutation(async ({ ctx, input }) => { await discardSiteTextDraft(ctx.db, input.key); return { success: true }; }),
+    restoreOriginalSiteText: adminProcedure.input(z.object({ key: z.string().max(80) })).mutation(({ ctx, input }) => restoreOriginalSiteText(ctx.db, input.key, ctx.email)),
+    publishSiteText: adminProcedure.input(z.object({ keys: z.union([z.literal("all"), z.array(z.string().max(80)).max(400)]) })).mutation(({ ctx, input }) => publishSiteText(ctx.db, input.keys, ctx.email)),
+    // Gift boxes, checkout settings, and corporate requests (all hidden until gift boxes are on).
+    giftBoxes: adminProcedure.query(async ({ ctx }) => {
+      const settings = await getCommerceSettings(ctx.db);
+      return { boxes: await listGiftBoxes(ctx.db), settings, squareApiReady: squareApiReady(ctx.env, settings), hasSquareToken: Boolean(ctx.env.SQUARE_ACCESS_TOKEN) };
+    }),
+    saveGiftBox: adminProcedure.input(giftBoxSchema).mutation(async ({ ctx, input }) => {
+      const saved = await saveGiftBox(ctx.db, input);
+      if (!saved) throw new TRPCError({ code: "NOT_FOUND", message: "That gift box no longer exists. Refresh the page." });
+      if (saved.previousImage && saved.previousImage !== (input.imageUrl || null)) await deleteSiteImageObject(ctx.env, saved.previousImage);
+      return { id: saved.id };
+    }),
+    deleteGiftBox: adminProcedure.input(z.object({ id: z.number().int().positive() })).mutation(async ({ ctx, input }) => {
+      const removed = await deleteGiftBox(ctx.db, input.id);
+      await deleteSiteImageObject(ctx.env, removed?.imageUrl);
+      return { success: true };
+    }),
+    saveCommerceSettings: adminProcedure.input(commerceSettingsSchema).mutation(async ({ ctx, input }) => { await setCommerceSettings(ctx.db, input); return { success: true }; }),
+    giftRequests: adminProcedure.query(({ ctx }) => listGiftRequests(ctx.db)),
+    updateGiftRequest: adminProcedure.input(z.object({ id: z.number().int().positive(), status: z.enum(GIFT_REQUEST_STATUSES), adminNote: z.string().trim().max(1200).default(""), quoteAmount: z.string().trim().max(40).default(""), externalOrderId: z.string().trim().max(64).default("") })).mutation(async ({ ctx, input }) => { const { id, ...change } = input; await updateGiftRequest(ctx.db, id, change); return { success: true }; }),
     bulkImport: adminProcedure.input(z.object({ vendors: z.array(ownerVendorSchema).min(1).max(500) })).mutation(({ ctx, input }) => bulkImportVendorProfiles(ctx.db, input.vendors, ctx.email)),
   }),
 });

@@ -6,6 +6,7 @@ import { formatLocalNumber } from "@/components/ContactForm";
 import { readableError } from "@/lib/notify";
 import { trpc } from "@/lib/trpc";
 import { APPLICATION_CATEGORIES, APPLICATION_FIELD_ORDER, applicationProblems, EMPTY_APPLICATION, formatApplicationPhone, SALES_CHANNELS, type ApplicationField, type ApplicationValues } from "@shared/application";
+import { Txt } from "@/lib/siteText";
 
 // Each application also goes to the marketplace inbox through FormSubmit (free,
 // already used by the contact form), so Nancy hears about it right away.
@@ -66,7 +67,7 @@ export default function ApplicationForm() {
 
   return <>
     <form className="contact-form application-form" onSubmit={send} noValidate>
-      <h2>The Cannery Marketplace Maker Application</h2>
+      <h2><Txt k="apply.form.title" /></h2>
       <p>Fields marked with an asterisk are required. It takes about five minutes.</p>
       <input type="text" name="website2" value={honey} onChange={(event) => setHoney(event.target.value)} style={{ display: "none" }} tabIndex={-1} autoComplete="off" aria-hidden="true" />
 

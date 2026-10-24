@@ -70,6 +70,7 @@ export async function handleVendorUpload(request: Request, env: Env): Promise<Re
  * POST /api/admin/upload  (owners only). Body: the raw image bytes.
  *   ?slot=<site image spot>  replaces that spot's image and removes the previous upload
  *   ?purpose=highlight       stores a home highlight image and returns its URL (saved with the highlight)
+ *   ?purpose=gift            stores a gift box photo and returns its URL (saved with the box)
  *   ?purpose=gallery&alt=... adds a photo to the About page gallery (up to 12)
  *   ?purpose=vendor          stores a photo for a maker listing the owner is editing, and returns its URL
  */
@@ -90,7 +91,7 @@ export async function handleSiteImageUpload(request: Request, env: Env): Promise
     return json({ key, url: `/media/${key}` });
   }
 
-  if (purpose === "highlight" || purpose === "gallery") {
+  if (purpose === "highlight" || purpose === "gallery" || purpose === "gift") {
     if (purpose === "gallery" && (await countGalleryPhotos(db)) >= MAX_GALLERY_PHOTOS) return json({ error: `The gallery holds up to ${MAX_GALLERY_PHOTOS} photos. Remove one before adding another.` }, 400);
     const upload = validateImageUpload(request);
     if (upload instanceof Response) return upload;

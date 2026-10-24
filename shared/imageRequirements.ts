@@ -4,7 +4,7 @@
 
 export type ImageSpot =
   | "logo" | "home-hero" | "marketplace-interior" | "about-display" | "social-sharing"
-  | "highlight" | "gallery" | "maker-cover" | "maker-gallery";
+  | "highlight" | "gallery" | "maker-cover" | "maker-gallery" | "gift-box";
 
 export type ImageRequirement = {
   label: string;
@@ -26,6 +26,7 @@ export const IMAGE_REQUIREMENTS: Record<ImageSpot, ImageRequirement> = {
   highlight: { label: "Home highlight", minWidth: 1200, minHeight: 900, orientation: "any", shape: "You frame it as a 4:3 landscape after choosing it", crop: { aspect: 4 / 3, outputWidth: 1600, allowWholeImage: true } },
   gallery: { label: "About page gallery", minWidth: 1200, minHeight: 900, orientation: "any", shape: "You frame it as a 4:3 landscape after choosing it", crop: { aspect: 4 / 3, outputWidth: 1600 } },
   "maker-cover": { label: "Maker cover photo", minWidth: 800, minHeight: 600, orientation: "any", shape: "You frame it as a 4:3 landscape after choosing it. Logos can be shown whole", crop: { aspect: 4 / 3, outputWidth: 1600, allowWholeImage: true } },
+  "gift-box": { label: "Gift box photo", minWidth: 1200, minHeight: 900, orientation: "any", shape: "You frame it as a 4:3 landscape after choosing it", crop: { aspect: 4 / 3, outputWidth: 1600 } },
   "maker-gallery": { label: "Maker work photo", minWidth: 800, minHeight: 800, orientation: "any", shape: "You frame it as a square after choosing it", crop: { aspect: 1, outputWidth: 1200, allowWholeImage: true } },
 };
 

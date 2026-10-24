@@ -1,4 +1,5 @@
 import { and, asc, eq } from "drizzle-orm";
+import { publishedSiteText } from "./siteText";
 import { vendorProfiles } from "../drizzle/schema";
 import { createDb, getSiteSetting, listSiteImages, type Database } from "./db";
 import type { Env } from "./env";
@@ -169,22 +170,35 @@ export async function handlePage(request: Request, env: Env): Promise<Response> 
     url.pathname = url.pathname.replace(/\/+$/, "") || "/";
     return Response.redirect(url.toString(), 301);
   }
-  const asset = await env.ASSETS.fetch(request);
-  if (!(asset.headers.get("Content-Type") || "").includes("text/html") || request.method !== "GET") return asset;
+  // Pages carry live data (search tags, site text), so the shell is always fetched in full:
+  // a conditional request would get an empty 304 body from the asset store, which the
+  // rewrite below would turn into a blank page.
+  const accept = request.headers.get("Accept") || "";
+  const conditional = request.headers.has("If-None-Match") || request.headers.has("If-Modified-Since");
+  const assetRequest = conditional && request.method === "GET" && !/\.[a-z0-9]{2,5}$/i.test(url.pathname) ? new Request(request.url, { method: "GET", headers: { Accept: accept || "text/html" } }) : request;
+  const asset = await env.ASSETS.fetch(assetRequest);
+  if (!(asset.headers.get("Content-Type") || "").includes("text/html") || request.method !== "GET" || asset.status === 304) return asset;
 
   const production = isProductionHost(url.hostname);
   let meta: PageMeta;
   try { meta = await resolvePage(createDb(env.DB), url.pathname); }
   catch (error) { console.error("SEO tags failed", error); return asset; }
   const tags = headTags(meta, production);
+  // The owners' published wording, so pages render it on first paint (no flash of the original text).
+  let siteText: Record<string, string> = {};
+  try { siteText = await publishedSiteText(createDb(env.DB)); } catch (error) { console.error("Site text failed", error); }
+  const textScript = `<script>window.__SITE_TEXT__=${JSON.stringify(siteText).replace(/</g, "\\u003c").replace(/\u2028/g, "\\u2028").replace(/\u2029/g, "\\u2029")}</script>`;
 
   const rewritten = new HTMLRewriter()
     .on("title, meta[name=description], meta[name=robots], meta[property^='og:'], meta[name^='twitter:'], link[rel=canonical]", { element: (element) => { element.remove(); } })
-    .on("head", { element: (element) => { element.append(tags, { html: true }); } })
+    .on("head", { element: (element) => { element.append(`${tags}\n    ${textScript}`, { html: true }); } })
     .transform(asset);
   const response = new Response(rewritten.body, { status: meta.status, headers: rewritten.headers });
   response.headers.set("Content-Type", "text/html; charset=utf-8");
-  response.headers.set("Cache-Control", "public, max-age=0, must-revalidate");
+  response.headers.set("Cache-Control", "no-cache");
+  // The asset's validators describe the file on disk, not this page with its live tags and text.
+  response.headers.delete("ETag");
+  response.headers.delete("Last-Modified");
   if (!production) response.headers.set("X-Robots-Tag", "noindex, nofollow");
   return response;
 }

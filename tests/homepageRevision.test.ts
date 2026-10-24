@@ -54,6 +54,6 @@ describe("maker-first homepage revision", () => {
     expect(sitemap).toContain('"/vendors"');
     expect(sitemap).toContain('path !== "/gifts" || giftsOn');
     expect(pageMeta).toContain('link[rel="canonical"]');
-    expect(gifts).toContain('canonicalPath="/gifts" noIndex');
+    expect(gifts).toContain('noIndex title="Gift boxes unavailable"');
   });
 });

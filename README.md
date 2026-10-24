@@ -21,15 +21,17 @@ It runs entirely on Cloudflare's free plan, so hosting costs **$0 a month**, wit
 * Sign in with a one time code sent by email, with no passwords
 * Edit every listing tied to their email, or add a new one
 * Frame each photo in its exact shape before uploading
-* Free AI writing help: "Improve my writing" and "Write it for me"
+* Free AI writing help: "Improve my writing" and "Write it for me". Every suggestion can be edited, used as is, changed on request ("make it shorter"), or tried again
 * Every change is reviewed by the owners before it goes live (up to 72 hours)
 
 **For the owners** (`/admin`)
 * Applications: review maker applications, then approve and invite in one click
-* Review queue: approve, request changes, or reject maker submissions
+* Review queue: each update shows exactly what changed (added and removed words, new and removed photos) before you approve, request changes, or reject
 * Published vendors: edit any listing, bulk assign login emails, show or hide, feature
 * Maker access: who can sign in, and which listings each email can edit
-* Site images, home highlights with start and end dates, photo gallery, gift boxes
+* Site text: edit any heading, paragraph, button, hours, or contact detail with drafts, preview, publish, history, Restore original, and AI help
+* Site images, home highlights with start and end dates, photo gallery
+* Gifts and corporate (hidden until turned on): gift boxes with checkout links from Square or any point of sale, and corporate and custom gift requests with quotes and invoice numbers
 * Spreadsheet import for many makers at once
 * A "Free plan usage" card showing AI use, photo storage, and uploads
 

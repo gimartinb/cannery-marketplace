@@ -118,7 +118,7 @@ export const aiUsage = sqliteTable("ai_usage", {
   count: integer("count").default(0).notNull(),
 }, (table) => [primaryKey({ columns: [table.email, table.day] })]);
 
-// Vendor interest form submissions (replaces the Google Form). Owners review them
+// Maker application submissions (replaces the Google Form). Owners review them
 // in the Applications tab and can invite an applicant to the maker portal.
 export const makerApplications = sqliteTable("maker_applications", {
   id: integer("id").primaryKey({ autoIncrement: true }),
@@ -147,3 +147,79 @@ export const makerApplications = sqliteTable("maker_applications", {
 export type VendorAccount = typeof vendorAccounts.$inferSelect;
 export type VendorProfile = typeof vendorProfiles.$inferSelect;
 export type VendorSubmission = typeof vendorSubmissions.$inferSelect;
+
+// Site text editor. A row exists only for text an owner has edited.
+// published: what the site shows (null = the original wording in shared/siteText.ts).
+// draft: saved but not yet published (null = no draft).
+export const siteText = sqliteTable("site_text", {
+  key: text("key").primaryKey(),
+  draft: text("draft"),
+  published: text("published"),
+  draftBy: text("draftBy"),
+  publishedBy: text("publishedBy"),
+  publishedAt: integer("publishedAt", { mode: "timestamp" }),
+  updatedAt: updatedAt(),
+});
+
+// Every publish, so an owner can bring back an earlier wording.
+export const siteTextHistory = sqliteTable("site_text_history", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  key: text("key").notNull(),
+  // The text that was published. An empty string means "back to the original".
+  text: text("text").notNull(),
+  publishedBy: text("publishedBy"),
+  publishedAt: createdAt(),
+}, (table) => [index("site_text_history_key_idx").on(table.key, table.id)]);
+
+// Gift boxes (hidden until the owners turn gift boxes on). Checkout is a link to
+// the store's payment provider, so this works with Square or any future system.
+export const giftBoxes = sqliteTable("gift_boxes", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  slug: text("slug").notNull(),
+  name: text("name").notNull(),
+  price: text("price").notNull(),
+  priceCents: integer("priceCents"),
+  description: text("description").notNull(),
+  details: text("details"),
+  imageUrl: text("imageUrl"),
+  // A Square Payment Link, Square Online item page, or any provider's checkout page.
+  checkoutUrl: text("checkoutUrl"),
+  // The item's id in the point of sale catalog (for example a Square catalog item id), for phase 2.
+  externalItemId: text("externalItemId"),
+  externalVariationId: text("externalVariationId"),
+  corporateOnly: integer("corporateOnly", { mode: "boolean" }).default(false).notNull(),
+  active: integer("active", { mode: "boolean" }).default(true).notNull(),
+  displayOrder: integer("displayOrder").default(100).notNull(),
+  createdAt: createdAt(),
+  updatedAt: updatedAt(),
+}, (table) => [uniqueIndex("gift_boxes_slug_unique").on(table.slug)]);
+
+// Corporate and custom gift requests from /request-a-quote.
+export const giftRequests = sqliteTable("gift_requests", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  company: text("company").notNull(),
+  contactName: text("contactName").notNull(),
+  email: text("email").notNull(),
+  phone: text("phone"),
+  quantity: integer("quantity").notNull(),
+  budgetPerGift: text("budgetPerGift").notNull(),
+  neededBy: text("neededBy"),
+  deliveryMethod: text("deliveryMethod").notNull(),
+  destinations: text("destinations"),
+  branding: text("branding").notNull(),
+  cardMessage: text("cardMessage"),
+  logoLink: text("logoLink"),
+  startingBox: text("startingBox"),
+  customBox: integer("customBox", { mode: "boolean" }).default(false).notNull(),
+  preferredCategories: text("preferredCategories").notNull(),
+  preferredMakers: text("preferredMakers"),
+  message: text("message").notNull(),
+  status: text("status", { enum: ["new", "quoted", "won", "lost", "archived"] }).default("new").notNull(),
+  adminNote: text("adminNote"),
+  quoteAmount: text("quoteAmount"),
+  // The invoice or order id in the point of sale (for example a Square invoice id), for phase 2.
+  externalOrderId: text("externalOrderId"),
+  sourceHash: text("sourceHash"),
+  createdAt: createdAt(),
+  updatedAt: updatedAt(),
+}, (table) => [index("gift_requests_status_idx").on(table.status), index("gift_requests_source_idx").on(table.sourceHash, table.createdAt)]);

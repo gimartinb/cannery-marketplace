@@ -5,6 +5,7 @@ import PageMeta from "@/components/PageMeta";
 import SiteShell from "@/components/SiteShell";
 import { publishedVendorToView } from "@/lib/vendors";
 import { trpc } from "@/lib/trpc";
+import { Txt, usePlainText } from "@/lib/siteText";
 
 const PAGE_SIZES = [10, 25, 50] as const;
 type PageSize = (typeof PAGE_SIZES)[number];
@@ -17,6 +18,7 @@ function useDebounced<T>(value: T, delay = 350): T {
 }
 
 export default function Vendors() {
+  const plain = usePlainText();
   const [category, setCategory] = useState("All makers");
   const [search, setSearch] = useState("");
   const [pageSize, setPageSize] = useState<PageSize>(10);
@@ -39,18 +41,18 @@ export default function Vendors() {
       <main>
         <section className="page-hero directory-hero">
           <div className="site-container page-hero-content">
-            <p className="eyebrow">The maker directory</p>
-            <h1 className="display">Meet the people behind the <em>good stuff.</em></h1>
-            <p>Explore the local makers and artisans who bring their work to The Cannery Marketplace. Each profile is a small window into the hands and ideas behind what you find here.</p>
+            <p className="eyebrow"><Txt k="makers.hero.eyebrow" /></p>
+            <h1 className="display"><Txt k="makers.hero.title" /></h1>
+            <p><Txt k="makers.hero.body" /></p>
           </div>
         </section>
 
         <section className="directory-section">
           <div className="site-container">
             <div className="directory-toolbar">
-              <div><p className="eyebrow">Browse the shelves</p><h2 className="display">Find a maker</h2></div>
+              <div><p className="eyebrow"><Txt k="makers.list.eyebrow" /></p><h2 className="display"><Txt k="makers.list.title" /></h2></div>
               <div className="directory-controls">
-                <label className="directory-search"><Search size={15} /><span className="sr-only">Search makers</span><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search makers" /></label>
+                <label className="directory-search"><Search size={15} /><span className="sr-only">{plain("makers.list.search")}</span><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder={plain("makers.list.search")} /></label>
                 <label className="category-select"><span>Category</span><select value={category} onChange={(event) => setCategory(event.target.value)} aria-label="Filter makers by category">{categories.map((item) => <option key={item} value={item}>{item}</option>)}</select></label>
               </div>
             </div>
@@ -66,11 +68,11 @@ export default function Vendors() {
                     <div className="vendor-card-meta"><span>{vendor.category}</span>{vendor.featured && <span className="featured-label"><Sparkles size={12} /> Featured</span>}</div>
                     <h3><Link href={`/vendors/${vendor.slug}`}>{vendor.name}</Link></h3>
                     <p>{vendor.bio}</p>
-                    <Link className="text-link" href={`/vendors/${vendor.slug}`}>View profile <ArrowRight size={15} /></Link>
+                    <Link className="text-link" href={`/vendors/${vendor.slug}`}><Txt k="makers.card.link" /> <ArrowRight size={15} /></Link>
                   </div>
                 </article>
               ))}
-            </div> : <div className="directory-empty"><Search size={19} /><h3>No makers found</h3><p>Try a different name, category, or keyword.</p><button className="button-plain" type="button" onClick={() => { setSearch(""); setCategory("All makers"); }}>Clear search <X size={14} /></button></div>}
+            </div> : <div className="directory-empty"><Search size={19} /><h3><Txt k="makers.empty.title" /></h3><p><Txt k="makers.empty.body" /></p><button className="button-plain" type="button" onClick={() => { setSearch(""); setCategory("All makers"); }}>Clear search <X size={14} /></button></div>}
 
             {visibleVendors.length > 0 && <div className="directory-pagination" style={{ display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: "1rem", marginTop: "2rem" }}>
               <p aria-live="polite">Showing {visibleVendors.length} of {total} maker{total === 1 ? "" : "s"}</p>

@@ -16,9 +16,9 @@ describe("AI description helper", () => {
   it("asks for a few words before writing from nothing, without using the allowance", async () => {
     const env = { AI: { run: async () => ({ response: "unused" }) } } as never;
     const db = {} as never; // never reached: the check happens before any database work
-    const empty = { name: "", ownerName: "", category: "", shortBio: "", ownerBio: "", title: "" };
-    await expect(aiWrite(env, db, { email: "m@example.com", role: "maker" }, { field: "shortBio", mode: "draft", text: "", notes: "", context: empty })).rejects.toThrow(/few words/);
-    await expect(aiWrite(env, db, { email: "m@example.com", role: "maker" }, { field: "shortBio", mode: "improve", text: "short", notes: "", context: empty })).rejects.toThrow(/20 characters/);
+    const empty = { name: "", ownerName: "", category: "", shortBio: "", ownerBio: "", title: "", section: "", maxChars: 0, original: "" };
+    await expect(aiWrite(env, db, { email: "m@example.com", role: "maker" }, { field: "shortBio", mode: "draft", text: "", notes: "", instruction: "", context: empty })).rejects.toThrow(/few words/);
+    await expect(aiWrite(env, db, { email: "m@example.com", role: "maker" }, { field: "shortBio", mode: "improve", text: "short", notes: "", instruction: "", context: empty })).rejects.toThrow(/20 characters/);
   });
 });
 

@@ -71,6 +71,13 @@
       "when": 1792846252022,
       "tag": "0009_application_address",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "6",
+      "when": 1792847409326,
+      "tag": "0010_site_text_and_gifts",
+      "breakpoints": true
     }
   ]
 }

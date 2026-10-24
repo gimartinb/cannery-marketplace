@@ -1,6 +1,6 @@
 import { TRPCError } from "@trpc/server";
 import { eq, inArray, sql } from "drizzle-orm";
-import { aiUsage, galleryPhotos, productHighlights, siteImages, siteSettings, vendorProfiles, vendorSubmissions } from "../drizzle/schema";
+import { aiUsage, galleryPhotos, giftBoxes, productHighlights, siteImages, siteSettings, vendorProfiles, vendorSubmissions } from "../drizzle/schema";
 import { createDb, type Database } from "./db";
 import type { Env } from "./env";
 
@@ -111,6 +111,7 @@ async function referencedKeys(db: Database) {
   for (const row of await db.select({ url: siteImages.url }).from(siteImages)) add(row.url);
   for (const row of await db.select({ url: productHighlights.imageUrl }).from(productHighlights)) add(row.url);
   for (const row of await db.select({ url: galleryPhotos.url }).from(galleryPhotos)) add(row.url);
+  for (const row of await db.select({ url: giftBoxes.imageUrl }).from(giftBoxes)) add(row.url);
   return keys;
 }
 

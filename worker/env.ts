@@ -10,6 +10,12 @@ export interface Env {
   ACCESS_AUD: string;
   /** Comma separated emails allowed into the owner dashboard. */
   ADMIN_EMAILS: string;
+  /**
+   * Phase 2 only (not used yet): a Square access token for connecting gift boxes and
+   * corporate invoices to Square. Add it with `wrangler secret put SQUARE_ACCESS_TOKEN`,
+   * never in code, chat, or the dashboard's text fields.
+   */
+  SQUARE_ACCESS_TOKEN?: string;
   /** Local development only. Set in .dev.vars, never in wrangler.jsonc. */
   ENVIRONMENT?: string;
   DEV_AUTH_EMAIL?: string;
