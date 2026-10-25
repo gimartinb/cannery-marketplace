@@ -230,7 +230,7 @@
 .gift-tone-sun { background: linear-gradient(145deg, #c29b45, #73552a); }
 .gift-tone-sage { background: linear-gradient(145deg, #8d9a78, #405340); }
 .gift-initials { position: relative; font-family: "Playfair Display", Georgia, serif; font-size: 5.5rem; font-style: italic; letter-spacing: -.09em; }
-.gift-placeholder > span:last-child { position: relative; font-size: .6rem; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; }
+.gift-placeholder > span:last-child:not(.gift-initials) { position: relative; font-size: .6rem; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; }
 .gift-card-copy { padding: 1.45rem 1.45rem 1.6rem; }
 .gift-card-top { display: flex; align-items: start; justify-content: space-between; gap: 1rem; }
 .gift-card h3 { margin: 0; font-family: "Playfair Display", Georgia, serif; font-size: 1.65rem; letter-spacing: -.035em; }
@@ -1437,3 +1437,36 @@ main { min-height: 100svh; }
   .mobile-menu { display: flex; position: absolute; top: 100%; left: 0; right: 0; flex-direction: column; gap: .1rem; padding: 1rem 18px 1.25rem; background: var(--paper); border-bottom: 1px solid var(--line); box-shadow: 0 18px 30px rgba(30,31,24,.09); }
   .mobile-menu .nav-link { padding: .85rem 0; }
 }
+
+/* Mobile polish (phones and tablets) */
+.site-text-list, .site-text-item { grid-template-columns: minmax(0, 1fr); }
+.site-text-item > *, .site-text-card > *, .secure-vendor-table > div > * { min-width: 0; }
+.secure-admin-card select, .secure-vendor-table select { max-width: 100%; }
+.secure-admin-card, .review-changes, .diff-text, .application-details dd { overflow-wrap: anywhere; }
+@media (max-width: 640px) {
+  .secure-vendor-table > div { grid-template-columns: 42px minmax(0, 1fr); }
+  .secure-vendor-table > div > :last-child:not(span) { grid-column: 1 / -1; justify-self: start; }
+  .site-text-head { flex-wrap: wrap; }
+  .site-image-compare figure { width: calc(50% - .5rem); }
+  .email-template > summary { flex-wrap: wrap; }
+  .preview-banner { bottom: .6rem; }
+}
+@media (max-width: 820px) {
+  /* Small labels stay readable on phones (at least 12px). */
+  .spotlight-ribbon, .vendor-card-ribbon, .spotlight-category, .category-select, .category-select span, .card-kicker, .image-caption, .gift-details, .admin-count, .compact-hours strong, .application-form label, .gift-request-form label, .form-field label { font-size: .75rem; }
+  /* Comfortable tap targets. */
+  .footer-list li { margin-bottom: .2rem; }
+  .footer-list a { display: inline-block; padding: .5rem 0; }
+  .text-link { padding: .35rem 0; }
+  input[type="checkbox"], input[type="radio"] { width: 1.25rem; height: 1.25rem; }
+  .choice { min-height: 44px; }
+}
+.secure-review-list { grid-template-columns: minmax(0, 1fr); }
+.connect-listing { display: flex; max-width: 100%; }
+.connect-listing select { min-width: 0; flex: 1 1 auto; width: 100%; }
+.promote-card { grid-template-columns: auto minmax(0, 1fr); }
+.promote-card label, .promote-card select { min-width: 0; max-width: 100%; }
+.secure-vendor-table > div > div { min-width: 0; }
+@media (max-width: 640px) { .secure-review-list > .secure-admin-card { margin-inline: 0; } }
+.secure-admin-card label { min-width: 0; max-width: 100%; }
+.secure-admin-card label > select { width: 100%; min-width: 0; }
