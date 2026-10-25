@@ -96,7 +96,7 @@
 }
 
 .navbar { position: sticky; top: 0; z-index: 80; background: rgba(255,253,248,.96); border-bottom: 1px solid rgba(32,36,29,.1); box-shadow: 0 8px 24px rgba(32,36,29,.04); backdrop-filter: blur(12px); }
-.navbar-inner { min-height: 5.7rem; display: grid; grid-template-columns: auto auto auto; justify-content: center; align-items: center; gap: clamp(1rem, 4vw, 3.5rem); }
+.navbar-inner { min-height: 5.7rem; display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); align-items: center; gap: clamp(1rem, 4vw, 3.5rem); }
 .brand-link { display: block; justify-self: center; }
 .brand-mark { display: block; width: 146px; height: auto; }
 .nav-links { display: flex; align-items: center; gap: clamp(.9rem, 2vw, 1.7rem); }
@@ -1421,3 +1421,19 @@ main { min-height: 100svh; }
 .email-log strong { font-size: .86rem; }
 .email-log small { font-size: .74rem; color: #70766b; }
 .email-log .is-failed svg { color: #c4473a; }
+
+/* Maker login sits alone in the top right corner; the menu stays centered */
+.navbar-inner { position: relative; }
+.navbar-inner { position: static; }
+.nav-login-corner { position: absolute; top: 50%; right: clamp(1rem, 2.5vw, 2.25rem); transform: translateY(-50%); }
+.nav-login-corner .nav-login { margin-left: 0; }
+/* Below 1080px the corner would crowd the centered menu, so the menu button takes over (Maker login is inside it). */
+@media (max-width: 1080px) {
+  .nav-login-corner { display: none; }
+  .navbar-inner { grid-template-columns: 1fr auto 1fr; gap: .5rem; }
+  .brand-link { grid-column: 2; }
+  .nav-links { display: none; }
+  .menu-toggle { display: inline-flex; grid-column: 3; justify-self: end; }
+  .mobile-menu { display: flex; position: absolute; top: 100%; left: 0; right: 0; flex-direction: column; gap: .1rem; padding: 1rem 18px 1.25rem; background: var(--paper); border-bottom: 1px solid var(--line); box-shadow: 0 18px 30px rgba(30,31,24,.09); }
+  .mobile-menu .nav-link { padding: .85rem 0; }
+}

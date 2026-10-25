@@ -34,7 +34,7 @@ describe("maker-first homepage revision", () => {
     const shell = read("client/src/components/SiteShell.tsx");
 
     expect(css).toMatch(/\.navbar \{ position: sticky; top: 0;/);
-    expect(css).toContain("grid-template-columns: auto auto auto; justify-content: center");
+    expect(css).toContain("grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr)");
     expect(shell).toContain('aria-controls="mobile-navigation"');
     expect(shell).toContain('aria-expanded={open}');
   });
