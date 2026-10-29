@@ -1,8 +1,8 @@
 import { TRPCError } from "@trpc/server";
 import { desc, eq, gt, sql } from "drizzle-orm";
 import { emailLog, emailTemplates } from "../drizzle/schema";
-import { DEFAULT_EMAIL_TEMPLATES, EMAIL_TEMPLATE_IDS, fillTemplate, templateDefault, type EmailTemplateId } from "../shared/emailTemplates";
-import type { Database } from "./db";
+import { AUTO_SEND_TEMPLATES, DEFAULT_AUTO_SEND, type AutoSendTemplate, DEFAULT_EMAIL_TEMPLATES, EMAIL_TEMPLATE_IDS, fillTemplate, templateDefault, type EmailTemplateId } from "../shared/emailTemplates";
+import { getSiteSetting, setSiteSetting, type Database } from "./db";
 import type { Env } from "./env";
 
 // Sends email through Resend (free plan: 3,000 a month, 100 a day). The site stops at
@@ -100,3 +100,16 @@ export async function sendAutomaticEmail(env: Env, db: Database, template: "appl
 }
 
 export const isTemplateId = (value: string): value is EmailTemplateId => (EMAIL_TEMPLATE_IDS as readonly string[]).includes(value);
+
+/** Which emails go out on their own instead of opening a preview. */
+export async function getAutoSend(db: Database): Promise<Record<AutoSendTemplate, boolean>> {
+  try {
+    const saved = JSON.parse(await getSiteSetting(db, "email_auto_send", "{}")) as Partial<Record<AutoSendTemplate, boolean>>;
+    return Object.fromEntries(AUTO_SEND_TEMPLATES.map((id) => [id, typeof saved[id] === "boolean" ? saved[id] : DEFAULT_AUTO_SEND[id]])) as Record<AutoSendTemplate, boolean>;
+  } catch { return { ...DEFAULT_AUTO_SEND }; }
+}
+
+export async function setAutoSend(db: Database, id: AutoSendTemplate, on: boolean) {
+  const current = await getAutoSend(db);
+  await setSiteSetting(db, "email_auto_send", JSON.stringify({ ...current, [id]: on }));
+}

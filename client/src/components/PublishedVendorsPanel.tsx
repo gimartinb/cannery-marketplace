@@ -18,12 +18,12 @@ export default function PublishedVendorsPanel({ vendors, onRefresh }: { vendors:
   // One step invite from a listing row: ties the email to the listing and gives it maker portal access.
   const [inviting, setInviting] = useState<{ id: number; email: string } | null>(null);
   const compose = useEmailComposer();
-  const welcome = (email: string, business: string, maker: string | null | undefined, id: number) => compose({ template: "makerWelcome", to: email, about: `listing:${id}`, values: { firstName: (maker || "").split(" ")[0] || "there", business, email, note: "" } });
+  const welcome = (email: string, business: string, maker: string | null | undefined, id: number, automatic = false) => compose({ template: "makerWelcome", to: email, about: `listing:${id}`, automatic, values: { firstName: (maker || "").split(" ")[0] || "there", business, email, note: "" } });
   const invite = trpc.adminPortal.assignListing.useMutation({
     onSuccess: async (row, input) => {
       const vendor = vendors.find((item) => item.id === input.profileId);
-      notifySuccess(`${row.name} is ready for ${input.email}`, { description: "They can sign in to the maker portal now. Check and send the welcome email." });
-      welcome(input.email, row.name, vendor?.ownerName, input.profileId);
+      notifySuccess(`${row.name} is ready for ${input.email}`, { description: "They can sign in to the maker portal now." });
+      welcome(input.email, row.name, vendor?.ownerName, input.profileId, true);
       setInviting(null);
       await refreshAll();
     },

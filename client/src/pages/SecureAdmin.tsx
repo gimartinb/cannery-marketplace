@@ -53,15 +53,16 @@ function ReviewQueue({ submissions, vendors, onRefresh }: { submissions: any[]; 
   const review = trpc.adminPortal.review.useMutation({
     onSuccess: async (_result, input) => {
       const item = submissions.find((entry) => entry.id === input.submissionId);
-      if (input.decision === "approved") notifySuccess(`${item?.name ?? "Listing"} approved and published`, { description: "Check and send the email letting the maker know.", link: item ? { label: "View listing", href: `/vendors/${item.slug}` } : undefined });
+      if (input.decision === "approved") notifySuccess(`${item?.name ?? "Listing"} approved and published`, { link: item ? { label: "View listing", href: `/vendors/${item.slug}` } : undefined });
       else notifySuccess(input.decision === "rejected" ? "Submission rejected" : "Changes requested", { description: "The maker also sees your note in their maker space. Check and send the email." });
-      if (item) emailMaker(item, input.decision, input.note ?? "");
+      // A maker's first published listing gets the approval email automatically (switch in the Emails tab).
+      if (item) emailMaker(item, input.decision, input.note ?? "", input.decision === "approved" && !findLiveListing(vendors, item));
       await onRefresh();
     },
     onError: (error) => notifyError(error, "Review not saved"),
   });
   const compose = useEmailComposer();
-  const emailMaker = (item: { id: number; name: string; slug: string; ownerName?: string | null; accountEmail?: string | null; contactEmail: string }, decision: "approved" | "changes_requested" | "rejected", note: string) => compose({
+  const emailMaker = (item: { id: number; name: string; slug: string; ownerName?: string | null; accountEmail?: string | null; contactEmail: string }, decision: "approved" | "changes_requested" | "rejected", note: string, automatic = false) => compose({ automatic,
     template: decision === "approved" ? "listingApproved" : decision === "rejected" ? "listingRejected" : "listingChanges",
     to: item.accountEmail || item.contactEmail, about: `submission:${item.id}`,
     values: { firstName: (item.ownerName || "").split(" ")[0] || "there", business: item.name, note, listingLink: `${window.location.origin}/vendors/${item.slug}` },

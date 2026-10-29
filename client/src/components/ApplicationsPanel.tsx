@@ -24,11 +24,11 @@ export default function ApplicationsPanel() {
   const [notes, setNotes] = useState<Record<number, string>>({});
   const compose = useEmailComposer();
   // Preview, then Send (see EmailComposer). Falls back to the owner's own email app.
-  const email = (application: { id: number; fullName: string; email: string; businessName: string }, kind: keyof typeof TEMPLATE, note: string) => compose({ template: TEMPLATE[kind], to: application.email, about: `application:${application.id}`, values: { firstName: application.fullName.split(" ")[0] || "there", business: application.businessName, email: application.email, note } });
+  const email = (application: { id: number; fullName: string; email: string; businessName: string }, kind: keyof typeof TEMPLATE, note: string, automatic = false) => compose({ template: TEMPLATE[kind], to: application.email, about: `application:${application.id}`, automatic, values: { firstName: application.fullName.split(" ")[0] || "there", business: application.businessName, email: application.email, note } });
   const update = trpc.adminPortal.setApplicationStatus.useMutation({
     onSuccess: async (result, input) => {
       const application = list.data?.find((item) => item.id === input.id);
-      if (application && input.status === "invited") { notifySuccess(`${application.businessName} invited`, { description: `${application.email} can now sign in to the maker portal${result.listingStarted ? ", and their listing is started from the application" : ""}. Next, check and send the welcome email.` }); email(application, "invite", input.note ?? ""); }
+      if (application && input.status === "invited") { notifySuccess(`${application.businessName} invited`, { description: `${application.email} can now sign in to the maker portal${result.listingStarted ? ", and their listing is started from the application" : ""}. ` }); email(application, "invite", input.note ?? "", true); }
       else if (application && input.status === "declined") { notifySuccess("Marked as declined", { description: "Check the short email, then send it." }); email(application, "decline", input.note ?? ""); }
       else notifySuccess(input.status === "archived" ? "Application archived" : "Moved back to New");
       await Promise.all([utils.adminPortal.applications.invalidate(), utils.adminPortal.makerInvites.invalidate()]);
@@ -41,7 +41,7 @@ export default function ApplicationsPanel() {
   const shown = filter === "all" ? rows : rows.filter((row) => row.status === filter);
 
   return <section className="admin-content">
-    <div className="admin-section-heading"><div><p className="eyebrow">Maker applications</p><h2>Applications</h2><p>Applications submitted on the site's "Become a vendor" page. Approve and invite gives them maker portal access and opens the welcome email to check and send.</p></div><a className="button-plain" href="/apply" target="_blank" rel="noreferrer"><ExternalLink size={14} /> View the form</a></div>
+    <div className="admin-section-heading"><div><p className="eyebrow">Maker applications</p><h2>Applications</h2><p>Applications submitted on the site's "Become a vendor" page. Approve and invite gives them maker portal access and sends the welcome email automatically (you can turn that off in the Emails tab).</p></div><a className="button-plain" href="/apply" target="_blank" rel="noreferrer"><ExternalLink size={14} /> View the form</a></div>
     <div className="application-filters" role="tablist" aria-label="Filter applications">{FILTERS.map((item) => <button key={item.id} type="button" role="tab" aria-selected={filter === item.id} className={filter === item.id ? "active" : ""} onClick={() => setFilter(item.id)}>{item.label} <span>{counts[item.id]}</span></button>)}</div>
     <div className="secure-review-list">
       {list.isLoading ? <div className="admin-empty"><Loader2 className="animate-spin" /></div> : list.error ? <div className="admin-empty"><h3>Applications did not load</h3><p>{list.error.message}</p></div> : shown.length ? shown.map((item) => <article className="secure-admin-card application-card" key={item.id}>

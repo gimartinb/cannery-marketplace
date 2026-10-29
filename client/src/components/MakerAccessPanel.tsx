@@ -43,9 +43,9 @@ export default function MakerAccessPanel({ vendors, onChanged }: { vendors: List
     setText("");
     const listing = vendors.find((vendor) => String(vendor.id) === listingId);
     if (listingId) { await assign.mutateAsync({ profileId: Number(listingId), email: entries[0] }).catch(() => null); setListingId(""); }
-    else { notifySuccess(`${result.added} email${result.added === 1 ? "" : "s"} can now sign in to the maker portal`, { description: entries.length === 1 ? "Check and send the welcome email." : "Connect each one to their listing below, then send each a welcome email." }); await refresh(); }
+    else { notifySuccess(`${result.added} email${result.added === 1 ? "" : "s"} can now sign in to the maker portal`, { description: entries.length === 1 ? "The welcome email goes out next." : "Connect each one to their listing below, then send each a welcome email." }); await refresh(); }
     // One maker at a time: open the welcome email to check and send.
-    if (entries.length === 1) compose({ template: "makerWelcome", to: entries[0], about: listing ? `listing:${listing.id}` : "maker-access", values: { firstName: "there", business: listing?.name || "your business", email: entries[0], note: "" } });
+    if (entries.length === 1) compose({ template: "makerWelcome", to: entries[0], about: listing ? `listing:${listing.id}` : "maker-access", automatic: true, values: { firstName: "there", business: listing?.name || "your business", email: entries[0], note: "" } });
   }
 
   const unconnected = vendors.filter((vendor) => !vendor.loginEmail);

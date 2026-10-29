@@ -17,7 +17,7 @@ const SIGNATURE = "The Cannery Marketplace\n7488 Monterey Road, Gilroy, Californ
 
 export const DEFAULT_EMAIL_TEMPLATES: EmailTemplate[] = [
   {
-    id: "makerWelcome", label: "Maker invite and welcome", when: "When you invite an applicant or add a maker", automatic: false,
+    id: "makerWelcome", label: "Maker invite and welcome", when: "When a new maker is invited (sent automatically unless turned off below)", automatic: false,
     placeholders: ["firstName", "business", "email", "portalLink", "note"],
     subject: "Welcome to The Cannery Marketplace, {business}",
     body: `Hi {firstName},
@@ -64,7 +64,7 @@ Thank you for your maker application for {business}.
 ${SIGNATURE}`,
   },
   {
-    id: "listingApproved", label: "Listing approved", when: "When you approve a maker's listing", automatic: false,
+    id: "listingApproved", label: "Listing approved", when: "When you approve a listing (automatic for a maker's first listing unless turned off below)", automatic: false,
     placeholders: ["firstName", "business", "listingLink", "note"],
     subject: "{business} is live on The Cannery Marketplace",
     body: `Hi {firstName},
@@ -144,6 +144,13 @@ Thank you for reaching out about {quantity} gifts for {company}. We received you
 ${SIGNATURE}`,
   },
 ];
+
+// Emails that can go out on their own (no preview), with the starting setting.
+// makerWelcome: when a new maker is invited (their maker profile is created).
+// listingApproved: when a maker's first listing is approved and published.
+export const AUTO_SEND_TEMPLATES = ["makerWelcome", "listingApproved"] as const;
+export type AutoSendTemplate = (typeof AUTO_SEND_TEMPLATES)[number];
+export const DEFAULT_AUTO_SEND: Record<AutoSendTemplate, boolean> = { makerWelcome: true, listingApproved: true };
 
 export const templateDefault = (id: EmailTemplateId) => DEFAULT_EMAIL_TEMPLATES.find((item) => item.id === id)!;
 

@@ -11,14 +11,17 @@ const PLACEHOLDER_HELP: Record<string, string> = {
   note: "your note (left out when empty)", company: "the company", quantity: "how many gifts", quote: "your quote (left out when empty)",
 };
 
-function TemplateEditor({ template, onSaved }: { template: Template; onSaved: () => Promise<unknown> }) {
+function TemplateEditor({ template, onSaved, autoSend }: { template: Template; onSaved: () => Promise<unknown>; autoSend?: boolean }) {
+  const utils = trpc.useUtils();
+  const setAuto = trpc.adminPortal.setEmailAutoSend.useMutation({ onSuccess: async (_r, input) => { notifySuccess(input.on ? "This email now goes out automatically" : "This email now opens a preview first"); await utils.adminPortal.emailSetup.invalidate(); }, onError: (error) => notifyError(error, "Setting not changed") });
   const [subject, setSubject] = useState(template.subject);
   const [body, setBody] = useState(template.body);
   const save = trpc.adminPortal.saveEmailTemplate.useMutation({ onSuccess: async () => { notifySuccess("Template saved", { description: "The next email of this kind uses it." }); await onSaved(); }, onError: (error) => notifyError(error, "Template not saved") });
   const reset = trpc.adminPortal.resetEmailTemplate.useMutation({ onSuccess: async () => { setSubject(template.original.subject); setBody(template.original.body); notifySuccess("Original wording restored"); await onSaved(); }, onError: (error) => notifyError(error, "Not restored") });
   const changed = subject !== template.subject || body !== template.body;
   return <details className="secure-admin-card email-template">
-    <summary><span><strong>{template.label}</strong><small>{template.when}</small></span><span className="email-template-tags">{template.automatic && <span className="listing-status listing-status-published"><Zap size={11} /> Automatic</span>}{template.edited && <span className="listing-status listing-status-pending">Edited</span>}</span></summary>
+    <summary><span><strong>{template.label}</strong><small>{template.when}</small></span><span className="email-template-tags">{(template.automatic || autoSend) && <span className="listing-status listing-status-published"><Zap size={11} /> Automatic</span>}{template.edited && <span className="listing-status listing-status-pending">Edited</span>}</span></summary>
+    {autoSend !== undefined && <label className="toggle-label"><input type="checkbox" checked={autoSend} disabled={setAuto.isPending} onChange={(event) => setAuto.mutate({ id: template.id as "makerWelcome" | "listingApproved", on: event.target.checked })} /><span className="fake-toggle" /> {template.id === "makerWelcome" ? "Send automatically when a new maker is invited" : "Send automatically when a maker's first listing is approved"} {autoSend ? "(on)" : "(off: a preview opens first)"}</label>}
     <label>Subject<input value={subject} maxLength={200} onChange={(event) => setSubject(event.target.value)} /></label>
     <label>Message<textarea rows={12} value={body} maxLength={6000} onChange={(event) => setBody(event.target.value)} /></label>
     <p className="form-hint">Filled in for each person: {template.placeholders.map((name) => <code key={name} title={PLACEHOLDER_HELP[name]}>{`{${name}}`}</code>)}. {template.placeholders.map((name) => `{${name}} is ${PLACEHOLDER_HELP[name]}`).join("; ")}.</p>
@@ -44,7 +47,7 @@ export default function EmailsPanel() {
         : <><TriangleAlert size={20} /><div><strong>Sending is not set up yet</strong><p>Until it is, the preview window offers Open in Gmail and Open in my email app, and automatic thank you emails are skipped. To turn it on: verify cannerymarket.com in Resend (three DNS records at GoDaddy), then add the Resend key in Cloudflare as the secret RESEND_API_KEY. The steps are in the hosting plan document.</p></div></>}
     </div>
     <h3 className="email-section-title">Templates</h3>
-    {templates.isLoading ? <div className="admin-empty"><Loader2 className="animate-spin" /></div> : <div className="secure-review-list">{(templates.data ?? []).map((template) => <TemplateEditor key={`${template.id}:${template.subject}:${template.body.length}`} template={template as Template} onSaved={() => utils.adminPortal.emailTemplates.invalidate()} />)}</div>}
+    {templates.isLoading ? <div className="admin-empty"><Loader2 className="animate-spin" /></div> : <div className="secure-review-list">{(templates.data ?? []).map((template) => <TemplateEditor key={`${template.id}:${template.subject}:${template.body.length}`} template={template as Template} autoSend={setup.data?.autoSend?.[template.id as "makerWelcome" | "listingApproved"]} onSaved={() => utils.adminPortal.emailTemplates.invalidate()} />)}</div>}
     <h3 className="email-section-title">Recently sent</h3>
     {log.isLoading ? <div className="admin-empty"><Loader2 className="animate-spin" /></div> : (log.data ?? []).length ? <div className="email-log">{(log.data ?? []).map((row) => <div key={row.id} className={row.status === "failed" ? "is-failed" : ""}>
       <Mail size={14} /><span><strong>{row.subject}</strong><small>To {row.to} · {new Date(row.createdAt).toLocaleString(undefined, { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })} · {row.sentBy === "website" ? "automatic" : `by ${row.sentBy}`}</small>{row.status === "failed" && <small className="form-error">Not sent: {row.error}</small>}</span>

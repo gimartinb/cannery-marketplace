@@ -3,7 +3,7 @@ import { createContext, useContext, useState, type ReactNode } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { notifyError, notifySuccess } from "@/lib/notify";
 import { trpc } from "@/lib/trpc";
-import { fillTemplate, templateDefault, type EmailTemplateId } from "@shared/emailTemplates";
+import { AUTO_SEND_TEMPLATES, fillTemplate, templateDefault, type AutoSendTemplate, type EmailTemplateId } from "@shared/emailTemplates";
 
 export type EmailRequest = {
   template: EmailTemplateId;
@@ -14,6 +14,8 @@ export type EmailRequest = {
   about?: string;
   /** Called after the email is sent. */
   onSent?: () => void;
+  /** Send right away without the preview, when this email is set to go out automatically. */
+  automatic?: boolean;
 };
 
 type Draft = EmailRequest & { subject: string; body: string };
@@ -50,7 +52,22 @@ export function EmailComposerProvider({ children }: { children: ReactNode }) {
       const templates = await utils.adminPortal.emailTemplates.fetch();
       const template = templates.find((item) => item.id === request.template) ?? templateDefault(request.template);
       const values = { ...commonEmailValues(), ...request.values };
-      setDraft({ ...request, subject: fillTemplate(template.subject, values), body: fillTemplate(template.body, values) });
+      const filled = { ...request, subject: fillTemplate(template.subject, values), body: fillTemplate(template.body, values) };
+      // Automatic emails send straight away when sending is set up and the switch is on (Emails tab).
+      const setupNow = await utils.adminPortal.emailSetup.fetch();
+      const autoOn = request.automatic && setupNow.ready && (AUTO_SEND_TEMPLATES as readonly string[]).includes(request.template) && setupNow.autoSend[request.template as AutoSendTemplate];
+      if (autoOn) {
+        try {
+          await send.mutateAsync({ template: filled.template, to: filled.to, subject: filled.subject, body: filled.body, about: filled.about ?? "" });
+          notifySuccess(`${templateDefault(request.template).label} sent to ${filled.to}`, { description: "Sent automatically. You can see it in the Emails tab." });
+          request.onSent?.();
+          await Promise.all([utils.adminPortal.emailSetup.invalidate(), utils.adminPortal.emailLog.invalidate()]);
+          return;
+        } catch (error) {
+          notifyError(error, "The automatic email did not go out. Check it and send it here");
+        }
+      }
+      setDraft(filled);
     } catch (error) {
       notifyError(error, "Email preview did not open");
     } finally {

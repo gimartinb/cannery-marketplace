@@ -14,8 +14,8 @@ import {
   listPublicHighlights, reorderGalleryPhotos, updateGalleryPhoto, updateHighlight,
 } from "./db";
 import { aiWrite } from "./aiWriting";
-import { EMAIL_DAILY_LIMIT, emailReady, listEmailLog, listEmailTemplates, resetEmailTemplate, saveEmailTemplate, sendAutomaticEmail, sendEmail, sentToday } from "./email";
-import { EMAIL_TEMPLATE_IDS, emailTemplateInput, sendEmailInput } from "../shared/emailTemplates";
+import { EMAIL_DAILY_LIMIT, emailReady, getAutoSend, setAutoSend, listEmailLog, listEmailTemplates, resetEmailTemplate, saveEmailTemplate, sendAutomaticEmail, sendEmail, sentToday } from "./email";
+import { AUTO_SEND_TEMPLATES, EMAIL_TEMPLATE_IDS, emailTemplateInput, sendEmailInput } from "../shared/emailTemplates";
 import { discardImageDraft, draftOriginalImage, listImageDrafts, previewSiteImages, publishSiteImages, saveImageDraftAlt } from "./siteImages";
 import { discardSiteTextDraft, listSiteTextForOwners, previewSiteText, publishedSiteText, publishSiteText, restoreOriginalSiteText, saveSiteTextDraft } from "./siteText";
 import { countRecentGiftRequests, createGiftRequest, deleteGiftBox, getCommerceSettings, GIFT_REQUEST_LIMIT_PER_SOURCE_PER_DAY, listGiftBoxChoices, listGiftBoxes, listGiftRequests, listPublicGiftBoxes, saveGiftBox, setCommerceSettings, squareApiReady, updateGiftRequest } from "./gifts";
@@ -264,7 +264,8 @@ export const adminRouter = router({
     giftRequests: adminProcedure.query(({ ctx }) => listGiftRequests(ctx.db)),
     updateGiftRequest: adminProcedure.input(z.object({ id: z.number().int().positive(), status: z.enum(GIFT_REQUEST_STATUSES), adminNote: z.string().trim().max(1200).default(""), quoteAmount: z.string().trim().max(40).default(""), externalOrderId: z.string().trim().max(64).default("") })).mutation(async ({ ctx, input }) => { const { id, ...change } = input; await updateGiftRequest(ctx.db, id, change); return { success: true }; }),
     // Emails the site sends for the owners (Preview, then Send). See worker/email.ts.
-    emailSetup: adminProcedure.query(async ({ ctx }) => ({ ready: emailReady(ctx.env), from: ctx.env.EMAIL_FROM ?? "", replyTo: ctx.env.EMAIL_REPLY_TO ?? "", sentToday: await sentToday(ctx.db), dailyLimit: EMAIL_DAILY_LIMIT })),
+    emailSetup: adminProcedure.query(async ({ ctx }) => ({ ready: emailReady(ctx.env), from: ctx.env.EMAIL_FROM ?? "", replyTo: ctx.env.EMAIL_REPLY_TO ?? "", sentToday: await sentToday(ctx.db), dailyLimit: EMAIL_DAILY_LIMIT, autoSend: await getAutoSend(ctx.db) })),
+    setEmailAutoSend: adminProcedure.input(z.object({ id: z.enum(AUTO_SEND_TEMPLATES), on: z.boolean() })).mutation(async ({ ctx, input }) => { await setAutoSend(ctx.db, input.id, input.on); return { success: true }; }),
     emailTemplates: adminProcedure.query(({ ctx }) => listEmailTemplates(ctx.db)),
     saveEmailTemplate: adminProcedure.input(emailTemplateInput).mutation(async ({ ctx, input }) => { await saveEmailTemplate(ctx.db, input.id, input.subject, input.body, ctx.email); return { success: true }; }),
     resetEmailTemplate: adminProcedure.input(z.object({ id: z.enum(EMAIL_TEMPLATE_IDS) })).mutation(async ({ ctx, input }) => { await resetEmailTemplate(ctx.db, input.id); return { success: true }; }),
