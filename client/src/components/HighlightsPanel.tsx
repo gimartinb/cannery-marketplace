@@ -88,7 +88,7 @@ export default function HighlightsPanel({ vendors, embedded = false }: { vendors
       <div className="highlight-dates"><label>Start date (optional)<input type="date" value={draft.startDate} onChange={(event) => setDraft({ ...draft, startDate: event.target.value })} /></label><label>End date (optional)<input type="date" value={draft.endDate} min={draft.startDate || undefined} onChange={(event) => setDraft({ ...draft, endDate: event.target.value })} /></label></div>
       <small className="form-hint">Blank start means it shows right away. Blank end means it stays until you remove it. The card stays up through the whole end date.</small>
       <label>Position among the cards (1 shows first)<input type="number" min={1} max={99} value={draft.displayOrder} onChange={(event) => setDraft({ ...draft, displayOrder: Number(event.target.value) || 1 })} /></label>
-      <div className="maker-media-editor"><p className="media-help">Photo (optional), {describeRequirement("highlight")}. Without one, the card uses a warm color background.</p>
+      <div className="maker-media-editor"><p className="media-help">Photo (optional). Best size: {describeRequirement("highlight")}, but any photo is resized to fit. Without one, the card uses a warm color background.</p>
         {draft.imageUrl && <img className="secure-review-cover" src={draft.imageUrl} alt="Highlight preview" />}
         <div className="review-actions"><ImageUploadButton spot="highlight" busy={uploading} onFiles={upload}>{draft.imageUrl ? "Change photo" : "Add photo"}</ImageUploadButton>{draft.imageUrl && <button className="button-plain" type="button" onClick={() => setDraft({ ...draft, imageUrl: "" })}><X size={14} /> Remove photo</button>}</div>
       </div>

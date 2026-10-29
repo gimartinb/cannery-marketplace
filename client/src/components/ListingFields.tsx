@@ -111,7 +111,7 @@ export default function ListingFields({ value, onChange, upload, ownerControls, 
     </fieldset>
     <div className="maker-media-editor">
       <p className="form-legend">Photos *</p>
-      <p className="media-help">One cover photo, {describeRequirement("maker-cover")}. One to {MAX_LISTING_GALLERY} work photos, {describeRequirement("maker-gallery")}. Photos are resized automatically after they pass the size check.</p>
+      <p className="media-help">One cover photo, {describeRequirement("maker-cover")}. One to {MAX_LISTING_GALLERY} work photos, {describeRequirement("maker-gallery")}. Any size works: large photos are made smaller and small ones are enlarged to fit. Very small photos (under 400 pixels) are turned away.</p>
       <div className="review-actions">
         <ImageUploadButton spot="maker-cover" busy={busy === "cover"} disabled={busy !== null} onFiles={(files) => addPhotos("cover", files)}>{value.coverImageUrl ? "Replace cover photo" : "Add cover photo"}</ImageUploadButton>
         {galleryRoom > 0 && <ImageUploadButton spot="maker-gallery" multiple busy={busy === "gallery"} disabled={busy !== null} onFiles={(files) => addPhotos("gallery", files)}>Add work photos</ImageUploadButton>}

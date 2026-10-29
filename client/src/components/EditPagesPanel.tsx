@@ -129,7 +129,7 @@ function ImageSpotEditor({ slot, live, draft, onSaved }: { slot: SiteImageSlotId
       <figure><img src={liveUrl} alt={liveAlt} style={logo} /><figcaption>{draft ? "Live now" : customLive ? "Live now (your image)" : "Live now (original)"}</figcaption></figure>
       {draftUrl && <figure className="is-draft"><img src={draftUrl} alt={shownAlt} style={logo} /><figcaption>{draft?.url ? "Draft" : "Draft: back to the original"}</figcaption></figure>}
     </div>
-    <small className="form-hint">Required: {describeRequirement(slot)}. {IMAGE_REQUIREMENTS[slot].shape}. JPEG, PNG, or WebP up to 5 MB.</small>
+    <small className="form-hint">Best: {describeRequirement(slot)}. {IMAGE_REQUIREMENTS[slot].shape}. Any JPEG, PNG, or WebP photo; large photos are resized for you.</small>
     <label>Image description (read aloud by screen readers)<input value={alt} maxLength={300} disabled={!editingCustom} onChange={(event) => setAlt(event.target.value)} placeholder={editingCustom ? "Describe what the photo shows" : "Replace the image first to edit its description"} /></label>
     <div className="review-actions">
       <ImageUploadButton spot={slot} busy={busy} onFiles={upload} className="button-plain compact-button">{editingCustom ? "Replace again" : "Replace image"}</ImageUploadButton>
