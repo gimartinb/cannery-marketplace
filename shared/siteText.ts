@@ -127,7 +127,6 @@ export const SITE_TEXT: SiteTextBlock[] = [
     ["story.title", "Maker story: heading without a name", "heading", "The person behind the *work.*"],
     ["work.eyebrow", "Photos: small label", "eyebrow", "A closer look"],
     ["work.title", "Photos: heading", "heading", "Made by *{business}.*"],
-    ["work.note", "Photos: note", "item", "Approved photos submitted by the maker."],
     ["back", "Back link", "button", "All makers"],
     ["bottom.eyebrow", "Bottom: small label", "eyebrow", "Keep exploring"],
     ["bottom.title", "Bottom: heading", "heading", "There is more to *find.*"],
