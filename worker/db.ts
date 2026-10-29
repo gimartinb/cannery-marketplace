@@ -384,7 +384,7 @@ export async function setApplicationStatus(db: Database, id: number, status: "ne
 // Owners inviting an applicant: start the maker's listing for them.
 // Maker application categories mapped to the maker portal's category list.
 const APPLICATION_TO_LISTING_CATEGORY: Record<string, string> = {
-  "Art": "Paper & Art", "Stationery & Books": "Paper & Art", "Apparel & Accessories": "Wearables", "Baked Goods & Sweets": "Coffee & Bakery",
+  "Art": "Paper & Art", "Stationery & Books": "Paper & Art", "Apparel & Accessories": "Wearables", "Baked Goods & Sweets": "Coffee, Matcha & Bakery",
   "Bath & Body": "Candles & Bath", "Candles & Wax Melts": "Candles & Bath", "Self Care": "Candles & Bath", "Children & Kids": "Kids & Baby",
   "Floral Products": "Plants & Floral", "Food Products": "Food & Pantry", "Home Decor": "Home & Gifts", "Jewelry": "Jewelry",
 };

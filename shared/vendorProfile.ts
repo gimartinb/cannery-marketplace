@@ -1,3 +1,4 @@
+import { currentCategory } from "./categoryNames";
 import { z } from "zod";
 import { normalizeLink, type LinkKind } from "./socialLinks";
 
@@ -19,7 +20,7 @@ export const vendorProfileSchema = z.object({
   profileId: z.number().int().positive().optional(),
   name: z.string().trim().min(2).max(140),
   slug: z.string().trim().regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/).max(160).optional(),
-  category: z.string().trim().min(2).max(100),
+  category: z.string().trim().min(2).max(100).transform(currentCategory),
   shortBio: z.string().trim().min(20).max(800),
   ownerBio: z.string().trim().max(1800).optional().default(""),
   ownerName: z.string().trim().max(120).optional().default(""),

@@ -5,7 +5,7 @@ describe("preview vendor directory", () => {
   it("includes Viva Café with public profile attribution", () => {
     const vivra = defaultVendors.find((vendor) => vendor.slug === "vivra-cafe");
     expect(vivra?.active).toBe(true);
-    expect(vivra?.category).toBe("Coffee & Bakery");
+    expect(vivra?.category).toBe("Coffee, Matcha & Bakery");
     expect(vivra?.socialUrl).toContain("instagram.com/vivracafe");
     expect(vivra?.bio).toContain("Mexican-inspired");
   });
@@ -27,5 +27,16 @@ describe("preview vendor directory", () => {
     const gilbert = defaultVendors.find((vendor) => vendor.slug === "gilberts-woodworking");
     expect(gilbert?.ownerBio).toContain("placeholder copy");
     expect(gilbert?.workSamples).toHaveLength(3);
+  });
+});
+
+import { vendorProfileSchema } from "../shared/vendorProfile";
+import { MAKER_CATEGORIES } from "../shared/makerListing";
+describe("renamed categories", () => {
+  it("maps the old Coffee & Bakery name to the new one", () => {
+    expect(MAKER_CATEGORIES).toContain("Coffee, Matcha & Bakery");
+    expect(MAKER_CATEGORIES).not.toContain("Coffee & Bakery");
+    const parsed = vendorProfileSchema.safeParse({ name: "Vivra Cafe", category: "Coffee & Bakery", shortBio: "Espresso, matcha, and pastries made fresh.", contactEmail: "hi@example.com" });
+    expect(parsed.success && parsed.data.category).toBe("Coffee, Matcha & Bakery");
   });
 });

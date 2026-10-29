@@ -4,6 +4,7 @@
 
 | Version | Date | Author | Change |
 |---|---|---|---|
+| 6.0 | 2026-10-28 | Gilbert Martin (with Claude) | Category "Coffee & Bakery" renamed to "Coffee, Matcha & Bakery" everywhere: the maker portal list, existing listings, pending submissions, and home highlights (migration 0013 updates saved data). Spreadsheets or drafts that still say "Coffee & Bakery" are converted automatically. |
 | 5.9 | 2026-10-28 | Gilbert Martin (with Claude) | Maker profile pages no longer show "Approved photos submitted by the maker." above the work photos (removed from the page and from Edit pages). |
 | 5.8 | 2026-10-28 | Gilbert Martin (with Claude) | Photos of any size now work everywhere (work photos, cover photos, site images, highlights, gallery, gift boxes). Resizing happens in the browser, so it costs nothing on Cloudflare and uploads stay small (a 26 MB test photo uploaded as 1.9 MB). Large photos up to 40 MB are made smaller; photos below the recommended size are enlarged to fit with a short heads up that they may look slightly soft; only photos under 400 pixels on a side are turned away. Help text now says "best size" instead of "required". |
 | 5.7 | 2026-10-28 | Gilbert Martin (with Claude) | New maker emails now go out automatically: the welcome email when a new maker is invited (Approve and invite, Invite maker on a listing, or Add maker for one email), and the "Listing approved" email when a maker's first listing is approved. Each has an on or off switch in the Emails tab (both start on). Updates to existing listings, declines, and replies still open the preview first. If sending is not set up or fails, the preview opens instead so nothing is lost. Access note: the Makers Access application must allow the One time PIN login method; with only "Cloudflare" selected, makers see "Cloudflare sign-in is restricted to members of the account." |
@@ -154,7 +155,7 @@ pnpm dev:offline   # or `pnpm dev` after `npx wrangler login`, to include the AI
 
 ## Viva Café mock vendor
 
-The preview includes **VIVRA CAFÉ** as a mock vendor in the Coffee & Bakery category. The public profile was used only for descriptive positioning and attribution: Mexican coffee, matcha, pastries, "Café para vivir," marranitos, and community pop ups. Its public Instagram link is https://www.instagram.com/vivracafe/.
+The preview includes **VIVRA CAFÉ** as a mock vendor in the Coffee, Matcha & Bakery category. The public profile was used only for descriptive positioning and attribution: Mexican coffee, matcha, pastries, "Café para vivir," marranitos, and community pop ups. Its public Instagram link is https://www.instagram.com/vivracafe/.
 
 No third party café image was copied into the preview because image search results were for similarly named businesses rather than clearly verified Viva Café assets. The panel therefore shows an attributed branded placeholder and supports uploading an authorized image from the owner.
 

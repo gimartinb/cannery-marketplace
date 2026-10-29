@@ -1,10 +1,11 @@
+export { currentCategory, RENAMED_CATEGORIES } from "./categoryNames";
 import { vendorProfileSchema, type VendorProfileInput } from "./vendorProfile";
 
 // Categories makers pick from in the maker portal. Owners can still type any
 // category when they edit a listing, and existing categories stay valid there.
 export const MAKER_CATEGORIES = [
   "Ceramics",
-  "Coffee & Bakery",
+  "Coffee, Matcha & Bakery",
   "Candles & Bath",
   "Food & Pantry",
   "Home & Gifts",
