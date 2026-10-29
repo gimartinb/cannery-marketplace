@@ -22,7 +22,7 @@ export const DEFAULT_EMAIL_TEMPLATES: EmailTemplate[] = [
     subject: "Welcome to The Cannery Marketplace, {business}",
     body: `Hi {firstName},
 
-Welcome to The Cannery Marketplace. We would love to have {business} on our shelves.
+Welcome to The Cannery Marketplace. We are excited to feature {business} on our website.
 
 {note}
 
