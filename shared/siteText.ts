@@ -142,7 +142,6 @@ export const SITE_TEXT: SiteTextBlock[] = [
     ["panel.note", "Side card: small note", "item", "About five minutes. You stay on this site the whole time."],
     ["how.eyebrow", "How it works: small label", "eyebrow", "How it works"],
     ["how.title", "How it works: heading", "heading", "From first hello to *your shelf.*"],
-    ["how.body", "How it works: text", "item", "We designed the process to be clear, human, and easy to start."],
     ["step1.title", "Step 1: heading", "heading", "Tell us about your work"],
     ["step1.body", "Step 1: text", "paragraph", "Complete the short application with your maker story, product category, social links, and the kind of display space you are looking for."],
     ["step2.title", "Step 2: heading", "heading", "We review and connect"],
