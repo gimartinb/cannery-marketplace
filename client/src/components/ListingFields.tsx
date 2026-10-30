@@ -5,7 +5,8 @@ import ImageUploadButton from "@/components/ImageUploadButton";
 import { notifyError, notifySuccess } from "@/lib/notify";
 import { resizeImageForPreview } from "@/lib/imageProcessing";
 import { describeRequirement } from "@shared/imageRequirements";
-import { isListedCategory, MAKER_CATEGORIES, type ListingField, type ListingProblems } from "@shared/makerListing";
+import { isListedCategory, type ListingField, type ListingProblems } from "@shared/makerListing";
+import { useMakerCategories } from "@/lib/makerCategories";
 import type { VendorProfileInput } from "@shared/vendorProfile";
 
 export const MAX_LISTING_GALLERY = 5;
@@ -57,7 +58,8 @@ export default function ListingFields({ value, onChange, upload, ownerControls, 
   const aiContext = { name: value.name, ownerName: value.ownerName || "", category: value.category === "Other" ? "" : value.category, shortBio: value.shortBio, ownerBio: value.ownerBio || "", title: "" };
   const invalid = (field: ListingField) => (problems?.[field] ? { "aria-invalid": true as const, "aria-describedby": `listing-${field}-error` } : {});
   // A category not on the list is shown as "Other" with the typed name in a text box.
-  const categoryChoice = !value.category ? "" : isListedCategory(value.category) ? value.category : "Other";
+  const categories = useMakerCategories();
+  const categoryChoice = !value.category ? "" : isListedCategory(value.category, categories) ? value.category : "Other";
   const ownCategory = categoryChoice === "Other" && value.category !== "Other" ? value.category : "";
 
   async function addPhotos(kind: "cover" | "gallery", files: File[]) {
@@ -92,7 +94,7 @@ export default function ListingFields({ value, onChange, upload, ownerControls, 
     {signedInEmail && <p className="signed-in-email">Your login email: <strong>{signedInEmail}</strong>. This is how you sign in. It is not shown on your public page.</p>}
     <label>Business name *<input id="listing-name" maxLength={140} value={value.name} onChange={(event) => set("name", event.target.value)} {...invalid("name")} /><FieldError problems={problems} field="name" /></label>
     <label>Maker's full name *<input id="listing-ownerName" maxLength={120} autoComplete="name" value={value.ownerName || ""} onChange={(event) => set("ownerName", event.target.value)} placeholder="Gilbert Martin" {...invalid("ownerName")} /><small className="form-hint">The person behind the work. Shown on the profile as "Meet" and this name.</small><FieldError problems={problems} field="ownerName" /></label>
-    <label>Category *<select id="listing-category" value={categoryChoice} onChange={(event) => set("category", event.target.value)} {...invalid("category")}><option value="">Choose a category</option>{MAKER_CATEGORIES.map((category) => <option key={category} value={category}>{category}</option>)}</select>{categoryChoice !== "Other" && <FieldError problems={problems} field="category" />}</label>
+    <label>Category *<select id="listing-category" value={categoryChoice} onChange={(event) => set("category", event.target.value)} {...invalid("category")}><option value="">Choose a category</option>{categories.map((category) => <option key={category} value={category}>{category}</option>)}</select>{categoryChoice !== "Other" && <FieldError problems={problems} field="category" />}</label>
     {categoryChoice === "Other" && <label>Your category *<input id="listing-category-other" maxLength={40} value={ownCategory} onChange={(event) => set("category", event.target.value || "Other")} placeholder="Leather goods" {...invalid("category")} /><small className="form-hint">The marketplace reviews new categories and may match yours to one on the list.</small><FieldError problems={problems} field="category" /></label>}
     <label>Short description *<textarea id="listing-shortBio" maxLength={800} rows={3} value={value.shortBio} onChange={(event) => set("shortBio", event.target.value)} {...invalid("shortBio")} /><small className="form-hint">{value.shortBio.trim().length} / 800, at least 20</small><FieldError problems={problems} field="shortBio" /></label>
     {aiWrite && <AiWriteHelper field="shortBio" text={value.shortBio} write={aiWrite} context={aiContext} onUse={(text) => set("shortBio", text)} />}

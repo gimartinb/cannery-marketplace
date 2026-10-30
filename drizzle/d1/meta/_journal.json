@@ -99,6 +99,13 @@
       "when": 1793253044708,
       "tag": "0013_rename_coffee_category",
       "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "6",
+      "when": 1793394769851,
+      "tag": "0014_maker_categories",
+      "breakpoints": true
     }
   ]
 }

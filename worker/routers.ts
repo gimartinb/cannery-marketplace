@@ -14,6 +14,7 @@ import {
   listPublicHighlights, reorderGalleryPhotos, updateGalleryPhoto, updateHighlight,
 } from "./db";
 import { aiWrite } from "./aiWriting";
+import { addCategory, adoptCategory, deleteCategory, listCategoriesForOwners, listCategoryNames, renameCategory, reorderCategories } from "./categories";
 import { EMAIL_DAILY_LIMIT, emailReady, getAutoSend, setAutoSend, listEmailLog, listEmailTemplates, resetEmailTemplate, saveEmailTemplate, sendAutomaticEmail, sendEmail, sentToday } from "./email";
 import { AUTO_SEND_TEMPLATES, EMAIL_TEMPLATE_IDS, emailTemplateInput, sendEmailInput } from "../shared/emailTemplates";
 import { discardImageDraft, draftOriginalImage, listImageDrafts, previewSiteImages, publishSiteImages, saveImageDraftAlt } from "./siteImages";
@@ -115,6 +116,8 @@ export const publicRouter = router({
       search: z.string().trim().max(80).optional(),
     })).query(({ ctx, input }) => listPublicVendorPage(ctx.db, { offset: input.cursor ?? 0, limit: input.limit, category: input.category || undefined, search: input.search || undefined })),
     categories: publicProcedure.query(({ ctx }) => listPublicVendorCategories(ctx.db)),
+    // The list makers pick from (managed by the owners in the Categories tab).
+    makerCategories: publicProcedure.query(({ ctx }) => listCategoryNames(ctx.db)),
     featured: publicProcedure.query(({ ctx }) => listFeaturedVendorProfiles(ctx.db, 3)),
     bySlug: publicProcedure.input(z.object({ slug: z.string().trim().min(1).max(160) })).query(({ ctx, input }) => getPublicVendorProfile(ctx.db, input.slug)),
   }),
@@ -271,6 +274,13 @@ export const adminRouter = router({
     resetEmailTemplate: adminProcedure.input(z.object({ id: z.enum(EMAIL_TEMPLATE_IDS) })).mutation(async ({ ctx, input }) => { await resetEmailTemplate(ctx.db, input.id); return { success: true }; }),
     sendEmail: adminProcedure.input(sendEmailInput).mutation(({ ctx, input }) => sendEmail(ctx.env, ctx.db, { ...input, sentBy: ctx.email })),
     emailLog: adminProcedure.query(({ ctx }) => listEmailLog(ctx.db)),
+    // Maker categories: add, rename (updates every listing), reorder, delete (moves listings).
+    categories: adminProcedure.query(({ ctx }) => listCategoriesForOwners(ctx.db)),
+    addCategory: adminProcedure.input(z.object({ name: z.string().max(60) })).mutation(({ ctx, input }) => addCategory(ctx.db, input.name)),
+    adoptCategory: adminProcedure.input(z.object({ name: z.string().max(60) })).mutation(({ ctx, input }) => adoptCategory(ctx.db, input.name)),
+    renameCategory: adminProcedure.input(z.object({ id: z.number().int().positive(), name: z.string().max(60) })).mutation(({ ctx, input }) => renameCategory(ctx.db, input.id, input.name)),
+    deleteCategory: adminProcedure.input(z.object({ id: z.number().int().positive(), moveTo: z.string().max(60).default("") })).mutation(({ ctx, input }) => deleteCategory(ctx.db, input.id, input.moveTo)),
+    reorderCategories: adminProcedure.input(z.object({ ids: z.array(z.number().int().positive()).max(200) })).mutation(async ({ ctx, input }) => { await reorderCategories(ctx.db, input.ids); return { success: true }; }),
     bulkImport: adminProcedure.input(z.object({ vendors: z.array(ownerVendorSchema).min(1).max(500) })).mutation(({ ctx, input }) => bulkImportVendorProfiles(ctx.db, input.vendors, ctx.email)),
   }),
 });

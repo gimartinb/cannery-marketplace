@@ -1,8 +1,8 @@
 export { currentCategory, RENAMED_CATEGORIES } from "./categoryNames";
 import { vendorProfileSchema, type VendorProfileInput } from "./vendorProfile";
 
-// Categories makers pick from in the maker portal. Owners can still type any
-// category when they edit a listing, and existing categories stay valid there.
+// The starting category list. The live list is managed by the owners in the
+// Categories tab (table maker_categories); this one is the fallback.
 export const MAKER_CATEGORIES = [
   "Ceramics",
   "Coffee, Matcha & Bakery",
@@ -20,8 +20,9 @@ export const MAKER_CATEGORIES = [
   "Other",
 ] as const;
 
-export function isListedCategory(category: string) {
-  return (MAKER_CATEGORIES as readonly string[]).includes(category) && category !== "Other";
+/** True when the category is on the list (the owners' list when given, otherwise the built in one). */
+export function isListedCategory(category: string, list: readonly string[] = MAKER_CATEGORIES) {
+  return list.includes(category) && category !== "Other";
 }
 
 export type ListingField = "name" | "ownerName" | "category" | "shortBio" | "ownerBio" | "contactEmail" | "websiteUrl" | "instagramUrl" | "facebookUrl" | "tiktokUrl" | "social" | "coverImageUrl" | "galleryImageUrls";

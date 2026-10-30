@@ -256,3 +256,13 @@ export const emailLog = sqliteTable("email_log", {
   sentBy: text("sentBy"),
   createdAt: createdAt(),
 }, (table) => [index("email_log_created_idx").on(table.createdAt)]);
+
+// The category list makers pick from (owners manage it in the Categories tab).
+// "Other" is built in and is not stored here.
+export const makerCategories = sqliteTable("maker_categories", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  name: text("name").notNull(),
+  displayOrder: integer("displayOrder").default(100).notNull(),
+  createdAt: createdAt(),
+  updatedAt: updatedAt(),
+}, (table) => [uniqueIndex("maker_categories_name_unique").on(table.name)]);

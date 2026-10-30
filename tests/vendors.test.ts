@@ -40,3 +40,19 @@ describe("renamed categories", () => {
     expect(parsed.success && parsed.data.category).toBe("Coffee, Matcha & Bakery");
   });
 });
+
+import { categoryNameProblem } from "../worker/categories";
+import { isListedCategory } from "../shared/makerListing";
+describe("owner managed categories", () => {
+  it("checks new category names", () => {
+    expect(categoryNameProblem("Leather Goods")).toBeNull();
+    expect(categoryNameProblem("ab")).toMatch(/3 characters/);
+    expect(categoryNameProblem("Other")).toMatch(/built in/);
+    expect(categoryNameProblem("<b>x</b>")).toMatch(/letters/);
+  });
+  it("uses the owners' list when given", () => {
+    expect(isListedCategory("Leather Goods", ["Leather Goods", "Other"])).toBe(true);
+    expect(isListedCategory("Ceramics", ["Leather Goods", "Other"])).toBe(false);
+    expect(isListedCategory("Other", ["Other"])).toBe(false);
+  });
+});
