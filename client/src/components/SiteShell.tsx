@@ -3,6 +3,7 @@ import { ReactNode, useEffect, useState } from "react";
 import { Link, useLocation } from "wouter";
 import { useSiteImage } from "@/lib/siteImages";
 import { trpc } from "@/lib/trpc";
+import { HoursNotice } from "@/components/StoreHours";
 import { Txt, useOwnerPreview, usePlainText } from "@/lib/siteText";
 
 // Menu labels are editable in the owner portal (Site text, "Every page").
@@ -57,4 +58,4 @@ export function Footer() {
   return <footer className="site-footer"><div className="site-container footer-main"><div className="footer-brand"><img className="footer-mark" src={logo} alt="The Cannery Marketplace logo" width="1173" height="618" loading="lazy" decoding="async" /><p><Txt k="shared.footer.tagline" /></p></div><div><p className="footer-heading">Explore</p><ul className="footer-list"><li><Link href="/">Home</Link></li><li><Link href="/about">About the marketplace</Link></li><li><Link href="/vendors">Meet the makers</Link></li>{(publicSettings?.giftBoxesEnabled === true || ownerPreview) && <li><Link href="/gifts">Gift boxes</Link></li>}<li><Link href="/become-a-vendor">Become a vendor</Link></li><li><Link href="/contact">Contact us</Link></li></ul></div><div><p className="footer-heading">Connect</p><ul className="footer-list"><li><a href={`tel:+1${phone.replace(/\D/g, "").replace(/^1(?=\d{10}$)/, "")}`}>{phone}</a></li><li><a href={`mailto:${plain("shared.business.email")}`}>Email the marketplace</a></li></ul><div className="footer-socials" aria-label="Social media"><a className="social-link" href="https://www.instagram.com/the_cannery_marketplace_/" target="_blank" rel="noreferrer" aria-label="The Cannery Marketplace on Instagram"><Instagram size={16} /></a><a className="social-link" href="https://www.facebook.com/events/downtown-gilroy/cannery-marketplace/188143524348078/" target="_blank" rel="noreferrer" aria-label="The Cannery Marketplace on Facebook"><Facebook size={16} /></a></div></div></div><div className="site-container footer-base"><span>© {new Date().getFullYear()} The Cannery Marketplace. All rights reserved.</span><span><Txt k="shared.business.addressLine1" />, <Txt k="shared.business.addressLine2" /></span></div></footer>;
 }
 
-export default function SiteShell({ children }: { children: ReactNode }) { return <div className="site-shell"><Header />{children}<Footer /></div>; }
+export default function SiteShell({ children }: { children: ReactNode }) { return <div className="site-shell"><HoursNotice /><Header />{children}<Footer /></div>; }

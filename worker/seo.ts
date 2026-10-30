@@ -1,4 +1,5 @@
 import { and, asc, eq } from "drizzle-orm";
+import { openingHoursForSearch, parseStoreHours } from "../shared/storeHours";
 import { redirectFor } from "./listingAddress";
 import { publishedSiteText } from "./siteText";
 import { vendorProfiles } from "../drizzle/schema";
@@ -33,7 +34,7 @@ export const STATIC_ROUTES: Record<string, StaticRoute> = {
   "/maker-portal": { title: "Maker sign in", description: "Secure maker profile access for The Cannery Marketplace.", index: false },
 };
 
-const BUSINESS = {
+const BUSINESS_BASE = {
   "@type": "LocalBusiness",
   "@id": `${SITE_URL}/#marketplace`,
   name: SITE_NAME,
@@ -45,11 +46,6 @@ const BUSINESS = {
   address: { "@type": "PostalAddress", streetAddress: "7488 Monterey Road", addressLocality: "Gilroy", addressRegion: "CA", postalCode: "95020", addressCountry: "US" },
   geo: { "@type": "GeoCoordinates", latitude: 37.0079724, longitude: -121.568909 },
   hasMap: "https://www.google.com/maps/search/?api=1&query=7488+Monterey+Road+Gilroy+CA+95020",
-  openingHoursSpecification: [
-    { "@type": "OpeningHoursSpecification", dayOfWeek: "https://schema.org/Wednesday", opens: "11:00", closes: "18:00" },
-    { "@type": "OpeningHoursSpecification", dayOfWeek: ["https://schema.org/Thursday", "https://schema.org/Friday", "https://schema.org/Saturday"], opens: "11:00", closes: "19:00" },
-    { "@type": "OpeningHoursSpecification", dayOfWeek: "https://schema.org/Sunday", opens: "11:00", closes: "18:00" },
-  ],
 };
 
 export type PageMeta = {
@@ -72,6 +68,9 @@ const breadcrumbs = (items: Array<[string, string]>) => ({ "@type": "BreadcrumbL
 
 /** Works out the tags for a page path, or a 404 for paths and makers that do not exist. */
 export async function resolvePage(db: Database, pathname: string): Promise<PageMeta> {
+  // Hours come from the Store hours tab, so search engines see the same hours (and holidays) as visitors.
+  const storeHours = parseStoreHours(await getSiteSetting(db, "store_hours", ""));
+  const BUSINESS = { ...BUSINESS_BASE, openingHoursSpecification: openingHoursForSearch(storeHours) };
   const images = new Map((await listSiteImages(db)).map((row) => [row.id, row]));
   const socialImage = images.get("social-sharing")?.url || DEFAULT_SOCIAL_IMAGE;
   const base = { image: socialImage, imageAlt: `${SITE_NAME} in Gilroy, California`, type: "website" as const };

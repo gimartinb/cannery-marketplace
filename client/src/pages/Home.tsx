@@ -7,8 +7,8 @@ import { useSiteImage } from "@/lib/siteImages";
 import { publishedVendorToView, type Vendor } from "@/lib/vendors";
 import { trpc } from "@/lib/trpc";
 import { Txt } from "@/lib/siteText";
+import { StoreHoursList } from "@/components/StoreHours";
 
-const days = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
 
 const highlightTones = ["clay", "sun", "cafe"] as const;
 
@@ -41,7 +41,7 @@ export default function Home() {
 
       <section className="image-story"><div className="site-container image-story-grid"><div className="image-frame"><img src={interiorImage.url} alt={interiorImage.alt} width="704" height="396" loading="lazy" decoding="async" /><span className="image-caption">{interiorImage.caption}</span></div><div className="image-story-copy"><p className="eyebrow"><Txt k="home.story.eyebrow" /></p><h2 className="display"><Txt k="home.story.title" /></h2><p className="body-large"><Txt k="home.story.body" /></p><Link className="text-link" href="/vendors"><Txt k="home.story.link" /> <ArrowRight size={15} /></Link></div></div></section>
 
-      <section className="home-visit-compact" id="visit" aria-labelledby="visit-title"><div className="site-container home-visit-compact-grid"><div className="compact-visit-intro"><p className="eyebrow"><Txt k="home.visit.eyebrow" /></p><h2 className="display" id="visit-title"><Txt k="home.visit.title" /></h2><p><MapPin size={16} /> <Txt k="shared.business.addressLine1" />, <Txt k="shared.business.addressLine2" /></p><a className="text-link" href="https://maps.google.com/?q=7488+Monterey+Road+Gilroy+CA+95020" target="_blank" rel="noreferrer"><Txt k="home.visit.directions" /> <Navigation size={14} /></a></div><div className="compact-hours" aria-label="Business hours"><div><Clock3 size={16} /><strong><Txt k="home.visit.hoursTitle" /></strong></div>{days.map((day) => <p key={day}><span>{day}</span><strong><Txt k={`shared.hours.${day.toLowerCase()}`} /></strong></p>)}</div><div className="compact-map"><iframe title="Map preview of The Cannery Marketplace at 7488 Monterey Road in Gilroy" src="https://maps.google.com/maps?hl=en&q=7488+Monterey+Road+Gilroy+CA+95020&z=15&output=embed" width="360" height="220" loading="lazy" referrerPolicy="no-referrer-when-downgrade" /></div></div></section>
+      <section className="home-visit-compact" id="visit" aria-labelledby="visit-title"><div className="site-container home-visit-compact-grid"><div className="compact-visit-intro"><p className="eyebrow"><Txt k="home.visit.eyebrow" /></p><h2 className="display" id="visit-title"><Txt k="home.visit.title" /></h2><p><MapPin size={16} /> <Txt k="shared.business.addressLine1" />, <Txt k="shared.business.addressLine2" /></p><a className="text-link" href="https://maps.google.com/?q=7488+Monterey+Road+Gilroy+CA+95020" target="_blank" rel="noreferrer"><Txt k="home.visit.directions" /> <Navigation size={14} /></a></div><StoreHoursList /><div className="compact-map"><iframe title="Map preview of The Cannery Marketplace at 7488 Monterey Road in Gilroy" src="https://maps.google.com/maps?hl=en&q=7488+Monterey+Road+Gilroy+CA+95020&z=15&output=embed" width="360" height="220" loading="lazy" referrerPolicy="no-referrer-when-downgrade" /></div></div></section>
     </main>
   </SiteShell>;
 }

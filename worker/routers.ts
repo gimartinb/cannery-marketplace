@@ -14,6 +14,7 @@ import {
   listPublicHighlights, reorderGalleryPhotos, updateGalleryPhoto, updateHighlight,
 } from "./db";
 import { aiWrite } from "./aiWriting";
+import { parseStoreHours, storeHoursSchema } from "../shared/storeHours";
 import { assertFeaturedRoom, featuredOverview, setFeatured, syncFeaturedHistory, trimFeatured } from "./featured";
 import { fixAllListingAddresses, fixListingAddress, redirectFor } from "./listingAddress";
 import { addressMatchesName, suggestedAddress } from "../shared/listingAddress";
@@ -81,6 +82,8 @@ export const publicRouter = router({
     public: publicProcedure.query(async ({ ctx }) => ({ giftBoxesEnabled: await giftBoxesEnabled(ctx.db) })),
     // Published site text (only wording the owners changed). Pages also get this in the HTML.
     siteText: publicProcedure.query(({ ctx }) => publishedSiteText(ctx.db)),
+    // Store hours, holidays, and special hours (managed in the Store hours tab).
+    storeHours: publicProcedure.query(async ({ ctx }) => parseStoreHours(await getSiteSetting(ctx.db, "store_hours", ""))),
   }),
   // Gift boxes and corporate requests. Everything is hidden while gift boxes are turned off.
   gifts: router({
@@ -320,6 +323,12 @@ export const adminRouter = router({
     }),
     fixListingAddress: adminProcedure.input(z.object({ id: z.number().int().positive() })).mutation(async ({ ctx, input }) => ({ fixed: await fixListingAddress(ctx.db, input.id) })),
     fixAllListingAddresses: adminProcedure.mutation(async ({ ctx }) => ({ fixed: await fixAllListingAddresses(ctx.db) })),
+    saveStoreHours: adminProcedure.input(storeHoursSchema).mutation(async ({ ctx, input }) => {
+      const ids = new Set(input.specials.map((item) => item.id));
+      if (ids.size !== input.specials.length) throw new TRPCError({ code: "BAD_REQUEST", message: "Two holiday entries have the same id. Reload the page and try again." });
+      await setSiteSetting(ctx.db, "store_hours", JSON.stringify({ ...input, specials: [...input.specials].sort((a, b) => a.start.localeCompare(b.start)) }));
+      return { success: true };
+    }),
     bulkImport: adminProcedure.input(z.object({ vendors: z.array(ownerVendorSchema).min(1).max(500) })).mutation(async ({ ctx, input }) => {
       const result = await bulkImportVendorProfiles(ctx.db, input.vendors, ctx.email);
       // Spreadsheets can mark more than 3 as featured; the earliest featured ones stay.

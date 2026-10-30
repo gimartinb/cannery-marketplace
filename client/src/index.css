@@ -1533,3 +1533,45 @@ main { min-height: 100svh; }
 .featured-history th, .featured-history td { text-align: left; padding: .45rem .5rem; border-bottom: 1px solid var(--line); }
 .featured-history th { font-size: .72rem; letter-spacing: .06em; text-transform: uppercase; color: #6d6247; }
 @media (max-width: 760px) { .featured-slots { grid-template-columns: 1fr; } }
+
+/* Store hours on the public site */
+.compact-hours .hours-today { background: #fbf5e8; padding-inline: .4rem; }
+.compact-hours .hours-today span { color: var(--gold); font-weight: 700; }
+.compact-hours p.is-today strong, .compact-hours p.is-today span { color: var(--ink); font-weight: 700; }
+.compact-hours .hours-specials { margin-top: .5rem; gap: .4rem; }
+.compact-hours .hours-special span { display: grid; }
+.compact-hours .hours-special small { color: #70766b; font-size: .66rem; }
+.compact-hours .hours-special strong { text-align: right; max-width: 60%; }
+.contact-hours { margin-top: .3rem; min-width: min(100%, 320px); }
+.contact-hours p, .contact-hours p strong { font-size: .82rem; }
+.hours-notice { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: .35rem; padding: .5rem 1rem; background: var(--moss); color: #fffdf8; font-size: .8rem; text-align: center; }
+.hours-notice svg { color: var(--gold-soft); }
+.hours-notice a { color: var(--gold-soft); font-weight: 700; margin-left: .3rem; }
+
+/* Store hours tab */
+.hours-card { display: grid; gap: .6rem; margin-bottom: 1rem; }
+.hours-card h3 { display: flex; align-items: center; gap: .45rem; margin: 0; }
+.hours-card h3 svg { color: var(--gold); }
+.hours-card-head { display: flex; justify-content: space-between; align-items: center; gap: .8rem; flex-wrap: wrap; }
+.hours-row { display: grid; grid-template-columns: 110px 120px 140px 140px auto; gap: .7rem; align-items: end; padding: .55rem 0; border-bottom: 1px solid var(--line); }
+.hours-row > strong { align-self: center; }
+.hours-row label, .special-row label { margin: 0; font-size: .74rem; }
+.hours-row input[type="time"], .special-row input { width: 100%; padding: .45rem .5rem; border: 1px solid var(--line); font: inherit; font-size: .88rem; background: #fff; }
+.hours-closed { color: #70766b; font-size: .82rem; align-self: center; }
+.holiday-ideas { display: flex; flex-wrap: wrap; gap: .35rem; align-items: center; font-size: .78rem; color: #6d6247; }
+.special-row { display: grid; grid-template-columns: 1.4fr 1fr 1fr auto auto auto; gap: .6rem; align-items: end; padding: .8rem; border: 1px solid var(--gold-soft); background: #fffaf0; }
+.special-row .special-note { grid-column: 1 / span 4; }
+.special-row .special-preview { grid-column: 1 / -1; }
+.notice-days { display: flex; align-items: center; gap: .6rem; font-size: .8rem; margin: .3rem 0 0; }
+.notice-days input { width: 5rem; padding: .35rem .5rem; border: 1px solid var(--line); }
+.past-specials summary { cursor: pointer; font-size: .8rem; font-weight: 600; color: #6d6247; }
+.past-specials[open] { display: grid; gap: .6rem; }
+.admin-empty-inline { margin: 0; font-size: .84rem; color: #70766b; }
+.hours-save-bar { display: flex; align-items: center; gap: .8rem; }
+@media (max-width: 760px) {
+  .hours-row { grid-template-columns: 1fr 1fr; }
+  .hours-row > button { grid-column: 1 / -1; justify-self: start; }
+  .special-row { grid-template-columns: 1fr 1fr; }
+  .special-row > label:first-child, .special-row .special-note { grid-column: 1 / -1; }
+}
+.contact-hours > div:first-child { display: none; }

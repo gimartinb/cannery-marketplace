@@ -150,7 +150,7 @@ const EXTRAS_AFTER: Partial<Record<string, Extra[]>> = {
   "home.feature3.body": [{ kind: "image", slot: "marketplace-interior" }],
   "about.story.quote": [{ kind: "image", slot: "about-display" }],
   "about.gallery.title": [{ kind: "gallery" }],
-  "shared.hours.sunday": [{ kind: "image", slot: "social-sharing" }],
+  "shared.business.email": [{ kind: "image", slot: "social-sharing" }],
 };
 const IMAGE_PAGE: Record<SiteImageSlotId, SitePageId> = { logo: "shared", "social-sharing": "shared", "home-hero": "home", "marketplace-interior": "home", "about-display": "about" };
 

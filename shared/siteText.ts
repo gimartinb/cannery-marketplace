@@ -42,13 +42,6 @@ export const SITE_TEXT: SiteTextBlock[] = [
     ["business.addressLine2", "Business address, city", "detail", "Gilroy, California 95020"],
     ["business.phone", "Business phone", "detail", "(408) 337-1620"],
     ["business.email", "Business email", "detail", "thecannerymarketplace@gmail.com"],
-    ["hours.monday", "Hours: Monday", "detail", "Closed"],
-    ["hours.tuesday", "Hours: Tuesday", "detail", "Closed"],
-    ["hours.wednesday", "Hours: Wednesday", "detail", "11 AM to 6 PM"],
-    ["hours.thursday", "Hours: Thursday", "detail", "11 AM to 7 PM"],
-    ["hours.friday", "Hours: Friday", "detail", "11 AM to 7 PM"],
-    ["hours.saturday", "Hours: Saturday", "detail", "11 AM to 7 PM"],
-    ["hours.sunday", "Hours: Sunday", "detail", "11 AM to 6 PM"],
   ]),
   ...page("home", [
     ["hero.eyebrow", "Top banner: small label", "eyebrow", "Gilroy, California"],
