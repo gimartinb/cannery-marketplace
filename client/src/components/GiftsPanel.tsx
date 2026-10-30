@@ -89,6 +89,7 @@ function RequestsList() {
   const compose = useEmailComposer();
   const [edits, setEdits] = useState<Record<number, { status: (typeof GIFT_REQUEST_STATUSES)[number]; adminNote: string; quoteAmount: string; externalOrderId: string }>>({});
   const update = trpc.adminPortal.updateGiftRequest.useMutation({ onSuccess: async () => { notifySuccess("Request updated"); await utils.adminPortal.giftRequests.invalidate(); }, onError: (error) => notifyError(error, "Request not updated") });
+  const remove = trpc.adminPortal.deleteGiftRequest.useMutation({ onSuccess: async () => { notifySuccess("Request deleted"); await utils.adminPortal.giftRequests.invalidate(); }, onError: (error) => notifyError(error, "Request not deleted") });
   const rows = list.data ?? [];
   if (list.isLoading) return <div className="admin-empty"><Loader2 className="animate-spin" /></div>;
   if (!rows.length) return <div className="admin-empty"><Building2 size={20} /><h3>No corporate requests yet</h3><p>Requests from the corporate gifting page will appear here, and you also get an email for each one.</p></div>;
@@ -114,7 +115,7 @@ function RequestsList() {
         <label>Square invoice or order number<input value={edit.externalOrderId} maxLength={64} placeholder="From Square, once invoiced" onChange={(event) => setEdit({ externalOrderId: event.target.value })} /></label>
       </div>
       <label>Private note<textarea rows={2} value={edit.adminNote} maxLength={1200} onChange={(event) => setEdit({ adminNote: event.target.value })} /></label>
-      <div className="review-actions"><button className="button-primary" type="button" disabled={update.isPending} onClick={() => update.mutate({ id: row.id, ...edit })}><Save size={14} /> Save</button><button className="button-plain" type="button" onClick={replyEmail}><Mail size={14} /> Reply by email</button></div>
+      <div className="review-actions"><button className="button-primary" type="button" disabled={update.isPending} onClick={() => update.mutate({ id: row.id, ...edit })}><Save size={14} /> Save</button><button className="button-plain" type="button" onClick={replyEmail}><Mail size={14} /> Reply by email</button><button className="danger-button" type="button" disabled={remove.isPending} onClick={() => { if (window.confirm(`Delete the request from ${row.company}? This cannot be undone.`)) remove.mutate({ id: row.id }); }}><Trash2 size={14} /> Delete</button></div>
     </article>;
   })}</div>;
 }

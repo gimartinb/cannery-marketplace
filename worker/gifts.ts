@@ -103,6 +103,10 @@ export async function listGiftRequests(db: Database) {
   return rows.map((row) => ({ ...row, branding: list(row.branding), preferredCategories: list(row.preferredCategories) }));
 }
 
+export async function deleteGiftRequest(db: Database, id: number) {
+  await db.delete(giftRequests).where(eq(giftRequests.id, id));
+}
+
 export async function updateGiftRequest(db: Database, id: number, change: { status: (typeof giftRequests.$inferSelect)["status"]; adminNote: string; quoteAmount: string; externalOrderId: string }) {
   await db.update(giftRequests).set({ status: change.status, adminNote: change.adminNote || null, quoteAmount: change.quoteAmount || null, externalOrderId: change.externalOrderId || null }).where(eq(giftRequests.id, id));
 }

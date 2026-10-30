@@ -304,6 +304,10 @@ export const reviews = sqliteTable("reviews", {
   featured: integer("featured", { mode: "boolean" }).default(false).notNull(),
   ownerNote: text("ownerNote"),
   sourceHash: text("sourceHash"),
+  // Owner edits: the shopper's original words are kept the first time a review is edited.
+  originalBody: text("originalBody"),
+  editedBy: text("editedBy"),
+  editedAt: integer("editedAt", { mode: "timestamp" }),
   reviewedBy: text("reviewedBy"),
   reviewedAt: integer("reviewedAt", { mode: "timestamp" }),
   createdAt: createdAt(),

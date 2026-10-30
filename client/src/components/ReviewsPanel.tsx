@@ -1,4 +1,4 @@
-import { Check, ExternalLink, Loader2, Mail, Plus, RotateCcw, Save, Star, StarOff, Trash2, X } from "lucide-react";
+import { Check, ExternalLink, Loader2, Mail, Pencil, Plus, RotateCcw, Save, Star, StarOff, Trash2, X } from "lucide-react";
 import { useState } from "react";
 import { Stars } from "@/components/Reviews";
 import { notifyError, notifySuccess } from "@/lib/notify";
@@ -29,6 +29,30 @@ function AddReviewForm({ vendors, onDone }: { vendors: Vendor[]; onDone: () => P
   </form>;
 }
 
+type ReviewRow = { id: number; profileId: number | null; rating: number; body: string; reviewerName: string; reviewerCity: string | null; source: ReviewSource; photoUrl: string | null; originalBody: string | null };
+
+/** Edit a published review. Shopper reviews keep their stars; reviews owners added can be fully corrected. */
+function EditReviewForm({ row, vendors, onDone }: { row: ReviewRow; vendors: Vendor[]; onDone: () => void }) {
+  const utils = trpc.useUtils();
+  const fromWebsite = row.source === "website";
+  const [form, setForm] = useState({ profileId: row.profileId ? String(row.profileId) : "", rating: row.rating, body: row.body, reviewerName: row.reviewerName, reviewerCity: row.reviewerCity ?? "", source: row.source, removePhoto: false });
+  const save = trpc.adminPortal.editReview.useMutation({ onSuccess: async () => { notifySuccess("Review updated", { description: "The change shows on the site right away." }); await Promise.all([utils.adminPortal.reviews.invalidate(), utils.reviews.invalidate()]); onDone(); }, onError: (error) => notifyError(error, "Review not updated") });
+  return <form className="edit-review-form" onSubmit={(event) => { event.preventDefault(); save.mutate({ id: row.id, profileId: form.profileId ? Number(form.profileId) : null, rating: form.rating, body: form.body, reviewerName: form.reviewerName, reviewerCity: form.reviewerCity, source: form.source, removePhoto: form.removePhoto }); }}>
+    {fromWebsite && <p className="form-hint">A shopper wrote this on our website. Fix typos or remove personal information, but keep their meaning. Their star rating cannot be changed.</p>}
+    <div className="form-grid">
+      <label>Maker<select value={form.profileId} onChange={(event) => setForm({ ...form, profileId: event.target.value })}><option value="">The marketplace in general</option>{vendors.map((vendor) => <option key={vendor.id} value={vendor.id}>{vendor.name}</option>)}</select></label>
+      <label>Stars<select value={form.rating} disabled={fromWebsite} onChange={(event) => setForm({ ...form, rating: Number(event.target.value) })}>{[5, 4, 3, 2, 1].map((n) => <option key={n} value={n}>{n} star{n === 1 ? "" : "s"}</option>)}</select></label>
+      {!fromWebsite && <label>Where it came from<select value={form.source} onChange={(event) => setForm({ ...form, source: event.target.value as ReviewSource })}>{REVIEW_SOURCES.filter((source) => source !== "website").map((source) => <option key={source} value={source}>{REVIEW_SOURCE_LABEL[source]}</option>)}</select></label>}
+      <label>Reviewer's name (private)<input value={form.reviewerName} maxLength={40} onChange={(event) => setForm({ ...form, reviewerName: event.target.value })} /></label>
+      <label>City<input value={form.reviewerCity} maxLength={60} onChange={(event) => setForm({ ...form, reviewerCity: event.target.value })} /></label>
+    </div>
+    <label>The review<textarea rows={4} maxLength={1500} value={form.body} onChange={(event) => setForm({ ...form, body: event.target.value })} /></label>
+    {row.photoUrl && <label className="checkbox-label"><input type="checkbox" checked={form.removePhoto} onChange={(event) => setForm({ ...form, removePhoto: event.target.checked })} /> Remove the photo</label>}
+    {row.originalBody && <details className="review-original"><summary>Shopper's original words</summary><p>“{row.originalBody}”</p></details>}
+    <div className="review-actions"><button className="button-primary compact-button" type="submit" disabled={save.isPending}>{save.isPending ? <Loader2 size={13} className="animate-spin" /> : <Save size={13} />} Save changes</button><button className="button-plain compact-button" type="button" onClick={onDone}><X size={13} /> Cancel</button></div>
+  </form>;
+}
+
 /** Owner dashboard tab: approve new reviews, choose home page reviews, add reviews from elsewhere, and set the Google link. */
 export default function ReviewsPanel({ vendors }: { vendors: Vendor[] }) {
   const utils = trpc.useUtils();
@@ -36,6 +60,7 @@ export default function ReviewsPanel({ vendors }: { vendors: Vendor[] }) {
   const [filter, setFilter] = useState<Filter>("pending");
   const [adding, setAdding] = useState(false);
   const [google, setGoogle] = useState<string | null>(null);
+  const [editingId, setEditingId] = useState<number | null>(null);
   const refresh = () => Promise.all([utils.adminPortal.reviews.invalidate(), utils.adminPortal.pendingReviews.invalidate(), utils.reviews.invalidate()]);
   const status = trpc.adminPortal.setReviewStatus.useMutation({ onSuccess: async (_r, input) => { notifySuccess(input.status === "approved" ? "Review approved" : input.status === "rejected" ? "Review removed" : "Moved back to Waiting", { description: input.status === "approved" ? "It shows on the maker's page now." : undefined }); await refresh(); }, onError: (error) => notifyError(error, "Review not updated") });
   const feature = trpc.adminPortal.setReviewFeatured.useMutation({ onSuccess: async (_r, input) => { notifySuccess(input.featured ? "Added to the home page" : "Removed from the home page"); await refresh(); }, onError: (error) => notifyError(error, "Not changed") });
@@ -64,9 +89,12 @@ export default function ReviewsPanel({ vendors }: { vendors: Vendor[] }) {
         <h3>{row.makerName || "The marketplace"} <Stars value={row.rating} size={14} /></h3>
         <p>{row.reviewerName}{row.reviewerCity ? `, ${row.reviewerCity}` : ""} · {when(row.createdAt)} · {REVIEW_SOURCE_LABEL[row.source]}{row.email ? <> · <a href={`mailto:${row.email}`}><Mail size={12} /> {row.email}</a></> : ""}</p>
       </div>{row.photoUrl && <img className="secure-review-cover" src={row.photoUrl} alt="" />}</div>
+      {editingId === row.id ? <EditReviewForm row={row as ReviewRow} vendors={vendors} onDone={() => setEditingId(null)} /> : <>
       <p className="review-admin-body">“{row.body}”</p>
+      {row.editedAt && <p className="form-hint">Edited by {row.editedBy} on {when(row.editedAt)}{row.originalBody ? " (original words kept)" : ""}.</p>}
       <div className="review-actions">
         {row.status !== "approved" && <button className="button-primary compact-button" type="button" disabled={busy} onClick={() => status.mutate({ id: row.id, status: "approved" })}><Check size={13} /> Approve</button>}
+        <button className="button-plain compact-button" type="button" disabled={busy} onClick={() => setEditingId(row.id)}><Pencil size={13} /> Edit</button>
         {row.status === "approved" && (row.featured
           ? <button className="button-plain compact-button" type="button" disabled={busy} onClick={() => feature.mutate({ id: row.id, featured: false })}><StarOff size={13} /> Remove from home page</button>
           : <button className="button-plain compact-button" type="button" disabled={busy || featuredCount >= FEATURED_REVIEW_LIMIT} title={featuredCount >= FEATURED_REVIEW_LIMIT ? `Up to ${FEATURED_REVIEW_LIMIT} on the home page` : undefined} onClick={() => feature.mutate({ id: row.id, featured: true })}><Star size={13} /> Show on home page</button>)}
@@ -74,7 +102,7 @@ export default function ReviewsPanel({ vendors }: { vendors: Vendor[] }) {
         {row.status !== "pending" && <button className="button-plain compact-button" type="button" disabled={busy} onClick={() => status.mutate({ id: row.id, status: "pending" })}><RotateCcw size={13} /> Back to waiting</button>}
         {slugFor(row.profileId) && <a className="button-plain compact-button" href={`/vendors/${slugFor(row.profileId)}#reviews`} target="_blank" rel="noreferrer"><ExternalLink size={13} /> View page</a>}
         <button className="danger-button compact-button" type="button" disabled={busy} onClick={() => { if (window.confirm("Delete this review for good?")) remove.mutate({ id: row.id }); }}><Trash2 size={13} /> Delete</button>
-      </div>
+      </div></>}
     </article>)}</div> : <div className="admin-empty"><Star size={20} /><h3>{filter === "pending" ? "No reviews waiting" : "Nothing here yet"}</h3><p>{filter === "pending" ? "New reviews from maker pages show up here, and you get an email for each one." : "Try another filter."}</p></div>}
   </section>;
 }

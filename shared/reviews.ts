@@ -67,3 +67,20 @@ export function summarize(ratings: number[]): ReviewSummary {
   if (!ratings.length) return { count: 0, average: 0 };
   return { count: ratings.length, average: Math.round((ratings.reduce((sum, value) => sum + value, 0) / ratings.length) * 10) / 10 };
 }
+
+/**
+ * Owners editing a published review. For shopper reviews from the website, the star
+ * rating cannot change and the words may only be corrected (typos, personal information);
+ * reviews owners added from elsewhere can be fully corrected.
+ */
+export const reviewEditSchema = z.object({
+  id: z.number().int().positive(),
+  profileId: z.number().int().positive().nullable(),
+  rating: z.number().int().min(1, "Choose 1 to 5 stars.").max(5),
+  body: z.string().trim().min(5, "The review cannot be empty.").max(1500),
+  reviewerName: z.string().trim().min(1, "Add the reviewer's name.").max(40),
+  reviewerCity: z.string().trim().max(60).default(""),
+  source: z.enum(REVIEW_SOURCES),
+  removePhoto: z.boolean().default(false),
+});
+export type ReviewEdit = z.infer<typeof reviewEditSchema>;

@@ -1,4 +1,4 @@
-import { Archive, ExternalLink, Inbox, Loader2, Mail, RotateCcw, UserCheck, X } from "lucide-react";
+import { Archive, ExternalLink, Inbox, Loader2, Mail, RotateCcw, Trash2, UserCheck, X } from "lucide-react";
 import { useState } from "react";
 import { notifyError, notifySuccess } from "@/lib/notify";
 import { trpc } from "@/lib/trpc";
@@ -36,6 +36,7 @@ export default function ApplicationsPanel() {
     onError: (error) => notifyError(error, "Application not updated"),
   });
 
+  const remove = trpc.adminPortal.deleteApplication.useMutation({ onSuccess: async () => { notifySuccess("Application deleted"); await utils.adminPortal.applications.invalidate(); }, onError: (error) => notifyError(error, "Application not deleted") });
   const rows = list.data || [];
   const counts = Object.fromEntries(FILTERS.map((item) => [item.id, item.id === "all" ? rows.length : rows.filter((row) => row.status === item.id).length]));
   const shown = filter === "all" ? rows : rows.filter((row) => row.status === filter);
@@ -68,6 +69,7 @@ export default function ApplicationsPanel() {
           {item.status === "new" && <button className="danger-button" type="button" disabled={update.isPending} onClick={() => update.mutate({ id: item.id, status: "declined", note: notes[item.id] || "" })}><X size={14} /> Decline</button>}
           {item.status !== "archived" && item.status !== "new" && <button className="button-plain" type="button" disabled={update.isPending} onClick={() => update.mutate({ id: item.id, status: "archived", note: item.adminNote || "" })}><Archive size={14} /> Archive</button>}
           {item.status !== "new" && <button className="button-plain" type="button" disabled={update.isPending} onClick={() => update.mutate({ id: item.id, status: "new", note: item.adminNote || "" })}><RotateCcw size={14} /> Move to New</button>}
+          <button className="danger-button" type="button" disabled={remove.isPending} onClick={() => { if (window.confirm(`Delete the application from ${item.businessName}? This cannot be undone. To keep it out of the way instead, use Archive.`)) remove.mutate({ id: item.id }); }}><Trash2 size={14} /> Delete</button>
         </div>
       </article>) : <div className="admin-empty"><Inbox size={20} /><h3>{filter === "new" ? "No new applications" : "Nothing here"}</h3><p>{filter === "new" ? "New maker applications will appear here. You also get an email for each one." : "Try another filter."}</p></div>}
     </div>

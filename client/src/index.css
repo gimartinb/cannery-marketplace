@@ -1640,3 +1640,11 @@ main { min-height: 100svh; }
 .featured-reviews-more { margin-top: 1.6rem; }
 @media (max-width: 640px) { .reviews-toolbar .button-primary { margin-left: 0; } }
 .review-card .text-link { margin-top: .2rem; }
+.edit-review-form { display: grid; gap: .7rem; padding: .9rem 1rem; background: #fffaf0; border: 1px solid var(--gold-soft); }
+.edit-review-form .form-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: .7rem; }
+.edit-review-form label { display: grid; gap: .3rem; margin: 0; font-size: .74rem; font-weight: 700; color: #4e5246; }
+.edit-review-form input:not([type="checkbox"]), .edit-review-form select, .edit-review-form textarea { width: 100%; padding: .5rem .6rem; border: 1px solid var(--line); background: #fff; font: inherit; font-size: .88rem; font-weight: 400; color: var(--ink); }
+.edit-review-form select:disabled { background: #f1ede2; color: #70766b; }
+.edit-review-form .checkbox-label { display: flex; align-items: center; gap: .5rem; }
+.review-original summary { cursor: pointer; font-size: .78rem; font-weight: 600; color: #6d6247; }
+.review-original p { margin: .4rem 0 0; font-style: italic; font-size: .86rem; }

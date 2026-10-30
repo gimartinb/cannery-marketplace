@@ -382,6 +382,11 @@ export async function setApplicationStatus(db: Database, id: number, status: "ne
   await db.update(makerApplications).set({ status, adminNote: note || null, reviewedAt: status === "new" ? null : new Date() }).where(eq(makerApplications.id, id));
 }
 
+/** Owners removing an application for good (spam, duplicates, or at the applicant's request). */
+export async function deleteApplication(db: Database, id: number) {
+  await db.delete(makerApplications).where(eq(makerApplications.id, id));
+}
+
 // Owners inviting an applicant: start the maker's listing for them.
 // Maker application categories mapped to the maker portal's category list.
 const APPLICATION_TO_LISTING_CATEGORY: Record<string, string> = {

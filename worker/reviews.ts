@@ -1,7 +1,7 @@
 import { TRPCError } from "@trpc/server";
 import { and, desc, eq, gt, inArray, sql } from "drizzle-orm";
 import { reviews, vendorProfiles } from "../drizzle/schema";
-import { FEATURED_REVIEW_LIMIT, summarize, type ReviewSource } from "../shared/reviews";
+import { FEATURED_REVIEW_LIMIT, summarize, type ReviewEdit, type ReviewSource } from "../shared/reviews";
 import type { Database } from "./db";
 
 export const REVIEW_LIMIT_PER_SOURCE_PER_DAY = 5;
@@ -87,4 +87,26 @@ export async function allApprovedReviews(db: Database) {
   // Reviews of makers that were hidden or deleted are left out.
   const shown = rows.filter((row) => row.profileId === null || (row.makerActive && row.makerSlug)).map(({ makerActive: _active, ...row }) => row);
   return { summary: summarize(shown.map((row) => row.rating)), marketplace: summarize(shown.filter((row) => row.profileId === null).map((row) => row.rating)), reviews: shown };
+}
+
+/** Saves an owner's edit. Returns the removed photo (if any) so storage can be cleaned up. */
+export async function editReview(db: Database, input: ReviewEdit, email: string) {
+  const current = (await db.select().from(reviews).where(eq(reviews.id, input.id)).limit(1))[0];
+  if (!current) throw new TRPCError({ code: "NOT_FOUND", message: "That review no longer exists. Refresh the page." });
+  const fromWebsite = current.source === "website";
+  if (fromWebsite && input.rating !== current.rating) throw new TRPCError({ code: "BAD_REQUEST", message: "A shopper's star rating cannot be changed. You can remove the review instead if it breaks the guidelines." });
+  if (fromWebsite && input.source !== "website") throw new TRPCError({ code: "BAD_REQUEST", message: "A review written on our website stays marked as from our website." });
+  if (!fromWebsite && input.source === "website") throw new TRPCError({ code: "BAD_REQUEST", message: "Choose where this review came from (Google, Instagram, and so on)." });
+  const maker = input.profileId ? (await db.select({ name: vendorProfiles.name }).from(vendorProfiles).where(eq(vendorProfiles.id, input.profileId)).limit(1))[0] : null;
+  if (input.profileId && !maker) throw new TRPCError({ code: "NOT_FOUND", message: "That maker no longer exists. Refresh the page." });
+  const bodyChanged = input.body !== current.body;
+  await db.update(reviews).set({
+    profileId: input.profileId, makerName: maker?.name ?? null, rating: input.rating, body: input.body,
+    reviewerName: input.reviewerName, reviewerCity: input.reviewerCity || null, source: input.source,
+    photoUrl: input.removePhoto ? null : current.photoUrl,
+    // Keep the shopper's own words from before the first edit.
+    originalBody: bodyChanged && !current.originalBody ? current.body : current.originalBody,
+    editedBy: email, editedAt: new Date(),
+  }).where(eq(reviews.id, input.id));
+  return { removedPhoto: input.removePhoto ? current.photoUrl : null };
 }

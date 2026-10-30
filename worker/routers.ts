@@ -7,15 +7,15 @@ import { TRPCError } from "@trpc/server";
 import { deleteSiteImageObject } from "./media";
 import {
   bulkImportVendorProfiles, listSiteImages, createVendorSubmission, getPublicVendorProfile, listMakerListings, makerOwnsProfile, freeSlugFor, updateVendorProfileAsOwner, assignListingLogin, bulkUpdateVendorProfiles, deleteVendorProfiles,
-  APPLICATION_LIMIT_PER_SOURCE_PER_DAY, countRecentApplications, createApplication, getApplication, listApplications, setApplicationStatus, startListingFromApplication,
+  APPLICATION_LIMIT_PER_SOURCE_PER_DAY, countRecentApplications, createApplication, getApplication, deleteApplication, listApplications, setApplicationStatus, startListingFromApplication,
   DIRECTORY_PAGE_SIZES, getSiteSetting, listAllVendorProfiles, listFeaturedVendorProfiles, listPublicVendorCategories, listPublicVendorPage, listVendorSubmissions,
   reviewVendorSubmission, setSiteSetting, setVendorActive, addMakerInvites, listMakerInvites, removeMakerInvite,
   createHighlight, deleteGalleryPhoto, deleteHighlight, getGalleryPhoto, getHighlight, listGalleryPhotos, listHighlights,
   listPublicHighlights, reorderGalleryPhotos, updateGalleryPhoto, updateHighlight,
 } from "./db";
 import { aiWrite } from "./aiWriting";
-import { allApprovedReviews, addOwnerReview, countRecentReviews, createReview, deleteReview, featuredReviews, listReviewsForOwners, pendingReviewCount, publicListing, REVIEW_LIMIT_PER_SOURCE_PER_DAY, reviewsForMaker, reviewsForMakerEmail, setReviewFeatured, setReviewStatus } from "./reviews";
-import { ownerReviewSchema, reviewSubmitSchema } from "../shared/reviews";
+import { allApprovedReviews, editReview, addOwnerReview, countRecentReviews, createReview, deleteReview, featuredReviews, listReviewsForOwners, pendingReviewCount, publicListing, REVIEW_LIMIT_PER_SOURCE_PER_DAY, reviewsForMaker, reviewsForMakerEmail, setReviewFeatured, setReviewStatus } from "./reviews";
+import { ownerReviewSchema, reviewEditSchema, reviewSubmitSchema } from "../shared/reviews";
 import { deleteReviewPhoto } from "./media";
 import { parseStoreHours, storeHoursSchema } from "../shared/storeHours";
 import { assertFeaturedRoom, featuredOverview, setFeatured, syncFeaturedHistory, trimFeatured } from "./featured";
@@ -28,7 +28,7 @@ import { EMAIL_DAILY_LIMIT, emailReady, getAutoSend, setAutoSend, listEmailLog, 
 import { AUTO_SEND_TEMPLATES, EMAIL_TEMPLATE_IDS, emailTemplateInput, sendEmailInput } from "../shared/emailTemplates";
 import { discardImageDraft, draftOriginalImage, listImageDrafts, previewSiteImages, publishSiteImages, saveImageDraftAlt } from "./siteImages";
 import { discardSiteTextDraft, listSiteTextForOwners, previewSiteText, publishedSiteText, publishSiteText, restoreOriginalSiteText, saveSiteTextDraft } from "./siteText";
-import { countRecentGiftRequests, createGiftRequest, deleteGiftBox, getCommerceSettings, GIFT_REQUEST_LIMIT_PER_SOURCE_PER_DAY, listGiftBoxChoices, listGiftBoxes, listGiftRequests, listPublicGiftBoxes, saveGiftBox, setCommerceSettings, squareApiReady, updateGiftRequest } from "./gifts";
+import { countRecentGiftRequests, createGiftRequest, deleteGiftBox, deleteGiftRequest, getCommerceSettings, GIFT_REQUEST_LIMIT_PER_SOURCE_PER_DAY, listGiftBoxChoices, listGiftBoxes, listGiftRequests, listPublicGiftBoxes, saveGiftBox, setCommerceSettings, squareApiReady, updateGiftRequest } from "./gifts";
 import { BRANDING_OPTIONS, commerceSettingsSchema, GIFT_CATEGORIES, GIFT_REQUEST_STATUSES, giftBoxSchema, giftRequestSchema } from "../shared/gifts";
 import { runStorageMaintenance, usageSummary } from "./usage";
 import { aiWriteSchema } from "../shared/aiWriting";
@@ -227,6 +227,7 @@ export const adminRouter = router({
       await setApplicationStatus(ctx.db, input.id, input.status, input.note);
       return { success: true, email: application.email, listingStarted };
     }),
+    deleteApplication: adminProcedure.input(z.object({ id: z.number().int().positive() })).mutation(async ({ ctx, input }) => { await deleteApplication(ctx.db, input.id); return { success: true }; }),
     // Owner support: edit any listing directly. Setting a login email also invites that maker to the portal.
     updateVendor: adminProcedure.input(ownerVendorSchema.extend({ id: z.number().int().positive() })).mutation(async ({ ctx, input }) => {
       const { id, ...values } = input;
@@ -329,6 +330,7 @@ export const adminRouter = router({
     saveCommerceSettings: adminProcedure.input(commerceSettingsSchema).mutation(async ({ ctx, input }) => { await setCommerceSettings(ctx.db, input); return { success: true }; }),
     giftRequests: adminProcedure.query(({ ctx }) => listGiftRequests(ctx.db)),
     updateGiftRequest: adminProcedure.input(z.object({ id: z.number().int().positive(), status: z.enum(GIFT_REQUEST_STATUSES), adminNote: z.string().trim().max(1200).default(""), quoteAmount: z.string().trim().max(40).default(""), externalOrderId: z.string().trim().max(64).default("") })).mutation(async ({ ctx, input }) => { const { id, ...change } = input; await updateGiftRequest(ctx.db, id, change); return { success: true }; }),
+    deleteGiftRequest: adminProcedure.input(z.object({ id: z.number().int().positive() })).mutation(async ({ ctx, input }) => { await deleteGiftRequest(ctx.db, input.id); return { success: true }; }),
     // Emails the site sends for the owners (Preview, then Send). See worker/email.ts.
     emailSetup: adminProcedure.query(async ({ ctx }) => ({ ready: emailReady(ctx.env), from: ctx.env.EMAIL_FROM ?? "", replyTo: ctx.env.EMAIL_REPLY_TO ?? "", sentToday: await sentToday(ctx.db), dailyLimit: EMAIL_DAILY_LIMIT, autoSend: await getAutoSend(ctx.db) })),
     setEmailAutoSend: adminProcedure.input(z.object({ id: z.enum(AUTO_SEND_TEMPLATES), on: z.boolean() })).mutation(async ({ ctx, input }) => { await setAutoSend(ctx.db, input.id, input.on); return { success: true }; }),
@@ -363,6 +365,7 @@ export const adminRouter = router({
     setReviewStatus: adminProcedure.input(z.object({ id: z.number().int().positive(), status: z.enum(["pending", "approved", "rejected"]), note: z.string().trim().max(500).default("") })).mutation(async ({ ctx, input }) => { await setReviewStatus(ctx.db, input.id, input.status, input.note, ctx.email); return { success: true }; }),
     setReviewFeatured: adminProcedure.input(z.object({ id: z.number().int().positive(), featured: z.boolean() })).mutation(async ({ ctx, input }) => { await setReviewFeatured(ctx.db, input.id, input.featured); return { success: true }; }),
     addReview: adminProcedure.input(ownerReviewSchema).mutation(async ({ ctx, input }) => { const { confirmed: _confirmed, ...values } = input; return { id: await addOwnerReview(ctx.db, values, ctx.email) }; }),
+    editReview: adminProcedure.input(reviewEditSchema).mutation(async ({ ctx, input }) => { const result = await editReview(ctx.db, input, ctx.email); await deleteReviewPhoto(ctx.env, result.removedPhoto); return { success: true }; }),
     deleteReview: adminProcedure.input(z.object({ id: z.number().int().positive() })).mutation(async ({ ctx, input }) => { await deleteReviewPhoto(ctx.env, await deleteReview(ctx.db, input.id)); return { success: true }; }),
     setGoogleReviewUrl: adminProcedure.input(z.object({ url: z.union([z.literal(""), z.string().trim().url("Paste the full link, starting with https://").max(400).refine((value) => /^https:\/\/([a-z0-9-]+\.)*(google\.com|g\.page|goo\.gl)\//i.test(value), "Use the review link from your Google Business Profile.")]) })).mutation(async ({ ctx, input }) => { await setSiteSetting(ctx.db, "google_review_url", input.url); return { success: true }; }),
     bulkImport: adminProcedure.input(z.object({ vendors: z.array(ownerVendorSchema).min(1).max(500) })).mutation(async ({ ctx, input }) => {
