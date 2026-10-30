@@ -274,3 +274,14 @@ export const listingRedirects = sqliteTable("listing_redirects", {
   newSlug: text("newSlug").notNull(),
   createdAt: createdAt(),
 });
+
+// Who has been featured on the home page and Makers page, and when, so owners can
+// give every maker a turn. endedAt null means featured right now.
+export const featuredHistory = sqliteTable("featured_history", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  profileId: integer("profileId").notNull(),
+  name: text("name").notNull(),
+  startedAt: integer("startedAt", { mode: "timestamp" }).default(now).notNull(),
+  endedAt: integer("endedAt", { mode: "timestamp" }),
+  startedBy: text("startedBy"),
+}, (table) => [index("featured_history_profile_idx").on(table.profileId, table.startedAt)]);

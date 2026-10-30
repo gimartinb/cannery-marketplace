@@ -120,6 +120,13 @@
       "when": 1793396668437,
       "tag": "0016_more_categories",
       "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "6",
+      "when": 1793397226252,
+      "tag": "0017_featured_history",
+      "breakpoints": true
     }
   ]
 }

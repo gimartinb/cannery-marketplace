@@ -14,6 +14,7 @@ import {
   listPublicHighlights, reorderGalleryPhotos, updateGalleryPhoto, updateHighlight,
 } from "./db";
 import { aiWrite } from "./aiWriting";
+import { assertFeaturedRoom, featuredOverview, setFeatured, syncFeaturedHistory, trimFeatured } from "./featured";
 import { fixAllListingAddresses, fixListingAddress, redirectFor } from "./listingAddress";
 import { addressMatchesName, suggestedAddress } from "../shared/listingAddress";
 import { vendorProfiles as vendorProfilesTable, vendorSubmissions as vendorSubmissionsTable } from "../drizzle/schema";
@@ -198,7 +199,13 @@ export const adminRouter = router({
     // Owner support: edit any listing directly. Setting a login email also invites that maker to the portal.
     updateVendor: adminProcedure.input(ownerVendorSchema.extend({ id: z.number().int().positive() })).mutation(async ({ ctx, input }) => {
       const { id, ...values } = input;
+      // Only 3 makers can be featured at a time.
+      if (values.featured) {
+        const before = (await ctx.db.select({ featured: vendorProfilesTable.featured }).from(vendorProfilesTable).where(eqOp(vendorProfilesTable.id, id)).limit(1))[0];
+        if (!before?.featured) await assertFeaturedRoom(ctx.db, [id]);
+      }
       const result = await updateVendorProfileAsOwner(ctx.db, id, values, ctx.email);
+      await syncFeaturedHistory(ctx.db, ctx.email);
       // A new business name gets a matching page address; the old address keeps working.
       const moved = await fixListingAddress(ctx.db, id);
       return { ...result, slug: moved?.to ?? result.slug, movedFrom: moved?.from ?? null };
@@ -209,12 +216,15 @@ export const adminRouter = router({
       loginEmail: z.union([z.literal(""), z.string().trim().toLowerCase().email().max(320)]).optional(),
       active: z.boolean().optional(),
       featured: z.boolean().optional(),
-    })).mutation(({ ctx, input }) => {
+    })).mutation(async ({ ctx, input }) => {
       const { ids, ...change } = input;
-      return bulkUpdateVendorProfiles(ctx.db, ids, change, ctx.email);
+      if (change.featured) await assertFeaturedRoom(ctx.db, ids);
+      const result = await bulkUpdateVendorProfiles(ctx.db, ids, change, ctx.email);
+      if (change.featured !== undefined) await syncFeaturedHistory(ctx.db, ctx.email);
+      return result;
     }),
     // Permanent delete of one or many listings (the dashboard asks for confirmation first).
-    deleteVendors: adminProcedure.input(z.object({ ids: z.array(z.number().int().positive()).min(1, "Select at least one listing").max(500) })).mutation(({ ctx, input }) => deleteVendorProfiles(ctx.db, input.ids)),
+    deleteVendors: adminProcedure.input(z.object({ ids: z.array(z.number().int().positive()).min(1, "Select at least one listing").max(500) })).mutation(async ({ ctx, input }) => { const result = await deleteVendorProfiles(ctx.db, input.ids); await syncFeaturedHistory(ctx.db, ctx.email); return result; }),
     setVendorActive: adminProcedure.input(z.object({ id: z.number().int().positive(), active: z.boolean() })).mutation(async ({ ctx, input }) => { await setVendorActive(ctx.db, input.id, input.active); return { success: true }; }),
     // Uploads use POST /api/admin/upload?slot=... (raw bytes, see media.ts). These edit or undo them.
     // Image spots use Draft then Publish, like site text. Uploads arrive as drafts (see media.ts).
@@ -310,7 +320,15 @@ export const adminRouter = router({
     }),
     fixListingAddress: adminProcedure.input(z.object({ id: z.number().int().positive() })).mutation(async ({ ctx, input }) => ({ fixed: await fixListingAddress(ctx.db, input.id) })),
     fixAllListingAddresses: adminProcedure.mutation(async ({ ctx }) => ({ fixed: await fixAllListingAddresses(ctx.db) })),
-    bulkImport: adminProcedure.input(z.object({ vendors: z.array(ownerVendorSchema).min(1).max(500) })).mutation(({ ctx, input }) => bulkImportVendorProfiles(ctx.db, input.vendors, ctx.email)),
+    bulkImport: adminProcedure.input(z.object({ vendors: z.array(ownerVendorSchema).min(1).max(500) })).mutation(async ({ ctx, input }) => {
+      const result = await bulkImportVendorProfiles(ctx.db, input.vendors, ctx.email);
+      // Spreadsheets can mark more than 3 as featured; the earliest featured ones stay.
+      await syncFeaturedHistory(ctx.db, ctx.email); await trimFeatured(ctx.db); await syncFeaturedHistory(ctx.db, ctx.email);
+      return result;
+    }),
+    // Featured makers (home page and Makers spotlight): up to 3, with a history of turns.
+    featuredMakers: adminProcedure.query(({ ctx }) => featuredOverview(ctx.db)),
+    setFeatured: adminProcedure.input(z.object({ id: z.number().int().positive(), on: z.boolean(), replaceId: z.number().int().positive().optional() })).mutation(async ({ ctx, input }) => { await setFeatured(ctx.db, input.id, input.on, ctx.email, input.replaceId); return { success: true }; }),
   }),
 });
 

@@ -86,7 +86,7 @@ export default function ListingFields({ value, onChange, upload, ownerControls, 
       <small className="form-hint">Saving adds this email to Maker access automatically. Leave blank if no maker should edit it.</small>
       <div className="listing-owner-row">
         <label className="checkbox-label"><input type="checkbox" checked={value.active} onChange={(event) => set("active", event.target.checked)} /> Visible on the site</label>
-        <label className="checkbox-label"><input type="checkbox" checked={value.featured} onChange={(event) => set("featured", event.target.checked)} /> <Star size={13} /> Featured on the home page</label>
+        <label className="checkbox-label"><input type="checkbox" checked={value.featured} onChange={(event) => set("featured", event.target.checked)} /> <Star size={13} /> Featured on the home page (up to 3 at a time; manage turns in Featured makers)</label>
         <label>Display order<input type="number" min={0} max={9999} value={value.displayOrder} onChange={(event) => set("displayOrder", Number(event.target.value) || 0)} /></label>
       </div>
     </fieldset>}

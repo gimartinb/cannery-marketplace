@@ -4,6 +4,7 @@ import ListingFields, { toListingValues, uploadListingPhoto, type ListingValues 
 import { notifyError, notifySuccess } from "@/lib/notify";
 import { trpc } from "@/lib/trpc";
 import { useEmailComposer } from "@/components/EmailComposer";
+import FeaturedMakersCard from "@/components/FeaturedMakersCard";
 
 type Vendor = Parameters<typeof toListingValues>[0] & { id: number; loginEmail: string | null };
 
@@ -29,7 +30,7 @@ export default function PublishedVendorsPanel({ vendors, onRefresh }: { vendors:
     },
     onError: (error) => notifyError(error, "Maker not invited"),
   });
-  const refreshAll = async () => { await Promise.all([onRefresh(), utils.directory.invalidate(), utils.adminPortal.makerInvites.invalidate(), utils.adminPortal.checkListings.invalidate()]); };
+  const refreshAll = async () => { await Promise.all([onRefresh(), utils.directory.invalidate(), utils.adminPortal.makerInvites.invalidate(), utils.adminPortal.checkListings.invalidate(), utils.adminPortal.featuredMakers.invalidate()]); };
   // Page check: each maker page's address should match its business name.
   const check = trpc.adminPortal.checkListings.useQuery();
   const checkById = useMemo(() => new Map((check.data ?? []).map((row) => [row.id, row])), [check.data]);
@@ -119,6 +120,7 @@ export default function PublishedVendorsPanel({ vendors, onRefresh }: { vendors:
           <button className="danger-button" type="button" disabled={bulk.isPending} onClick={() => { if (window.confirm(`Remove the login email from ${selected.size} listing${selected.size === 1 ? "" : "s"}? The listings stay on the site, but no maker can edit them until you assign an email.`)) bulk.mutate({ ids, loginEmail: "" }); }}><UserMinus size={14} /> Remove login email</button>
         </div>
       </div>}
+      <FeaturedMakersCard onChanged={refreshAll} />
       <div className={`secure-admin-card page-check ${mismatched.length ? "has-issues" : ""}`}>
         {check.isLoading ? <><Loader2 size={18} className="animate-spin" /><div><strong>Checking maker pages…</strong></div></>
           : mismatched.length ? <><AlertTriangle size={20} /><div><strong>{mismatched.length} maker page{mismatched.length === 1 ? " has an address" : "s have addresses"} that {mismatched.length === 1 ? "does" : "do"} not match the business name</strong><p>{mismatched.slice(0, 4).map((row) => `${row.name} is at /vendors/${row.slug}`).join("; ")}{mismatched.length > 4 ? `; and ${mismatched.length - 4} more` : ""}. Fixing moves each page to its name's address, and the old address keeps working.</p></div><button className="button-primary" type="button" disabled={fixAll.isPending} onClick={() => fixAll.mutate()}>{fixAll.isPending ? <Loader2 size={14} className="animate-spin" /> : <Link2 size={14} />} Fix {mismatched.length === 1 ? "it" : `all ${mismatched.length}`}</button></>

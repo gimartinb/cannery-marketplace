@@ -1512,3 +1512,24 @@ main { min-height: 100svh; }
 .address-warning { display: flex; flex-wrap: wrap; align-items: center; gap: .3rem; color: #9a5d0c !important; }
 .text-button { border: 0; background: none; padding: 0; color: var(--gold); font: inherit; font-weight: 700; text-decoration: underline; cursor: pointer; }
 @media (max-width: 640px) { .page-check { flex-wrap: wrap; } }
+
+/* Published vendors: Featured makers */
+.featured-card { display: grid; gap: .9rem; margin-bottom: 1rem; border-top: 3px solid var(--gold); }
+.featured-card-head { display: flex; justify-content: space-between; gap: 1rem; align-items: flex-start; flex-wrap: wrap; }
+.featured-card-head h3 { display: flex; align-items: center; gap: .4rem; margin: 0; }
+.featured-card-head h3 svg { color: var(--gold); }
+.featured-card-head p { margin: .25rem 0 0; font-size: .84rem; color: #4e5246; }
+.featured-slots { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .7rem; }
+.featured-slot { display: grid; grid-template-columns: 48px minmax(0, 1fr); gap: .6rem; align-items: center; padding: .7rem; border: 1px solid var(--gold-soft); background: #fbf5e8; }
+.featured-slot > img, .featured-slot > span { width: 48px; height: 48px; object-fit: cover; display: grid; place-items: center; background: var(--moss); color: #fff; font-size: .72rem; font-weight: 800; }
+.featured-slot strong { display: block; font-size: .9rem; }
+.featured-slot small { color: #6d6247; font-size: .74rem; }
+.featured-slot > button { grid-column: 1 / -1; justify-self: start; }
+.featured-slot.empty { border-style: dashed; background: #fff; }
+.featured-slot.empty > span { background: #f1ede2; color: var(--gold); }
+.featured-pick { display: flex; flex-wrap: wrap; gap: .7rem; align-items: flex-end; }
+.featured-pick label { flex: 1 1 240px; margin: 0; }
+.featured-history table { width: 100%; border-collapse: collapse; font-size: .82rem; }
+.featured-history th, .featured-history td { text-align: left; padding: .45rem .5rem; border-bottom: 1px solid var(--line); }
+.featured-history th { font-size: .72rem; letter-spacing: .06em; text-transform: uppercase; color: #6d6247; }
+@media (max-width: 760px) { .featured-slots { grid-template-columns: 1fr; } }
