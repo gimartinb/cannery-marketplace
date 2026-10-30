@@ -266,3 +266,11 @@ export const makerCategories = sqliteTable("maker_categories", {
   createdAt: createdAt(),
   updatedAt: updatedAt(),
 }, (table) => [uniqueIndex("maker_categories_name_unique").on(table.name)]);
+
+// Old maker page addresses that now point to a listing's current address,
+// so shared links keep working after a listing is renamed.
+export const listingRedirects = sqliteTable("listing_redirects", {
+  oldSlug: text("oldSlug").primaryKey(),
+  newSlug: text("newSlug").notNull(),
+  createdAt: createdAt(),
+});

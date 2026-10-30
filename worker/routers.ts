@@ -14,6 +14,10 @@ import {
   listPublicHighlights, reorderGalleryPhotos, updateGalleryPhoto, updateHighlight,
 } from "./db";
 import { aiWrite } from "./aiWriting";
+import { fixAllListingAddresses, fixListingAddress, redirectFor } from "./listingAddress";
+import { addressMatchesName, suggestedAddress } from "../shared/listingAddress";
+import { vendorProfiles as vendorProfilesTable, vendorSubmissions as vendorSubmissionsTable } from "../drizzle/schema";
+import { eq as eqOp } from "drizzle-orm";
 import { addCategory, adoptCategory, deleteCategory, listCategoriesForOwners, listCategoryNames, renameCategory, reorderCategories } from "./categories";
 import { EMAIL_DAILY_LIMIT, emailReady, getAutoSend, setAutoSend, listEmailLog, listEmailTemplates, resetEmailTemplate, saveEmailTemplate, sendAutomaticEmail, sendEmail, sentToday } from "./email";
 import { AUTO_SEND_TEMPLATES, EMAIL_TEMPLATE_IDS, emailTemplateInput, sendEmailInput } from "../shared/emailTemplates";
@@ -119,7 +123,13 @@ export const publicRouter = router({
     // The list makers pick from (managed by the owners in the Categories tab).
     makerCategories: publicProcedure.query(({ ctx }) => listCategoryNames(ctx.db)),
     featured: publicProcedure.query(({ ctx }) => listFeaturedVendorProfiles(ctx.db, 3)),
-    bySlug: publicProcedure.input(z.object({ slug: z.string().trim().min(1).max(160) })).query(({ ctx, input }) => getPublicVendorProfile(ctx.db, input.slug)),
+    // Old addresses of renamed listings still find the listing (the page then shows its current address).
+    bySlug: publicProcedure.input(z.object({ slug: z.string().trim().min(1).max(160) })).query(async ({ ctx, input }) => {
+      const found = await getPublicVendorProfile(ctx.db, input.slug);
+      if (found) return found;
+      const moved = await redirectFor(ctx.db, input.slug);
+      return moved ? getPublicVendorProfile(ctx.db, moved) : null;
+    }),
   }),
 });
 
@@ -154,7 +164,16 @@ export const adminRouter = router({
   adminPortal: router({
     me: adminProcedure.query(({ ctx }) => ({ email: ctx.email })),
     dashboard: adminProcedure.query(async ({ ctx }) => ({ submissions: await listVendorSubmissions(ctx.db), vendors: await listAllVendorProfiles(ctx.db), giftBoxesEnabled: await giftBoxesEnabled(ctx.db) })),
-    review: adminProcedure.input(reviewDecisionSchema).mutation(async ({ ctx, input }) => { await reviewVendorSubmission(ctx.db, input.submissionId, input.decision, input.note, input.category); return { success: true }; }),
+    review: adminProcedure.input(reviewDecisionSchema).mutation(async ({ ctx, input }) => {
+      await reviewVendorSubmission(ctx.db, input.submissionId, input.decision, input.note, input.category);
+      // An approved rename moves the page to the new name's address (the old one keeps working).
+      if (input.decision === "approved") {
+        const submission = (await ctx.db.select({ slug: vendorSubmissionsTable.slug }).from(vendorSubmissionsTable).where(eqOp(vendorSubmissionsTable.id, input.submissionId)).limit(1))[0];
+        const profile = submission && (await ctx.db.select({ id: vendorProfilesTable.id }).from(vendorProfilesTable).where(eqOp(vendorProfilesTable.slug, submission.slug)).limit(1))[0];
+        if (profile) await fixListingAddress(ctx.db, profile.id);
+      }
+      return { success: true };
+    }),
     setGiftBoxesEnabled: adminProcedure.input(z.object({ enabled: z.boolean() })).mutation(async ({ ctx, input }) => { await setSiteSetting(ctx.db, "gift_boxes_enabled", String(input.enabled)); return { success: true }; }),
     // Free tier guardrails: today's AI use and photo storage, shown on the Overview.
     usage: adminProcedure.query(({ ctx }) => usageSummary(ctx.db)),
@@ -179,7 +198,10 @@ export const adminRouter = router({
     // Owner support: edit any listing directly. Setting a login email also invites that maker to the portal.
     updateVendor: adminProcedure.input(ownerVendorSchema.extend({ id: z.number().int().positive() })).mutation(async ({ ctx, input }) => {
       const { id, ...values } = input;
-      return updateVendorProfileAsOwner(ctx.db, id, values, ctx.email);
+      const result = await updateVendorProfileAsOwner(ctx.db, id, values, ctx.email);
+      // A new business name gets a matching page address; the old address keeps working.
+      const moved = await fixListingAddress(ctx.db, id);
+      return { ...result, slug: moved?.to ?? result.slug, movedFrom: moved?.from ?? null };
     }),
     // Same change to many listings at once: login email ("" clears it), visibility, or featured.
     bulkUpdateVendors: adminProcedure.input(z.object({
@@ -281,6 +303,13 @@ export const adminRouter = router({
     renameCategory: adminProcedure.input(z.object({ id: z.number().int().positive(), name: z.string().max(60) })).mutation(({ ctx, input }) => renameCategory(ctx.db, input.id, input.name)),
     deleteCategory: adminProcedure.input(z.object({ id: z.number().int().positive(), moveTo: z.string().max(60).default("") })).mutation(({ ctx, input }) => deleteCategory(ctx.db, input.id, input.moveTo)),
     reorderCategories: adminProcedure.input(z.object({ ids: z.array(z.number().int().positive()).max(200) })).mutation(async ({ ctx, input }) => { await reorderCategories(ctx.db, input.ids); return { success: true }; }),
+    // Maker page check: is each page public, and does its address match the business name?
+    checkListings: adminProcedure.query(async ({ ctx }) => {
+      const rows = await ctx.db.select({ id: vendorProfilesTable.id, name: vendorProfilesTable.name, slug: vendorProfilesTable.slug, active: vendorProfilesTable.active }).from(vendorProfilesTable);
+      return rows.map((row) => ({ ...row, addressOk: addressMatchesName(row.name, row.slug), suggested: suggestedAddress(row.name) }));
+    }),
+    fixListingAddress: adminProcedure.input(z.object({ id: z.number().int().positive() })).mutation(async ({ ctx, input }) => ({ fixed: await fixListingAddress(ctx.db, input.id) })),
+    fixAllListingAddresses: adminProcedure.mutation(async ({ ctx }) => ({ fixed: await fixAllListingAddresses(ctx.db) })),
     bulkImport: adminProcedure.input(z.object({ vendors: z.array(ownerVendorSchema).min(1).max(500) })).mutation(({ ctx, input }) => bulkImportVendorProfiles(ctx.db, input.vendors, ctx.email)),
   }),
 });

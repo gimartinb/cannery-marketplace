@@ -1,4 +1,5 @@
 import { and, asc, eq } from "drizzle-orm";
+import { redirectFor } from "./listingAddress";
 import { publishedSiteText } from "./siteText";
 import { vendorProfiles } from "../drizzle/schema";
 import { createDb, getSiteSetting, listSiteImages, type Database } from "./db";
@@ -179,6 +180,16 @@ export async function handlePage(request: Request, env: Env): Promise<Response> 
   const asset = await env.ASSETS.fetch(assetRequest);
   if (!(asset.headers.get("Content-Type") || "").includes("text/html") || request.method !== "GET" || asset.status === 304) return asset;
 
+  // Renamed maker pages: send old addresses to the current one (permanent, so search engines update).
+  const vendorPath = url.pathname.match(/^\/vendors\/([a-z0-9-]{1,160})$/);
+  if (vendorPath) {
+    try {
+      const db = createDb(env.DB);
+      const exists = (await db.select({ id: vendorProfiles.id }).from(vendorProfiles).where(eq(vendorProfiles.slug, vendorPath[1])).limit(1))[0];
+      const moved = exists ? null : await redirectFor(db, vendorPath[1]);
+      if (moved) { url.pathname = `/vendors/${moved}`; return Response.redirect(url.toString(), 301); }
+    } catch (error) { console.error("Redirect check failed", error); }
+  }
   const production = isProductionHost(url.hostname);
   let meta: PageMeta;
   try { meta = await resolvePage(createDb(env.DB), url.pathname); }

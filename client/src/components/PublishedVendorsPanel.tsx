@@ -1,4 +1,4 @@
-import { Mail, Send, Trash2, UserPlus, CheckSquare, ExternalLink, Eye, EyeOff, Loader2, Pencil, Save, Search, Star, StarOff, UserCheck, UserMinus, X } from "lucide-react";
+import { AlertTriangle, CheckCircle2, Link2, Mail, Send, Trash2, UserPlus, CheckSquare, ExternalLink, Eye, EyeOff, Loader2, Pencil, Save, Search, Star, StarOff, UserCheck, UserMinus, X } from "lucide-react";
 import { useMemo, useState } from "react";
 import ListingFields, { toListingValues, uploadListingPhoto, type ListingValues } from "@/components/ListingFields";
 import { notifyError, notifySuccess } from "@/lib/notify";
@@ -29,7 +29,13 @@ export default function PublishedVendorsPanel({ vendors, onRefresh }: { vendors:
     },
     onError: (error) => notifyError(error, "Maker not invited"),
   });
-  const refreshAll = async () => { await Promise.all([onRefresh(), utils.directory.invalidate(), utils.adminPortal.makerInvites.invalidate()]); };
+  const refreshAll = async () => { await Promise.all([onRefresh(), utils.directory.invalidate(), utils.adminPortal.makerInvites.invalidate(), utils.adminPortal.checkListings.invalidate()]); };
+  // Page check: each maker page's address should match its business name.
+  const check = trpc.adminPortal.checkListings.useQuery();
+  const checkById = useMemo(() => new Map((check.data ?? []).map((row) => [row.id, row])), [check.data]);
+  const mismatched = (check.data ?? []).filter((row) => !row.addressOk);
+  const fixOne = trpc.adminPortal.fixListingAddress.useMutation({ onSuccess: async (result) => { if (result.fixed) notifySuccess(`${result.fixed.name} now lives at /vendors/${result.fixed.to}`, { description: `The old address /vendors/${result.fixed.from} sends visitors to the new one.`, link: { label: "View page", href: `/vendors/${result.fixed.to}` } }); await refreshAll(); }, onError: (error) => notifyError(error, "Address not fixed") });
+  const fixAll = trpc.adminPortal.fixAllListingAddresses.useMutation({ onSuccess: async (result) => { notifySuccess(`${result.fixed.length} address${result.fixed.length === 1 ? "" : "es"} fixed`, { description: "Old addresses send visitors to the new ones." }); await refreshAll(); }, onError: (error) => notifyError(error, "Addresses not fixed") });
   const toggle = trpc.adminPortal.setVendorActive.useMutation({
     onSuccess: async (_result, input) => { notifySuccess(input.active ? "Listing is visible on the site" : "Listing hidden from the site"); await refreshAll(); },
     onError: (error) => notifyError(error, "Visibility not changed"),
@@ -37,7 +43,7 @@ export default function PublishedVendorsPanel({ vendors, onRefresh }: { vendors:
   const save = trpc.adminPortal.updateVendor.useMutation({
     onSuccess: async (result, input) => {
       notifySuccess(`${input.name} saved`, {
-        description: input.loginEmail ? `${input.loginEmail} can sign in to the maker portal to edit this listing.` : "Changes are live now.",
+        description: [result.movedFrom ? `New name, new page address: /vendors/${result.slug} (the old one keeps working).` : "", input.loginEmail ? `${input.loginEmail} can sign in to the maker portal to edit this listing.` : "Changes are live now."].filter(Boolean).join(" "),
         link: { label: "View listing", href: `/vendors/${result.slug}` },
       });
       setEditing(null);
@@ -113,12 +119,18 @@ export default function PublishedVendorsPanel({ vendors, onRefresh }: { vendors:
           <button className="danger-button" type="button" disabled={bulk.isPending} onClick={() => { if (window.confirm(`Remove the login email from ${selected.size} listing${selected.size === 1 ? "" : "s"}? The listings stay on the site, but no maker can edit them until you assign an email.`)) bulk.mutate({ ids, loginEmail: "" }); }}><UserMinus size={14} /> Remove login email</button>
         </div>
       </div>}
+      <div className={`secure-admin-card page-check ${mismatched.length ? "has-issues" : ""}`}>
+        {check.isLoading ? <><Loader2 size={18} className="animate-spin" /><div><strong>Checking maker pages…</strong></div></>
+          : mismatched.length ? <><AlertTriangle size={20} /><div><strong>{mismatched.length} maker page{mismatched.length === 1 ? " has an address" : "s have addresses"} that {mismatched.length === 1 ? "does" : "do"} not match the business name</strong><p>{mismatched.slice(0, 4).map((row) => `${row.name} is at /vendors/${row.slug}`).join("; ")}{mismatched.length > 4 ? `; and ${mismatched.length - 4} more` : ""}. Fixing moves each page to its name's address, and the old address keeps working.</p></div><button className="button-primary" type="button" disabled={fixAll.isPending} onClick={() => fixAll.mutate()}>{fixAll.isPending ? <Loader2 size={14} className="animate-spin" /> : <Link2 size={14} />} Fix {mismatched.length === 1 ? "it" : `all ${mismatched.length}`}</button></>
+          : <><CheckCircle2 size={20} /><div><strong>All {check.data?.length ?? 0} maker pages checked</strong><p>Every page address matches its business name. Renamed listings move to a matching address automatically.</p></div></>}
+      </div>
       <label className="admin-search"><Search size={15} /><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search by name, category, or login email" aria-label="Search listings" /></label>
       {shown.length > 0 && <label className="select-all"><input type="checkbox" checked={allShownSelected} onChange={toggleShown} /> <CheckSquare size={14} /> {allShownSelected ? "Unselect" : "Select"} all {shown.length}{query ? " matching" : ""} listing{shown.length === 1 ? "" : "s"}</label>}
       <div className="secure-vendor-table selectable-table">{shown.length ? shown.map((vendor) => <div key={vendor.id} className={selected.has(vendor.id) ? "is-selected" : undefined}>
         <input type="checkbox" className="row-select" checked={selected.has(vendor.id)} onChange={() => toggleOne(vendor.id)} aria-label={`Select ${vendor.name}`} />
         <span>{vendor.coverImageUrl ? <img src={vendor.coverImageUrl} alt="" /> : vendor.name.slice(0, 2).toUpperCase()}</span>
-        <div><strong>{vendor.name}</strong><small>{vendor.category} · /vendors/{vendor.slug}</small><small className={vendor.loginEmail ? "login-email" : "login-email missing"}><UserCheck size={12} /> {vendor.loginEmail ? `Login: ${vendor.loginEmail}` : "No login email yet"}</small>
+        <div><strong>{vendor.name}</strong><small>{vendor.category} · <a href={`/vendors/${vendor.slug}`} target="_blank" rel="noreferrer">/vendors/{vendor.slug}</a>{!vendor.active && " (hidden, not public)"}</small>
+          {checkById.get(vendor.id) && !checkById.get(vendor.id)!.addressOk && <small className="address-warning"><AlertTriangle size={12} /> Address does not match the name. It should be /vendors/{checkById.get(vendor.id)!.suggested}. <button type="button" className="text-button" disabled={fixOne.isPending} onClick={() => fixOne.mutate({ id: vendor.id })}>Fix address</button></small>}<small className={vendor.loginEmail ? "login-email" : "login-email missing"}><UserCheck size={12} /> {vendor.loginEmail ? `Login: ${vendor.loginEmail}` : "No login email yet"}</small>
           {inviting?.id === vendor.id && <form className="row-invite" onSubmit={(event) => { event.preventDefault(); const email = inviting.email.trim().toLowerCase(); if (!/^[^\s@]+@[^\s@.]+(\.[^\s@.]+)+$/.test(email)) { notifyError("Enter a valid email address, like name@example.com.", "Check the email"); return; } invite.mutate({ profileId: vendor.id, email }); }}>
             <label>Maker's email<input type="email" autoFocus value={inviting.email} onChange={(event) => setInviting({ ...inviting, email: event.target.value })} placeholder="maker@example.com" /></label>
             <div className="review-actions"><button className="button-primary compact-button" type="submit" disabled={invite.isPending}>{invite.isPending ? <Loader2 size={13} className="animate-spin" /> : <Send size={13} />} Invite</button><button className="button-plain compact-button" type="button" onClick={() => setInviting(null)}>Cancel</button></div>

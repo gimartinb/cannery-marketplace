@@ -7,7 +7,8 @@ import type { OwnerVendorInput, VendorProfileInput } from "../shared/vendorProfi
 export type Database = ReturnType<typeof createDb>;
 export function createDb(d1: D1Database) { return drizzle(d1); }
 
-export function slugify(value: string) { return value.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, ""); }
+import { addressFromName } from "../shared/listingAddress";
+export const slugify = addressFromName;
 
 function serializeProfile(input: VendorProfileInput) {
   return {

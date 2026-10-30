@@ -1501,3 +1501,14 @@ main { min-height: 100svh; }
 .category-table > div > .category-actions { flex-wrap: nowrap; min-width: max-content; }
 @media (max-width: 640px) { .category-table > div > .category-actions { flex-wrap: wrap; min-width: 0; } }
 .secure-vendor-table > div > .category-actions, .secure-vendor-table > div > .maker-access-actions { display: flex; }
+
+/* Published vendors: maker page check */
+.page-check { display: flex; gap: .8rem; align-items: center; margin-bottom: 1rem; border-left: 4px solid #4f9a3a; }
+.page-check > svg { flex: 0 0 auto; color: #4f9a3a; }
+.page-check.has-issues { border-left-color: #c9892a; background: #fffaf0; }
+.page-check.has-issues > svg { color: #b0731a; }
+.page-check > div { flex: 1; }
+.page-check p { margin: .2rem 0 0; font-size: .82rem; color: #4e5246; line-height: 1.5; }
+.address-warning { display: flex; flex-wrap: wrap; align-items: center; gap: .3rem; color: #9a5d0c !important; }
+.text-button { border: 0; background: none; padding: 0; color: var(--gold); font: inherit; font-weight: 700; text-decoration: underline; cursor: pointer; }
+@media (max-width: 640px) { .page-check { flex-wrap: wrap; } }

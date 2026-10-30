@@ -56,3 +56,17 @@ describe("owner managed categories", () => {
     expect(isListedCategory("Other", ["Other"])).toBe(false);
   });
 });
+
+import { addressMatchesName, suggestedAddress } from "../shared/listingAddress";
+describe("maker page addresses", () => {
+  it("flags an address that belongs to another name", () => {
+    expect(addressMatchesName("J&R Scentuals", "gilberts-woodworking")).toBe(false);
+    expect(suggestedAddress("J&R Scentuals")).toBe("j-r-scentuals");
+    expect(addressMatchesName("J&R Scentuals", "j-r-scentuals")).toBe(true);
+    expect(addressMatchesName("J&R Scentuals", "j-r-scentuals-2")).toBe(true);
+    expect(addressMatchesName("Gilbert’s Woodworking", "gilbert-s-woodworking")).toBe(true);
+    expect(addressMatchesName("Gilbert’s Woodworking", "gilberts-woodworking")).toBe(true);
+    expect(suggestedAddress("VIVRA CAFÉ")).toBe("vivra-cafe");
+    expect(addressMatchesName("Moss & Marrow", "moss-and-marrow")).toBe(true);
+  });
+});

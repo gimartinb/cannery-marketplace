@@ -1,4 +1,5 @@
 import { ArrowLeft, ArrowRight, ExternalLink, Facebook, Globe2, Instagram, Music2, Sparkles } from "lucide-react";
+import { useEffect } from "react";
 import { Link, useParams } from "wouter";
 import PageMeta from "@/components/PageMeta";
 import SiteShell from "@/components/SiteShell";
@@ -10,6 +11,8 @@ export default function VendorProfile() {
   const params = useParams<{ slug: string }>();
   const approved = trpc.directory.bySlug.useQuery({ slug: params.slug });
   const vendor = approved.data ? publishedVendorToView(approved.data) : undefined;
+  // An old address of a renamed listing: show the current address in the browser bar.
+  useEffect(() => { if (approved.data && approved.data.slug !== params.slug) window.history.replaceState(window.history.state, "", `/vendors/${approved.data.slug}`); }, [approved.data, params.slug]);
   if (approved.isLoading && !vendor) return <SiteShell><main><section className="page-hero"><div className="site-container page-hero-content"><p className="eyebrow">Loading maker</p><h1 className="display">Finding the profile…</h1></div></section></main></SiteShell>;
   if (!vendor) return <SiteShell><main><section className="page-hero"><div className="site-container page-hero-content"><p className="eyebrow">Maker not found</p><h1 className="display">That profile has moved.</h1><Link className="button-primary" href="/vendors">Back to the directory <ArrowLeft size={15} /></Link></div></section></main></SiteShell>;
   const names = { business: vendor.name, maker: vendor.ownerName || "" };
