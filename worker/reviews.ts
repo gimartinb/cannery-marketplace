@@ -80,3 +80,11 @@ export async function pendingReviewCount(db: Database) {
   const [row] = await db.select({ total: sql<number>`count(*)` }).from(reviews).where(eq(reviews.status, "pending"));
   return Number(row?.total ?? 0);
 }
+
+/** Every approved review for the Reviews page: makers that are public, plus the marketplace itself. */
+export async function allApprovedReviews(db: Database) {
+  const rows = await db.select({ ...publicFields, makerSlug: vendorProfiles.slug, makerActive: vendorProfiles.active, category: vendorProfiles.category }).from(reviews).leftJoin(vendorProfiles, eq(vendorProfiles.id, reviews.profileId)).where(eq(reviews.status, "approved")).orderBy(desc(reviews.createdAt)).limit(1000);
+  // Reviews of makers that were hidden or deleted are left out.
+  const shown = rows.filter((row) => row.profileId === null || (row.makerActive && row.makerSlug)).map(({ makerActive: _active, ...row }) => row);
+  return { summary: summarize(shown.map((row) => row.rating)), marketplace: summarize(shown.filter((row) => row.profileId === null).map((row) => row.rating)), reviews: shown };
+}

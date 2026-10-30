@@ -35,7 +35,8 @@ export function reviewProblems(values: ReviewValues): Partial<Record<ReviewField
 const reviewPhoto = z.union([z.literal(""), z.string().max(300).regex(/^\/media\/review\/[A-Za-z0-9._-]+$/, "Upload the photo with the form.")]);
 
 export const reviewSubmitSchema = z.object({
-  slug: z.string().trim().min(1).max(160),
+  // Empty means a review of the marketplace itself.
+  slug: z.string().trim().max(160),
   rating: z.number().int(),
   body: z.string().max(1100),
   reviewerName: z.string().max(60),

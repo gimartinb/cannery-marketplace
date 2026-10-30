@@ -37,7 +37,7 @@ export function ReviewCard({ review, maker }: { review: PublicReview; maker?: { 
   </article>;
 }
 
-function ReviewForm({ slug, makerName, onClose }: { slug: string; makerName: string; onClose: () => void }) {
+export function ReviewForm({ slug, makerName, onClose }: { slug: string; makerName: string; onClose: () => void }) {
   const [values, setValues] = useState<ReviewValues>(EMPTY_REVIEW);
   const [showProblems, setShowProblems] = useState(false);
   const [honey, setHoney] = useState("");
@@ -68,17 +68,17 @@ function ReviewForm({ slug, makerName, onClose }: { slug: string; makerName: str
     setError("");
     try {
       await submit.mutateAsync({ slug, ...values, website2: honey });
-      void fetch(NOTIFY_ENDPOINT, { method: "POST", headers: { "Content-Type": "application/json", Accept: "application/json" }, body: JSON.stringify({ _subject: `New review for ${makerName}: ${values.rating} stars`, _template: "table", Maker: makerName, Rating: `${values.rating} of 5`, Review: values.body.trim(), From: `${values.reviewerName.trim()}${values.reviewerCity.trim() ? `, ${values.reviewerCity.trim()}` : ""}`, "Approve it": `${window.location.origin}/admin` }) }).catch(() => undefined);
+      void fetch(NOTIFY_ENDPOINT, { method: "POST", headers: { "Content-Type": "application/json", Accept: "application/json" }, body: JSON.stringify({ _subject: `New review for ${slug ? makerName : "the marketplace"}: ${values.rating} stars`, _template: "table", Maker: slug ? makerName : "The marketplace itself", Rating: `${values.rating} of 5`, Review: values.body.trim(), From: `${values.reviewerName.trim()}${values.reviewerCity.trim() ? `, ${values.reviewerCity.trim()}` : ""}`, "Approve it": `${window.location.origin}/admin` }) }).catch(() => undefined);
       setDone(true);
     } catch (failure) { setError(readableError(failure, "We could not send your review. Please try again.")); }
   }
 
   if (done) return <div className="review-form review-thanks" role="status"><CheckCircle2 size={22} /><p><Txt k="profile.reviews.thanks" /></p><button className="button-plain" type="button" onClick={onClose}>Close</button></div>;
   return <form className="review-form contact-form" onSubmit={send} noValidate>
-    <div className="review-form-head"><h3>Review {makerName}</h3><button className="button-plain compact-button" type="button" onClick={onClose} aria-label="Close the review form"><X size={13} /></button></div>
+    <div className="review-form-head"><h3>{slug ? `Review ${makerName}` : "Review The Cannery Marketplace"}</h3><button className="button-plain compact-button" type="button" onClick={onClose} aria-label="Close the review form"><X size={13} /></button></div>
     <input type="text" name="website2" value={honey} onChange={(event) => setHoney(event.target.value)} style={{ display: "none" }} tabIndex={-1} autoComplete="off" aria-hidden="true" />
     <div className="form-field full"><span className="field-label">Your rating *</span><StarPicker value={values.rating} onChange={(value) => set("rating", value)} invalid={Boolean(shown.rating)} />{fieldError("rating")}</div>
-    <div className="form-field full"><label htmlFor="review-body">Your review *</label><textarea id="review-body" rows={4} maxLength={1000} value={values.body} onChange={(event) => set("body", event.target.value)} placeholder="What did you buy, and what did you love about it?" aria-invalid={shown.body ? true : undefined} /><small className="form-hint">{values.body.trim().length} / 1,000</small>{fieldError("body")}</div>
+    <div className="form-field full"><label htmlFor="review-body">Your review *</label><textarea id="review-body" rows={4} maxLength={1000} value={values.body} onChange={(event) => set("body", event.target.value)} placeholder={slug ? "What did you buy, and what did you love about it?" : "How was your visit? What did you find?"} aria-invalid={shown.body ? true : undefined} /><small className="form-hint">{values.body.trim().length} / 1,000</small>{fieldError("body")}</div>
     <div className="form-grid">
       <div className="form-field"><label htmlFor="review-name">First name * (only our team sees it)</label><input id="review-name" maxLength={40} autoComplete="given-name" value={values.reviewerName} onChange={(event) => set("reviewerName", event.target.value)} aria-invalid={shown.reviewerName ? true : undefined} />{fieldError("reviewerName")}</div>
       <div className="form-field"><label htmlFor="review-city">City (optional)</label><input id="review-city" maxLength={60} autoComplete="address-level2" placeholder="Gilroy" value={values.reviewerCity} onChange={(event) => set("reviewerCity", event.target.value)} /></div>
@@ -124,6 +124,7 @@ export function FeaturedReviews() {
     <p className="eyebrow"><Txt k="home.reviews.eyebrow" /></p>
     <h2 className="display" id="home-reviews-title"><Txt k="home.reviews.title" /></h2>
     <div className="review-grid">{list.map((review) => <ReviewCard key={review.id} review={review} maker={{ name: review.makerName, slug: review.makerSlug }} />)}</div>
+    <Link className="text-link featured-reviews-more" href="/reviews"><Txt k="home.reviews.link" /> <ArrowRight size={15} /></Link>
   </div></section>;
 }
 

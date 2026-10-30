@@ -1630,3 +1630,13 @@ main { min-height: 100svh; }
 .add-review-card input:not([type="checkbox"]), .add-review-card select, .add-review-card textarea { width: 100%; padding: .5rem .6rem; border: 1px solid var(--line); background: #fff; font: inherit; font-size: .88rem; font-weight: 400; color: var(--ink); }
 .add-review-card .checkbox-label { display: flex; align-items: center; gap: .5rem; font-weight: 600; }
 .add-review-card .checkbox-label input { width: 1.1rem; height: 1.1rem; flex: 0 0 auto; }
+
+/* Reviews page */
+.reviews-page-summary { margin-top: 1.2rem; font-size: 1rem; }
+.reviews-toolbar { display: flex; flex-wrap: wrap; gap: .8rem 1.2rem; align-items: center; margin-bottom: 1.6rem; }
+.reviews-toolbar .application-filters { margin: 0; }
+.reviews-toolbar .button-primary { margin-left: auto; }
+.reviews-maker-hint { margin: -1.2rem 0 2rem; }
+.featured-reviews-more { margin-top: 1.6rem; }
+@media (max-width: 640px) { .reviews-toolbar .button-primary { margin-left: 0; } }
+.review-card .text-link { margin-top: .2rem; }

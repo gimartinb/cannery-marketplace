@@ -14,6 +14,7 @@ const Gifts = lazy(() => import("./pages/Gifts"));
 const MakerPortal = lazy(() => import("./pages/MakerPortal"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 const RequestQuote = lazy(() => import("./pages/RequestQuote"));
+const ReviewsPage = lazy(() => import("./pages/ReviewsPage"));
 const VendorProfile = lazy(() => import("./pages/VendorProfile"));
 const Vendors = lazy(() => import("./pages/Vendors"));
 
@@ -41,6 +42,7 @@ function Router() {
     <Route path="/contact" component={Contact} />
     <Route path="/apply" component={Apply} />
     <Route path="/become-a-vendor" component={BecomeVendor} />
+    <Route path="/reviews" component={ReviewsPage} />
     <Route path="/gifts" component={Gifts} />
     <Route path="/request-a-quote" component={RequestQuote} />
     <Route path="/admin" component={SecureAdmin} />

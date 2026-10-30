@@ -14,7 +14,7 @@ import {
   listPublicHighlights, reorderGalleryPhotos, updateGalleryPhoto, updateHighlight,
 } from "./db";
 import { aiWrite } from "./aiWriting";
-import { addOwnerReview, countRecentReviews, createReview, deleteReview, featuredReviews, listReviewsForOwners, pendingReviewCount, publicListing, REVIEW_LIMIT_PER_SOURCE_PER_DAY, reviewsForMaker, reviewsForMakerEmail, setReviewFeatured, setReviewStatus } from "./reviews";
+import { allApprovedReviews, addOwnerReview, countRecentReviews, createReview, deleteReview, featuredReviews, listReviewsForOwners, pendingReviewCount, publicListing, REVIEW_LIMIT_PER_SOURCE_PER_DAY, reviewsForMaker, reviewsForMakerEmail, setReviewFeatured, setReviewStatus } from "./reviews";
 import { ownerReviewSchema, reviewSubmitSchema } from "../shared/reviews";
 import { deleteReviewPhoto } from "./media";
 import { parseStoreHours, storeHoursSchema } from "../shared/storeHours";
@@ -95,15 +95,17 @@ export const publicRouter = router({
       return listing?.active ? reviewsForMaker(ctx.db, listing.id) : { summary: { count: 0, average: 0 }, reviews: [] };
     }),
     featured: publicProcedure.query(({ ctx }) => featuredReviews(ctx.db)),
+    all: publicProcedure.query(({ ctx }) => allApprovedReviews(ctx.db)),
     googleLink: publicProcedure.query(async ({ ctx }) => ({ url: await getSiteSetting(ctx.db, "google_review_url", "") })),
     submit: publicProcedure.input(reviewSubmitSchema).mutation(async ({ ctx, input }) => {
       if (input.website2) return { id: 0 };
-      const listing = await publicListing(ctx.db, input.slug);
-      if (!listing?.active) throw new TRPCError({ code: "NOT_FOUND", message: "This maker's page is not available right now." });
+      // No maker means a review of the marketplace itself.
+      const listing = input.slug ? await publicListing(ctx.db, input.slug) : null;
+      if (input.slug && !listing?.active) throw new TRPCError({ code: "NOT_FOUND", message: "This maker's page is not available right now." });
       const hash = await sourceHash(ctx.request);
       if ((await countRecentReviews(ctx.db, hash)) >= REVIEW_LIMIT_PER_SOURCE_PER_DAY) throw new TRPCError({ code: "TOO_MANY_REQUESTS", message: "We received several reviews from this connection today. Please try again tomorrow." });
       const id = await createReview(ctx.db, {
-        profileId: listing.id, makerName: listing.name, rating: input.rating, body: input.body.trim(), reviewerName: clean(input.reviewerName), reviewerCity: clean(input.reviewerCity) || null,
+        profileId: listing?.id ?? null, makerName: listing?.name ?? null, rating: input.rating, body: input.body.trim(), reviewerName: clean(input.reviewerName), reviewerCity: clean(input.reviewerCity) || null,
         email: input.email.trim().toLowerCase() || null, photoUrl: input.photoUrl || null, source: "website", status: "pending", sourceHash: hash,
       });
       return { id };

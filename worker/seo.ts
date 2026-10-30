@@ -28,6 +28,7 @@ export const STATIC_ROUTES: Record<string, StaticRoute> = {
   "/become-a-vendor": { title: "Become a maker at The Cannery Marketplace", description: "Apply to become a vendor at The Cannery Marketplace in Gilroy and follow a simple onboarding process for local makers and artisans.", index: true, changefreq: "monthly", priority: 0.8 },
   "/apply": { title: "Maker application", description: "Apply to become a maker at The Cannery Marketplace. Our team reviews every application from Gilroy area makers and artisans.", index: true, changefreq: "monthly", priority: 0.8 },
   "/contact": { title: "Contact and visit The Cannery Marketplace in Gilroy", description: "Contact The Cannery Marketplace or visit us at 7488 Monterey Road in downtown Gilroy, California.", index: true, changefreq: "monthly", priority: 0.7 },
+  "/reviews": { title: "Shopper reviews of Gilroy makers", description: "Read what shoppers say about The Cannery Marketplace and its local makers and artisans in Gilroy, California, and share your own review.", index: true, changefreq: "weekly", priority: 0.7 },
   "/gifts": { title: "Gift boxes from local Gilroy makers", description: "Shop gift boxes featuring handcrafted goods from makers at The Cannery Marketplace in Gilroy, California.", index: true, changefreq: "monthly", priority: 0.6 },
   "/request-a-quote": { title: "Request a corporate order quote", description: "Request custom pricing for corporate and bulk orders from The Cannery Marketplace.", index: false },
   "/admin": { title: "Owner portal", description: "Private owner access for The Cannery Marketplace.", index: false },
@@ -123,6 +124,7 @@ export async function resolvePage(db: Database, pathname: string): Promise<PageM
   if (pathname === "/contact" || pathname === "/about") jsonLd.push({ ...BUSINESS, image: absolute(socialImage) }, breadcrumbs([["Home", "/"], [pathname === "/contact" ? "Contact" : "About", pathname]]));
   if (pathname === "/vendors") jsonLd.push({ "@type": "CollectionPage", url: `${SITE_URL}/vendors`, name: `Makers at ${SITE_NAME}`, isPartOf: { "@id": `${SITE_URL}/#website` } }, breadcrumbs([["Home", "/"], ["Makers", "/vendors"]]));
   if (pathname === "/become-a-vendor") jsonLd.push(breadcrumbs([["Home", "/"], ["Become a vendor", "/become-a-vendor"]]));
+  if (pathname === "/reviews") jsonLd.push(breadcrumbs([["Home", "/"], ["Reviews", "/reviews"]]));
   if (pathname === "/apply") jsonLd.push(breadcrumbs([["Home", "/"], ["Become a vendor", "/become-a-vendor"], ["Maker application", "/apply"]]));
 
   return {
