@@ -24,7 +24,13 @@ function withSecurityHeaders(response: Response): Response {
 
 export default {
   async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
-    const { pathname } = new URL(request.url);
+    const requestUrl = new URL(request.url);
+    const { pathname } = requestUrl;
+    // One address for search engines and sign in: www goes to cannerymarket.com.
+    if (requestUrl.hostname === "www.cannerymarket.com") {
+      requestUrl.hostname = "cannerymarket.com";
+      return Response.redirect(requestUrl.toString(), 301);
+    }
 
     for (const endpoint of TRPC_ENDPOINTS) {
       if (pathname === endpoint.prefix || pathname.startsWith(`${endpoint.prefix}/`)) {

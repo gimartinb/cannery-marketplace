@@ -4,6 +4,7 @@
 
 | Version | Date | Author | Change |
 |---|---|---|---|
+| 7.4 | 2026-10-30 | Cutover prep: the current site is on GoDaddy Website Builder and there is no @cannerymarket.com mailbox (mail goes to Gmail), so moving DNS to Cloudflare risks no inbox. The Worker now sends www.cannerymarket.com to cannerymarket.com with a permanent redirect. Cutover steps updated: delete the imported Website Builder A record and www CNAME in Cloudflare before adding the Custom Domains. |
 | 7.3 | 2026-10-30 | Standing rule: owners can edit, update and delete everything they manage. Published reviews now have an Edit button (maker, city, private name, words, remove photo). A shopper's star rating cannot change and their original words are kept with an "Edited by" note; reviews owners added from Google or elsewhere are fully editable. Maker applications and corporate gift requests can now be deleted (with a confirmation). Migration 0019. |
 | 7.2 | 2026-10-30 | Gilbert Martin (with Claude) | New Reviews page at /reviews: every approved review in one place (makers and the marketplace itself) with the overall average, a The marketplace filter, a maker filter, and sorting (newest, highest, lowest). Shoppers can now review the marketplace itself with a "Review the marketplace" form (same approval steps; shows as "The marketplace" in the Reviews tab). Reviews of hidden or deleted makers are left out. Linked from the footer and from "Read all reviews" under the home page reviews; listed in the sitemap. Wording is editable in Edit pages (Reviews). |
 | 7.1 | 2026-10-30 | Gilbert Martin (with Claude) | Reviews are anonymous on the site: each shows as "A verified shopper" (plus the city, if given). The first name is still required on the form so owners see it in the Reviews tab when approving, but it is never sent to the public site, the home page, or the maker portal. |
@@ -145,7 +146,7 @@ Do this only after staging has been tested end to end.
 
 1. Add `cannerymarket.com` to Cloudflare on the Free plan. Compare the DNS records it imports against GoDaddy's, especially any email records.
 2. In GoDaddy, replace the nameservers with the two Cloudflare provides. The domain stays registered and billed at GoDaddy.
-3. On the Worker, add `cannerymarket.com` (and `www`) as a Custom Domain.
+3. In Cloudflare DNS, delete the imported `A @` (GoDaddy Website Builder) and `CNAME www` records. Keep the Resend records and `pay`. Then on the Worker, add `cannerymarket.com` and `www.cannerymarket.com` as Custom Domains (www redirects to the main address).
 4. In Zero Trust, create two Access applications on the real domain:
    * Owners: paths `/admin` and `/api/admin`, policy allowing only the `ADMIN_EMAILS`.
    * Vendors: paths `/maker-portal` and `/api/vendor`, policy allowing everyone with email verification.
