@@ -25,14 +25,14 @@ function StarPicker({ value, onChange, invalid }: { value: number; onChange: (va
   </div>;
 }
 
-type PublicReview = { id: number; rating: number; body: string; reviewerName: string; reviewerCity: string | null; photoUrl: string | null; source: ReviewSource; createdAt: Date | string };
+type PublicReview = { id: number; rating: number; body: string; reviewerCity: string | null; photoUrl: string | null; source: ReviewSource; createdAt: Date | string };
 
 export function ReviewCard({ review, maker }: { review: PublicReview; maker?: { name: string | null; slug: string | null } }) {
   return <article className="review-card">
     <Stars value={review.rating} />
     <p className="review-body">“{review.body}”</p>
-    {review.photoUrl && <img className="review-photo" src={review.photoUrl} alt={`Photo shared by ${review.reviewerName}`} loading="lazy" />}
-    <footer><span><strong>{review.reviewerName}</strong>{review.reviewerCity ? `, ${review.reviewerCity}` : ""}</span><small>{monthYear(review.createdAt)}{review.source !== "website" ? ` · via ${REVIEW_SOURCE_LABEL[review.source]}` : ""}</small></footer>
+    {review.photoUrl && <img className="review-photo" src={review.photoUrl} alt="Photo shared by the shopper" loading="lazy" />}
+    <footer><span><strong>A verified shopper</strong>{review.reviewerCity ? ` from ${review.reviewerCity}` : ""}</span><small>{monthYear(review.createdAt)}{review.source !== "website" ? ` · via ${REVIEW_SOURCE_LABEL[review.source]}` : ""}</small></footer>
     {maker?.name && (maker.slug ? <Link className="text-link" href={`/vendors/${maker.slug}`}>{maker.name} <ArrowRight size={14} /></Link> : <span className="review-maker">{maker.name}</span>)}
   </article>;
 }
@@ -80,7 +80,7 @@ function ReviewForm({ slug, makerName, onClose }: { slug: string; makerName: str
     <div className="form-field full"><span className="field-label">Your rating *</span><StarPicker value={values.rating} onChange={(value) => set("rating", value)} invalid={Boolean(shown.rating)} />{fieldError("rating")}</div>
     <div className="form-field full"><label htmlFor="review-body">Your review *</label><textarea id="review-body" rows={4} maxLength={1000} value={values.body} onChange={(event) => set("body", event.target.value)} placeholder="What did you buy, and what did you love about it?" aria-invalid={shown.body ? true : undefined} /><small className="form-hint">{values.body.trim().length} / 1,000</small>{fieldError("body")}</div>
     <div className="form-grid">
-      <div className="form-field"><label htmlFor="review-name">First name *</label><input id="review-name" maxLength={40} autoComplete="given-name" value={values.reviewerName} onChange={(event) => set("reviewerName", event.target.value)} aria-invalid={shown.reviewerName ? true : undefined} />{fieldError("reviewerName")}</div>
+      <div className="form-field"><label htmlFor="review-name">First name * (only our team sees it)</label><input id="review-name" maxLength={40} autoComplete="given-name" value={values.reviewerName} onChange={(event) => set("reviewerName", event.target.value)} aria-invalid={shown.reviewerName ? true : undefined} />{fieldError("reviewerName")}</div>
       <div className="form-field"><label htmlFor="review-city">City (optional)</label><input id="review-city" maxLength={60} autoComplete="address-level2" placeholder="Gilroy" value={values.reviewerCity} onChange={(event) => set("reviewerCity", event.target.value)} /></div>
       <div className="form-field full"><label htmlFor="review-email">Email (optional, never shown)</label><input id="review-email" type="email" autoComplete="email" maxLength={254} value={values.email} onChange={(event) => set("email", event.target.value)} placeholder="So we can thank you or follow up" aria-invalid={shown.email ? true : undefined} />{fieldError("email")}</div>
     </div>

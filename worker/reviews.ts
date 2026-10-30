@@ -6,8 +6,9 @@ import type { Database } from "./db";
 
 export const REVIEW_LIMIT_PER_SOURCE_PER_DAY = 5;
 
-// What the public sees: no email, no owner notes.
-const publicFields = { id: reviews.id, profileId: reviews.profileId, makerName: reviews.makerName, rating: reviews.rating, body: reviews.body, reviewerName: reviews.reviewerName, reviewerCity: reviews.reviewerCity, photoUrl: reviews.photoUrl, source: reviews.source, createdAt: reviews.createdAt };
+// What the public sees: no name, no email, no owner notes. Reviews are anonymous on the site;
+// only owners see the reviewer's name (in the Reviews tab).
+const publicFields = { id: reviews.id, profileId: reviews.profileId, makerName: reviews.makerName, rating: reviews.rating, body: reviews.body, reviewerCity: reviews.reviewerCity, photoUrl: reviews.photoUrl, source: reviews.source, createdAt: reviews.createdAt };
 
 export async function countRecentReviews(db: Database, sourceHash: string) {
   const since = new Date(Date.now() - 24 * 60 * 60 * 1000);

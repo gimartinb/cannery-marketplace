@@ -128,7 +128,7 @@ export const SITE_TEXT: SiteTextBlock[] = [
     ["reviews.empty", "Reviews: text when there are none yet", "item", "No reviews yet. Bought something from {business}? Be the first to share it."],
     ["reviews.button", "Reviews: write a review button", "button", "Write a review"],
     ["reviews.thanks", "Reviews: thank you message", "paragraph", "Thank you for your review! It will appear here once our team takes a quick look."],
-    ["reviews.guidelines", "Reviews: guidelines under the form", "item", "Please keep it about the products and your experience. We post every honest review; we only remove spam, profanity, or personal information."],
+    ["reviews.guidelines", "Reviews: guidelines under the form", "item", "Reviews are posted anonymously; only our team sees your name and email. Please keep it about the products. We post every honest review."],
     ["bottom.eyebrow", "Bottom: small label", "eyebrow", "Keep exploring"],
     ["bottom.title", "Bottom: heading", "heading", "There is more to *find.*"],
     ["bottom.button", "Bottom: button", "button", "Browse all makers"],
