@@ -1470,3 +1470,12 @@ main { min-height: 100svh; }
 @media (max-width: 640px) { .secure-review-list > .secure-admin-card { margin-inline: 0; } }
 .secure-admin-card label { min-width: 0; max-width: 100%; }
 .secure-admin-card label > select { width: 100%; min-width: 0; }
+
+/* Maker access: tidy action buttons and the Add new maker form */
+.maker-access-table > div { grid-template-columns: 48px minmax(0, 1fr) auto; }
+.maker-access-actions { display: flex; flex-direction: column; gap: .45rem; align-items: stretch; }
+.maker-access-actions > button { justify-content: center; white-space: nowrap; }
+.add-maker-card { display: grid; gap: .8rem; border-top: 3px solid var(--gold); }
+@media (max-width: 640px) {
+  .maker-access-actions { grid-column: 1 / -1; flex-direction: row; flex-wrap: wrap; }
+}

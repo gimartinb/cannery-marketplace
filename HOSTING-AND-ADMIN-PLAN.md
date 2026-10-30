@@ -4,6 +4,7 @@
 
 | Version | Date | Author | Change |
 |---|---|---|---|
+| 6.1 | 2026-10-30 | Gilbert Martin (with Claude) | Maker access: Welcome email and Remove access are now matching buttons stacked on the right of each maker (they wrapped into a narrow column before). A clear "Add new maker" button at the top opens the add form, which now also asks for the maker's first name so the automatic welcome email greets them by name. |
 | 6.0 | 2026-10-28 | Gilbert Martin (with Claude) | Category "Coffee & Bakery" renamed to "Coffee, Matcha & Bakery" everywhere: the maker portal list, existing listings, pending submissions, and home highlights (migration 0013 updates saved data). Spreadsheets or drafts that still say "Coffee & Bakery" are converted automatically. |
 | 5.9 | 2026-10-28 | Gilbert Martin (with Claude) | Maker profile pages no longer show "Approved photos submitted by the maker." above the work photos (removed from the page and from Edit pages). |
 | 5.8 | 2026-10-28 | Gilbert Martin (with Claude) | Photos of any size now work everywhere (work photos, cover photos, site images, highlights, gallery, gift boxes). Resizing happens in the browser, so it costs nothing on Cloudflare and uploads stay small (a 26 MB test photo uploaded as 1.9 MB). Large photos up to 40 MB are made smaller; photos below the recommended size are enlarged to fit with a short heads up that they may look slightly soft; only photos under 400 pixels on a side are turned away. Help text now says "best size" instead of "required". |
