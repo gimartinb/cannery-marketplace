@@ -113,6 +113,13 @@
       "when": 1793396365920,
       "tag": "0015_listing_redirects",
       "breakpoints": true
+    },
+    {
+      "idx": 16,
+      "version": "6",
+      "when": 1793396668437,
+      "tag": "0016_more_categories",
+      "breakpoints": true
     }
   ]
 }
