@@ -7,6 +7,7 @@ import ListingFields, { emptyListing, toListingValues, uploadListingPhoto, type 
 import { notifyError, notifySuccess } from "@/lib/notify";
 import { LISTING_FIELD_ORDER, listingProblems, REVIEW_TIME_NOTE } from "@shared/makerListing";
 import { clearSignInAttempt, signInJustFailed, signInThroughAccess, signOutOfAccess, trpc } from "@/lib/trpc";
+import { ReviewCard, Stars } from "@/components/Reviews";
 
 type Status = "published" | "hidden" | "pending" | "changes_requested" | "rejected" | "draft";
 const STATUS_TEXT: Record<Status, string> = { published: "Published", hidden: "Hidden by the marketplace", pending: "Change waiting for review", changes_requested: "Changes requested", rejected: "Not approved", draft: "Draft" };
@@ -74,6 +75,7 @@ export default function MakerPortal() {
             <div className="review-actions"><button className="button-plain" type="button" disabled={card.locked} title={card.locked ? "Waiting for review. You can edit again after the marketplace responds." : undefined} onClick={() => setEditing({ values: card.values, title: card.name })}><Pencil size={14} /> {card.locked ? "Waiting for review" : "Edit"}</button>{card.viewHref && <a className="button-plain" href={card.viewHref} target="_blank" rel="noreferrer"><ExternalLink size={14} /> View</a>}</div></div>
         </article>)}</div> : <div className="admin-empty"><h3>No listings are tied to this email yet</h3><p>If you already sell at The Cannery, ask the marketplace to connect your listing to {email}. Or add a new listing and send it for review.</p></div>}
       </div>}
+      {!editing && <MakerPortalReviews />}
       {editing && <div className="maker-portal-grid"><form className="maker-editor-card" noValidate onSubmit={send}>
         <div className="portal-card-heading"><div><p className="eyebrow">{editing.values.profileId ? "Update your listing" : "New listing"}</p><h2>{editing.title}</h2></div><button className="button-plain compact-button" type="button" onClick={() => setEditing(null)}><ArrowLeft size={13} /> All listings</button></div>
         <ListingFields value={editing.values} signedInEmail={email} aiWrite={async (request) => (await aiWriter.mutateAsync(request)).suggestion} problems={showProblems ? problems : undefined} onChange={(values) => setEditingState({ ...editing, values })} upload={(file) => uploadListingPhoto("/api/vendor/upload", file)} />
@@ -84,4 +86,17 @@ export default function MakerPortal() {
       <aside className="maker-portal-side"><div className="portal-preview-card"><div className="portal-card-heading"><div><p className="eyebrow">Public preview</p><h2>What shoppers will see</h2></div><Eye size={17} /></div><div className="portal-preview-photo">{editing.values.coverImageUrl ? <img src={editing.values.coverImageUrl} alt="Maker preview" /> : <><span>Cover photo</span><small>Add a photo in the editor</small></>}</div><p className="eyebrow">{editing.values.category || "Maker category"}</p><h3>{editing.values.name || "Business name"}</h3><p>{editing.values.shortBio || "Your short description will appear here."}</p><div className="portal-gallery-preview">{editing.values.galleryImageUrls.slice(0, 3).map((image, index) => <img src={image} alt={`Work sample ${index + 1}`} key={image} />)}</div><div className="portal-preview-rule" /><p className="portal-preview-label">{editing.values.ownerName ? `Meet ${editing.values.ownerName}` : "Meet the maker"}</p><p>{editing.values.ownerBio || "Your maker story will appear here."}</p></div><div className="portal-history"><div className="portal-card-heading"><div><p className="eyebrow">Review process</p><h2>Trust and control</h2></div><History size={17} /></div>{["Send a new listing or an update", "The administrator reviews it within 72 hours", "Only approved content becomes public"].map((item, index) => <div className="portal-history-item" key={item}><span><Check size={11} /></span><div><strong>{item}</strong><small>Step {index + 1}</small></div></div>)}</div></aside></div>}
     </div></section>
   </main></SiteShell>;
+}
+
+/** Approved reviews of this maker's listings. Read only: owners handle review questions. */
+function MakerPortalReviews() {
+  const reviews = trpc.vendorPortal.reviews.useQuery();
+  const list = reviews.data ?? [];
+  if (reviews.isLoading || !list.length) return null;
+  const average = Math.round((list.reduce((sum, row) => sum + row.rating, 0) / list.length) * 10) / 10;
+  return <div className="maker-listings maker-portal-reviews">
+    <div className="portal-card-heading"><div><p className="eyebrow">Shopper reviews</p><h2>What shoppers say</h2><p className="review-summary"><Stars value={average} /> <strong>{average.toFixed(1)}</strong> from {list.length} review{list.length === 1 ? "" : "s"}</p></div></div>
+    <div className="review-grid">{list.slice(0, 12).map((review) => <ReviewCard key={review.id} review={review} maker={list.length > 1 && review.makerName ? { name: review.makerName, slug: null } : undefined} />)}</div>
+    <p className="form-hint">Reviews are approved by The Cannery Marketplace. Questions about a review? Reply to any email from us.</p>
+  </div>;
 }

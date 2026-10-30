@@ -14,6 +14,9 @@ import {
   listPublicHighlights, reorderGalleryPhotos, updateGalleryPhoto, updateHighlight,
 } from "./db";
 import { aiWrite } from "./aiWriting";
+import { addOwnerReview, countRecentReviews, createReview, deleteReview, featuredReviews, listReviewsForOwners, pendingReviewCount, publicListing, REVIEW_LIMIT_PER_SOURCE_PER_DAY, reviewsForMaker, reviewsForMakerEmail, setReviewFeatured, setReviewStatus } from "./reviews";
+import { ownerReviewSchema, reviewSubmitSchema } from "../shared/reviews";
+import { deleteReviewPhoto } from "./media";
 import { parseStoreHours, storeHoursSchema } from "../shared/storeHours";
 import { assertFeaturedRoom, featuredOverview, setFeatured, syncFeaturedHistory, trimFeatured } from "./featured";
 import { fixAllListingAddresses, fixListingAddress, redirectFor } from "./listingAddress";
@@ -85,6 +88,27 @@ export const publicRouter = router({
     // Store hours, holidays, and special hours (managed in the Store hours tab).
     storeHours: publicProcedure.query(async ({ ctx }) => parseStoreHours(await getSiteSetting(ctx.db, "store_hours", ""))),
   }),
+  // Shopper reviews: approved ones are public; new ones wait for an owner.
+  reviews: router({
+    forMaker: publicProcedure.input(z.object({ slug: z.string().trim().min(1).max(160) })).query(async ({ ctx, input }) => {
+      const listing = await publicListing(ctx.db, input.slug);
+      return listing?.active ? reviewsForMaker(ctx.db, listing.id) : { summary: { count: 0, average: 0 }, reviews: [] };
+    }),
+    featured: publicProcedure.query(({ ctx }) => featuredReviews(ctx.db)),
+    googleLink: publicProcedure.query(async ({ ctx }) => ({ url: await getSiteSetting(ctx.db, "google_review_url", "") })),
+    submit: publicProcedure.input(reviewSubmitSchema).mutation(async ({ ctx, input }) => {
+      if (input.website2) return { id: 0 };
+      const listing = await publicListing(ctx.db, input.slug);
+      if (!listing?.active) throw new TRPCError({ code: "NOT_FOUND", message: "This maker's page is not available right now." });
+      const hash = await sourceHash(ctx.request);
+      if ((await countRecentReviews(ctx.db, hash)) >= REVIEW_LIMIT_PER_SOURCE_PER_DAY) throw new TRPCError({ code: "TOO_MANY_REQUESTS", message: "We received several reviews from this connection today. Please try again tomorrow." });
+      const id = await createReview(ctx.db, {
+        profileId: listing.id, makerName: listing.name, rating: input.rating, body: input.body.trim(), reviewerName: clean(input.reviewerName), reviewerCity: clean(input.reviewerCity) || null,
+        email: input.email.trim().toLowerCase() || null, photoUrl: input.photoUrl || null, source: "website", status: "pending", sourceHash: hash,
+      });
+      return { id };
+    }),
+  }),
   // Gift boxes and corporate requests. Everything is hidden while gift boxes are turned off.
   gifts: router({
     catalog: publicProcedure.query(async ({ ctx }) => (await giftBoxesEnabled(ctx.db)) ? { enabled: true as const, ...(await listPublicGiftBoxes(ctx.db)) } : { enabled: false as const, providerName: "", pickupNote: "", boxes: [] }),
@@ -142,6 +166,8 @@ export const publicRouter = router({
 export const vendorRouter = router({
   vendorPortal: router({
     me: vendorProcedure.query(({ ctx }) => ({ email: ctx.email })),
+    // Approved reviews of this maker's listings.
+    reviews: vendorProcedure.query(({ ctx }) => reviewsForMakerEmail(ctx.db, ctx.email)),
     // Every listing tied to this login email, plus new listings still waiting for approval.
     listings: vendorProcedure.query(({ ctx }) => listMakerListings(ctx.db, ctx.email, ctx.vendorAccount.id)),
     // AI writing help on listing text: improve what the maker wrote, or write it for them.
@@ -329,6 +355,14 @@ export const adminRouter = router({
       await setSiteSetting(ctx.db, "store_hours", JSON.stringify({ ...input, specials: [...input.specials].sort((a, b) => a.start.localeCompare(b.start)) }));
       return { success: true };
     }),
+    // Reviews: approve or remove (spam, profanity, off topic), feature up to 6 on the home page, add real reviews from elsewhere.
+    reviews: adminProcedure.query(async ({ ctx }) => ({ reviews: await listReviewsForOwners(ctx.db), googleUrl: await getSiteSetting(ctx.db, "google_review_url", "") })),
+    pendingReviews: adminProcedure.query(({ ctx }) => pendingReviewCount(ctx.db)),
+    setReviewStatus: adminProcedure.input(z.object({ id: z.number().int().positive(), status: z.enum(["pending", "approved", "rejected"]), note: z.string().trim().max(500).default("") })).mutation(async ({ ctx, input }) => { await setReviewStatus(ctx.db, input.id, input.status, input.note, ctx.email); return { success: true }; }),
+    setReviewFeatured: adminProcedure.input(z.object({ id: z.number().int().positive(), featured: z.boolean() })).mutation(async ({ ctx, input }) => { await setReviewFeatured(ctx.db, input.id, input.featured); return { success: true }; }),
+    addReview: adminProcedure.input(ownerReviewSchema).mutation(async ({ ctx, input }) => { const { confirmed: _confirmed, ...values } = input; return { id: await addOwnerReview(ctx.db, values, ctx.email) }; }),
+    deleteReview: adminProcedure.input(z.object({ id: z.number().int().positive() })).mutation(async ({ ctx, input }) => { await deleteReviewPhoto(ctx.env, await deleteReview(ctx.db, input.id)); return { success: true }; }),
+    setGoogleReviewUrl: adminProcedure.input(z.object({ url: z.union([z.literal(""), z.string().trim().url("Paste the full link, starting with https://").max(400).refine((value) => /^https:\/\/([a-z0-9-]+\.)*(google\.com|g\.page|goo\.gl)\//i.test(value), "Use the review link from your Google Business Profile.")]) })).mutation(async ({ ctx, input }) => { await setSiteSetting(ctx.db, "google_review_url", input.url); return { success: true }; }),
     bulkImport: adminProcedure.input(z.object({ vendors: z.array(ownerVendorSchema).min(1).max(500) })).mutation(async ({ ctx, input }) => {
       const result = await bulkImportVendorProfiles(ctx.db, input.vendors, ctx.email);
       // Spreadsheets can mark more than 3 as featured; the earliest featured ones stay.

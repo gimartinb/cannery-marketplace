@@ -12,7 +12,8 @@ It runs entirely on Cloudflare's free plan, so hosting costs **$0 a month**, wit
 **For shoppers**
 * Home page with featured makers and scheduled "Find something with a story" highlights
 * Maker directory with an "In the spotlight" section for featured makers, search, category filter, and 10, 25, or 50 makers per page
-* A profile page for every maker: photos, story, owner, and social links
+* A profile page for every maker: photos, story, owner, social links, and shopper reviews with a Write a review form
+* "What shoppers say" reviews on the home page, and a Review us on Google card on the Contact page
 * About page with an "Inside the Cannery" photo gallery
 * Contact form that keeps visitors on the site
 * Maker application at `/apply`, which replaces the old Google Form
@@ -26,6 +27,7 @@ It runs entirely on Cloudflare's free plan, so hosting costs **$0 a month**, wit
 
 **For the owners** (`/admin`)
 * Applications: review maker applications, then approve and invite in one click
+* Reviews: approve shopper reviews, feature up to 6 on the home page, add real reviews from Google or elsewhere, and set the Google review link
 * Review queue: each update shows exactly what changed (added and removed words, new and removed photos) before you approve, request changes, or reject
 * Published vendors: edit any listing, bulk assign login emails, show or hide, feature
 * Maker access: who can sign in, and which listings each email can edit

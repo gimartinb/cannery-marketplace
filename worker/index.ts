@@ -1,7 +1,7 @@
 import { fetchRequestHandler } from "@trpc/server/adapters/fetch";
 import type { AnyTRPCRouter } from "@trpc/server";
 import type { Env } from "./env";
-import { handleMedia, handleSiteImageUpload, handleVendorUpload } from "./media";
+import { handleMedia, handleReviewPhotoUpload, handleSiteImageUpload, handleVendorUpload } from "./media";
 import { adminRouter, publicRouter, vendorRouter } from "./routers";
 import { createContext } from "./trpc";
 import { handlePage, robotsTxt, sitemapXml } from "./seo";
@@ -43,6 +43,7 @@ export default {
     }
 
     if (pathname === "/api/vendor/upload") return withSecurityHeaders(await handleVendorUpload(request, env));
+    if (pathname === "/api/review-photo") return withSecurityHeaders(await handleReviewPhotoUpload(request, env));
     if (pathname === "/api/admin/upload") return withSecurityHeaders(await handleSiteImageUpload(request, env));
     if (pathname.startsWith("/media/")) return handleMedia(request, env, decodeURIComponent(pathname.slice("/media/".length)), ctx);
     if (pathname.startsWith("/manus-storage/")) return handleMedia(request, env, decodeURIComponent(pathname.slice("/manus-storage/".length)), ctx);

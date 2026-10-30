@@ -1575,3 +1575,58 @@ main { min-height: 100svh; }
   .special-row > label:first-child, .special-row .special-note { grid-column: 1 / -1; }
 }
 .contact-hours > div:first-child { display: none; }
+
+/* Reviews */
+.stars { display: inline-flex; gap: 1px; vertical-align: -2px; }
+.stars svg { color: #d8cfb8; fill: none; }
+.stars svg.on { color: #c9952e; fill: #c9952e; }
+.stars svg.half { color: #c9952e; fill: rgba(201,149,46,.45); }
+.maker-reviews-section { padding: 5rem 0; background: var(--cream); }
+.maker-reviews-heading { display: flex; justify-content: space-between; align-items: end; gap: 1.5rem; flex-wrap: wrap; margin-bottom: 2rem; }
+.maker-reviews-heading h2 { margin: .7rem 0 .4rem; font-size: clamp(2.3rem, 4vw, 3.6rem); }
+.review-summary { display: flex; align-items: center; gap: .45rem; margin: 0; color: #4e5246; font-size: .92rem; }
+.review-summary strong { color: var(--ink); }
+.review-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1rem; }
+.review-card { display: grid; gap: .6rem; align-content: start; padding: 1.3rem 1.4rem; background: #fffdf8; border-top: 2px solid var(--gold); box-shadow: 0 10px 24px rgba(32,36,29,.06); }
+.review-body { margin: 0; color: var(--ink); font-size: .95rem; line-height: 1.65; font-style: italic; overflow-wrap: anywhere; }
+.review-photo { width: 100%; aspect-ratio: 4 / 3; object-fit: cover; }
+.review-card footer { display: grid; gap: .1rem; font-size: .86rem; color: #4e5246; }
+.review-card footer small { color: #70766b; font-size: .76rem; }
+.review-card .text-link, .review-maker { font-size: .82rem; }
+.review-empty { color: #4e5246; margin: 0; }
+.review-form { max-width: 720px; margin: 0 0 2rem; }
+.review-form-head { display: flex; justify-content: space-between; align-items: center; }
+.review-form-head h3 { margin: 0; }
+.field-label { font-size: .7rem; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; color: var(--ink); }
+.star-picker { display: flex; align-items: center; gap: .15rem; margin-top: .4rem; }
+.star-picker button { border: 0; background: none; padding: .2rem; cursor: pointer; color: #d8cfb8; min-width: 40px; min-height: 40px; }
+.star-picker button.on { color: #c9952e; }
+.star-picker button.on svg { fill: #c9952e; }
+.star-picker span { margin-left: .5rem; font-size: .84rem; color: #4e5246; }
+.star-picker.invalid button { color: #e0b5ab; }
+.review-photo-field { margin: .4rem 0 1rem; }
+.review-photo-chosen { display: flex; align-items: center; gap: .8rem; }
+.review-photo-chosen img { width: 96px; height: 72px; object-fit: cover; }
+.review-thanks { display: flex; align-items: center; gap: .8rem; padding: 1.2rem; background: #f1f7ec; border: 1px solid #cfe3c4; }
+.review-thanks svg { color: #4f9a3a; flex: 0 0 auto; }
+.review-thanks p { margin: 0; flex: 1; }
+.featured-reviews-section { padding: 5.5rem 0; background: #fbf7ee; }
+.featured-reviews-section h2 { margin: .7rem 0 2rem; font-size: clamp(2.3rem, 4vw, 3.8rem); }
+.google-review-invite { display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; margin-top: 2rem; padding: 1.2rem 1.4rem; background: #fffdf8; border: 1px solid var(--gold-soft); }
+.google-review-invite > svg { color: #c9952e; fill: #c9952e; flex: 0 0 auto; }
+.google-review-invite > div { flex: 1 1 240px; }
+.google-review-invite p { margin: .2rem 0 0; color: #4e5246; font-size: .9rem; }
+.maker-portal-reviews { margin-top: 2rem; }
+/* Reviews tab */
+.google-link-card { display: flex; gap: .7rem; align-items: flex-end; flex-wrap: wrap; margin-bottom: 1rem; }
+.google-link-card label { flex: 1 1 320px; margin: 0; }
+.add-review-card { display: grid; gap: .7rem; border-top: 3px solid var(--gold); margin-bottom: .5rem; }
+.add-review-card h3 { margin: 0; }
+.review-admin-card h3 { display: flex; align-items: center; gap: .5rem; flex-wrap: wrap; }
+.review-admin-body { margin: .3rem 0 .6rem; font-style: italic; color: var(--ink); line-height: 1.6; overflow-wrap: anywhere; }
+.review-grid { align-items: start; }
+.add-review-card .form-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: .7rem; }
+.add-review-card label { display: grid; gap: .3rem; margin: 0; font-size: .74rem; font-weight: 700; color: #4e5246; }
+.add-review-card input:not([type="checkbox"]), .add-review-card select, .add-review-card textarea { width: 100%; padding: .5rem .6rem; border: 1px solid var(--line); background: #fff; font: inherit; font-size: .88rem; font-weight: 400; color: var(--ink); }
+.add-review-card .checkbox-label { display: flex; align-items: center; gap: .5rem; font-weight: 600; }
+.add-review-card .checkbox-label input { width: 1.1rem; height: 1.1rem; flex: 0 0 auto; }

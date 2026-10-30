@@ -285,3 +285,26 @@ export const featuredHistory = sqliteTable("featured_history", {
   endedAt: integer("endedAt", { mode: "timestamp" }),
   startedBy: text("startedBy"),
 }, (table) => [index("featured_history_profile_idx").on(table.profileId, table.startedAt)]);
+
+// Shopper reviews of makers. New website reviews wait for an owner to approve them.
+// Owners can also add real reviews received elsewhere (Google, Instagram, a card).
+export const reviews = sqliteTable("reviews", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  profileId: integer("profileId"),
+  makerName: text("makerName"),
+  rating: integer("rating").notNull(),
+  body: text("body").notNull(),
+  reviewerName: text("reviewerName").notNull(),
+  reviewerCity: text("reviewerCity"),
+  // Private: only owners see it, for follow up.
+  email: text("email"),
+  photoUrl: text("photoUrl"),
+  source: text("source", { enum: ["website", "google", "instagram", "facebook", "in_store", "other"] }).default("website").notNull(),
+  status: text("status", { enum: ["pending", "approved", "rejected"] }).default("pending").notNull(),
+  featured: integer("featured", { mode: "boolean" }).default(false).notNull(),
+  ownerNote: text("ownerNote"),
+  sourceHash: text("sourceHash"),
+  reviewedBy: text("reviewedBy"),
+  reviewedAt: integer("reviewedAt", { mode: "timestamp" }),
+  createdAt: createdAt(),
+}, (table) => [index("reviews_profile_idx").on(table.profileId, table.status), index("reviews_status_idx").on(table.status), index("reviews_source_idx").on(table.sourceHash, table.createdAt)]);

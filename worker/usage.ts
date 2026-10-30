@@ -1,6 +1,6 @@
 import { TRPCError } from "@trpc/server";
 import { eq, inArray, sql } from "drizzle-orm";
-import { aiUsage, galleryPhotos, giftBoxes, productHighlights, siteImageDrafts, siteImages, siteSettings, vendorProfiles, vendorSubmissions } from "../drizzle/schema";
+import { aiUsage, galleryPhotos, giftBoxes, reviews, productHighlights, siteImageDrafts, siteImages, siteSettings, vendorProfiles, vendorSubmissions } from "../drizzle/schema";
 import { createDb, type Database } from "./db";
 import type { Env } from "./env";
 
@@ -25,7 +25,7 @@ export const STORAGE_BLOCK_BYTES = 9 * 1024 ** 3;
 export const UPLOADS_FREE_PER_MONTH = 1_000_000;
 export const UPLOADS_BLOCK_PER_MONTH = 900_000;
 const ORPHAN_GRACE_DAYS = 7;
-const MANAGED_PREFIX = /^(vendor-\d+|vendor-owner|site)\//;
+const MANAGED_PREFIX = /^(vendor-\d+|vendor-owner|site|review)\//;
 
 // Workers AI pricing for the model we use (neurons per million tokens).
 const NEURONS_PER_M_INPUT = 4_119;
@@ -113,6 +113,7 @@ async function referencedKeys(db: Database) {
   for (const row of await db.select({ url: productHighlights.imageUrl }).from(productHighlights)) add(row.url);
   for (const row of await db.select({ url: galleryPhotos.url }).from(galleryPhotos)) add(row.url);
   for (const row of await db.select({ url: giftBoxes.imageUrl }).from(giftBoxes)) add(row.url);
+  for (const row of await db.select({ url: reviews.photoUrl }).from(reviews)) add(row.url);
   return keys;
 }
 

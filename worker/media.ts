@@ -3,6 +3,8 @@ import { saveImageDraftUpload } from "./siteImages";
 import { getAccessIdentity, isAdminEmail } from "./access";
 import { addGalleryPhoto, countGalleryPhotos, createDb, getOrCreateVendorAccount, isInvitedMaker, MAX_GALLERY_PHOTOS } from "./db";
 import type { Env } from "./env";
+import { sql } from "drizzle-orm";
+import { aiUsage } from "../drizzle/schema";
 import { deleteStoredObject, recordUpload, storageRoomProblem } from "./usage";
 
 const MAX_UPLOAD_BYTES = 5 * 1024 * 1024;
@@ -147,4 +149,32 @@ export async function handleMedia(request: Request, env: Env, key: string, ctx: 
   const response = new Response(object.body, { headers });
   ctx.waitUntil(cache.put(cacheKey, response.clone()));
   return request.method === "HEAD" ? new Response(null, { headers }) : response;
+}
+
+export const REVIEW_PHOTOS_PER_SOURCE_PER_DAY = 5;
+
+/**
+ * POST /api/review-photo  (anyone; for the review form). Body: the raw image bytes.
+ * Limited to a few photos per connection per day, and to the free storage allowance.
+ * A photo that never ends up on a review is removed by the nightly storage job.
+ */
+export async function handleReviewPhotoUpload(request: Request, env: Env): Promise<Response> {
+  const address = request.headers.get("CF-Connecting-IP") || "local";
+  const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(`cannery-review-photo:${address}`));
+  const key = `review-photo:${Array.from(new Uint8Array(digest)).slice(0, 12).map((byte) => byte.toString(16).padStart(2, "0")).join("")}`;
+  const db = createDb(env.DB);
+  const day = new Date().toISOString().slice(0, 10);
+  // Reuses the small daily counter table (ai_usage) as a per connection upload counter.
+  const [row] = await db.insert(aiUsage).values({ email: key, day, count: 1 }).onConflictDoUpdate({ target: [aiUsage.email, aiUsage.day], set: { count: sql`${aiUsage.count} + 1` } }).returning({ count: aiUsage.count });
+  if (row && row.count > REVIEW_PHOTOS_PER_SOURCE_PER_DAY) return json({ error: "That is the most photos we can take from one connection today. You can still send your review without a photo." }, 429);
+  const upload = validateImageUpload(request);
+  if (upload instanceof Response) return upload;
+  const objectKey = `review/${randomSuffix()}${randomSuffix()}.${upload.extension}`;
+  { const refused = await storeObject(env, objectKey, upload); if (refused) return refused; }
+  return json({ url: `/media/${objectKey}` });
+}
+
+/** Removes a review photo (owners deleting a review). */
+export async function deleteReviewPhoto(env: Env, url: string | null | undefined) {
+  if (url && url.startsWith("/media/review/")) await deleteStoredObject(env, url.slice("/media/".length));
 }
