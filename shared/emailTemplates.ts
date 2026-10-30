@@ -26,7 +26,7 @@ Welcome to The Cannery Marketplace. We are excited to feature {business} on our 
 
 {note}
 
-Your maker space is ready. To finish your listing:
+To finish your listing:
 
 1. Go to {portalLink}
 2. Enter this email address: {email}
