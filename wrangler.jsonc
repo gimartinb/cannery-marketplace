@@ -1,0 +1,60 @@
+// Cloudflare Worker configuration for The Cannery Marketplace.
+// Deploys automatically from GitHub through Workers Builds (see HOSTING-AND-ADMIN-PLAN.md).
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "cannery-marketplace",
+  "main": "worker/index.ts",
+  "compatibility_date": "2026-10-01",
+
+  // The React build, with index.html as the fallback for client routes.
+  "assets": {
+    "directory": "./dist/public",
+    "binding": "ASSETS",
+    "not_found_handling": "single-page-application",
+    // The Worker runs first for pages (to write each page's search tags), the API,
+    // images, robots.txt, and the sitemap. Built files skip it and are served directly.
+    "run_worker_first": ["/*", "!/assets/*", "!/images/*", "!/downloads/*", "!/icons/*", "!/favicon.ico", "!/site.webmanifest"]
+  },
+
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "cannery-marketplace",
+      "database_id": "92b7e94f-ce96-42ef-86e9-6d7d54aa759d",
+      "migrations_dir": "drizzle/d1"
+    }
+  ],
+
+  "r2_buckets": [
+    {
+      "binding": "MEDIA",
+      // Created once in the dashboard (R2 Object Storage). Private: images are served through the Worker.
+      "bucket_name": "cannery-marketplace-media"
+    }
+  ],
+
+  // Workers AI, used only for the maker "Help me improve this" button. The free plan
+  // includes 10,000 neurons a day; past that, requests fail (nothing is billed).
+  "ai": { "binding": "AI" },
+
+  // Not secrets: the Access team domain and audience tags are public identifiers.
+  "vars": {
+    // ACCESS_AUD lists the Access applications allowed to sign people in, comma separated:
+    // the two staging path apps (owners and makers on workers.dev), then the Worker level preview app.
+    // If a sign in is rejected, the error screen names the missing tag to add here.
+    // While it is empty every admin and vendor request is denied, which is the safe default.
+    "ACCESS_TEAM_DOMAIN": "https://cannery.cloudflareaccess.com",
+    "ACCESS_AUD": "41bb51742615818bc70d7589c7f06b47101e5deb0092296bd2ff484ffe315259,d28c9eae01c9aeae9eb0a36c8bf22409ea797ec870b0d612052155ac1f7333bf,bf301d5292396c1fdf1cbadda5016790c8faf05ffd925ba6278c737224ee1d7a",
+    "ADMIN_EMAILS": "gilbert.martin@gmail.com,thecannerymarketplace@gmail.com",
+    // Emails the site sends (through Resend). The API key is a secret: RESEND_API_KEY.
+    // Replies go to the marketplace Gmail inbox.
+    "EMAIL_FROM": "The Cannery Marketplace <hello@cannerymarket.com>",
+    "EMAIL_REPLY_TO": "thecannerymarketplace@gmail.com"
+  },
+
+  // Nightly at 3:17 a.m. Pacific (10:17 UTC): recount photo storage and remove
+  // photos no page uses anymore. Cron triggers are free.
+  "triggers": { "crons": ["17 10 * * *"] },
+
+  "observability": { "enabled": true }
+}
