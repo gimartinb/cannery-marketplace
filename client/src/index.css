@@ -1669,3 +1669,33 @@ main { min-height: 100svh; }
   .follow-buttons { width: 100%; }
   .follow-button { flex: 1 1 100%; justify-content: center; }
 }
+/* Pop-ups fit any window: the framing box shrinks to the window height so its buttons stay visible. */
+.crop-frame { width: min(100%, max(160px, calc((100dvh - 21rem) * var(--crop-aspect, 1.333)))); margin-inline: auto; }
+.crop-dialog [data-slot="dialog-footer"] { position: sticky; bottom: -1.5rem; margin: 0 -1.5rem -1.5rem; padding: .8rem 1.5rem 1.2rem; background: var(--background); border-top: 1px solid var(--line); }
+/* Save and Send for review stay on screen while editing a long listing. */
+.sticky-save-bar { position: sticky; bottom: 0; z-index: 5; margin-top: 1rem; padding: .85rem 1rem; background: rgba(255, 253, 248, .96); border-top: 1px solid var(--line); box-shadow: 0 -8px 20px rgba(32, 36, 29, .06); backdrop-filter: blur(4px); }
+/* Photo cards in the listing editor (owners and makers): replace, reorder, make cover, remove. */
+.maker-photo-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: .9rem; margin-top: .9rem; }
+.maker-photo-card { margin: 0; border: 1px solid var(--line); background: #fff; display: grid; }
+.maker-photo-card img { width: 100%; aspect-ratio: 1; object-fit: cover; display: block; }
+.maker-photo-card.is-cover img { aspect-ratio: 4 / 3; }
+.maker-photo-card.is-cover { border-color: var(--gold-soft); box-shadow: 0 0 0 2px rgba(223, 199, 142, .45); }
+.maker-photo-card figcaption { padding: .45rem .6rem 0; font-size: .7rem; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: #5b604f; }
+.photo-card-actions { display: flex; flex-wrap: wrap; gap: .35rem; padding: .5rem .6rem .65rem; }
+.photo-action { display: inline-flex; align-items: center; gap: .3rem; min-height: 32px; padding: .3rem .55rem; border: 1px solid var(--line); background: var(--paper); color: var(--ink); font-size: .72rem; font-weight: 600; cursor: pointer; border-radius: 6px; }
+.photo-action:hover:not(:disabled) { border-color: var(--moss); }
+.photo-action:disabled { opacity: .4; cursor: default; }
+.photo-action.danger { color: var(--clay); }
+/* Follow card that slides up on maker pages */
+.maker-follow-card { position: fixed; right: 1.25rem; bottom: 1.25rem; z-index: 60; width: min(360px, calc(100vw - 2rem)); padding: 1.3rem 1.3rem 1.2rem; background: var(--paper); border: 1px solid var(--gold-soft); box-shadow: 0 18px 50px rgba(32, 36, 29, .22); animation: follow-card-in .35s ease-out; }
+.maker-follow-card .eyebrow { margin: 0 0 .3rem; }
+.maker-follow-card h2 { margin: 0; font-size: 1.45rem; line-height: 1.15; padding-right: 1.5rem; }
+.maker-follow-card p:not(.eyebrow) { margin: .45rem 0 .9rem; font-size: .92rem; color: #4e5246; }
+.maker-follow-buttons { display: grid; gap: .5rem; }
+.maker-follow-buttons .follow-button { justify-content: center; background: var(--moss); color: var(--paper); }
+.maker-follow-buttons .follow-button:hover { background: var(--gold); }
+.maker-follow-close { position: absolute; top: .55rem; right: .55rem; width: 36px; height: 36px; display: grid; place-items: center; border: 0; background: transparent; color: var(--ink); cursor: pointer; border-radius: 50%; }
+.maker-follow-close:hover { background: var(--cream); }
+@keyframes follow-card-in { from { transform: translateY(24px); opacity: 0; } to { transform: none; opacity: 1; } }
+@media (max-width: 640px) { .maker-follow-card { right: 1rem; left: 1rem; bottom: 1rem; width: auto; } .maker-follow-buttons { grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); } }
+@media (prefers-reduced-motion: reduce) { .maker-follow-card { animation: none; } }

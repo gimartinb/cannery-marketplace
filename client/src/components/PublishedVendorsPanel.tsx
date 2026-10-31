@@ -105,7 +105,7 @@ export default function PublishedVendorsPanel({ vendors, onRefresh }: { vendors:
     {editing && <form className="secure-admin-card" onSubmit={(event) => { event.preventDefault(); save.mutate({ id: editing.id, ...editing.values, loginEmail: editing.values.loginEmail || "" }); }}>
       <div className="secure-card-heading"><div><span className="review-status">Owner edit, goes live when saved</span><h3>Edit {editing.values.name || "listing"}</h3></div><button className="button-plain compact-button" type="button" onClick={() => setEditing(null)}><X size={13} /> Close</button></div>
       <ListingFields ownerControls aiWrite={async (request) => (await aiWriter.mutateAsync(request)).suggestion} value={editing.values} onChange={(values) => setEditing({ ...editing, values })} upload={(file) => uploadListingPhoto("/api/admin/upload?purpose=vendor", file)} />
-      <div className="review-actions"><button className="button-primary" type="submit" disabled={save.isPending}>{save.isPending ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />} Save and publish</button><button className="button-plain" type="button" onClick={() => setEditing(null)}>Cancel</button></div>
+      <div className="review-actions sticky-save-bar"><button className="button-primary" type="submit" disabled={save.isPending}>{save.isPending ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />} Save and publish</button><button className="button-plain" type="button" onClick={() => setEditing(null)}>Cancel</button></div>
     </form>}
     {!editing && <>
       {selected.size > 0 && <div className="bulk-bar" role="region" aria-label="Bulk update">

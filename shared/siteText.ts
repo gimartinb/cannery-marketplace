@@ -123,6 +123,8 @@ export const SITE_TEXT: SiteTextBlock[] = [
   ]),
   ...page("profile", [
     ["follow.title", "Follow the maker: heading", "item", "Follow {business}"],
+    ["followCard.eyebrow", "Follow pop-up card: small label", "eyebrow", "Enjoying their work?"],
+    ["followCard.body", "Follow pop-up card: text", "item", "See new pieces and pop-up dates from {business} first."],
     ["story.eyebrow", "Maker story: small label", "eyebrow", "Meet the maker"],
     ["story.titleWithName", "Maker story: heading when the maker's name is known", "heading", "Meet *{maker}.*"],
     ["story.title", "Maker story: heading without a name", "heading", "The person behind the *work.*"],

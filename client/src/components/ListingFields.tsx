@@ -1,4 +1,4 @@
-import { Star, Trash2 } from "lucide-react";
+import { ArrowLeft, ArrowRight, Star, Trash2 } from "lucide-react";
 import AiWriteHelper, { type AiWriter } from "@/components/AiWriteHelper";
 import { useState } from "react";
 import ImageUploadButton from "@/components/ImageUploadButton";
@@ -62,6 +62,30 @@ export default function ListingFields({ value, onChange, upload, ownerControls, 
   const categoryChoice = !value.category ? "" : isListedCategory(value.category, categories) ? value.category : "Other";
   const ownCategory = categoryChoice === "Other" && value.category !== "Other" ? value.category : "";
 
+  // Replaces one existing photo with a new upload, in the same place.
+  async function replacePhoto(kind: "cover" | "gallery", index: number, files: File[]) {
+    if (!files[0]) return;
+    setBusy(kind);
+    try {
+      const url = await upload(files[0]);
+      onChange(kind === "cover" ? { ...value, coverImageUrl: url } : { ...value, galleryImageUrls: value.galleryImageUrls.map((item, itemIndex) => itemIndex === index ? url : item) });
+      notifySuccess(kind === "cover" ? "Cover photo replaced" : `Work photo ${index + 1} replaced`, { description: "Save the listing to keep the change." });
+    } catch (error) { notifyError(error, "Photo not replaced"); } finally { setBusy(null); }
+  }
+  function movePhoto(index: number, step: -1 | 1) {
+    const next = [...value.galleryImageUrls]; const target = index + step;
+    if (target < 0 || target >= next.length) return;
+    [next[index], next[target]] = [next[target], next[index]];
+    set("galleryImageUrls", next);
+  }
+  // A work photo becomes the cover; the old cover takes its place among the work photos.
+  function makeCover(index: number) {
+    const chosen = value.galleryImageUrls[index];
+    const gallery = value.coverImageUrl ? value.galleryImageUrls.map((item, itemIndex) => itemIndex === index ? value.coverImageUrl : item) : value.galleryImageUrls.filter((_, itemIndex) => itemIndex !== index);
+    onChange({ ...value, coverImageUrl: chosen, galleryImageUrls: gallery });
+    notifySuccess("Cover photo changed", { description: "Save the listing to keep the change." });
+  }
+
   async function addPhotos(kind: "cover" | "gallery", files: File[]) {
     const selected = kind === "cover" ? files.slice(0, 1) : files.slice(0, Math.max(0, galleryRoom));
     if (!selected.length) { notifyError(`A listing holds up to ${MAX_LISTING_GALLERY} work photos. Remove one first.`, "Photo not added"); return; }
@@ -119,9 +143,20 @@ export default function ListingFields({ value, onChange, upload, ownerControls, 
         {galleryRoom > 0 && <ImageUploadButton spot="maker-gallery" multiple busy={busy === "gallery"} disabled={busy !== null} onFiles={(files) => addPhotos("gallery", files)}>Add work photos</ImageUploadButton>}
       </div>
       <FieldError problems={problems} field="coverImageUrl" /><FieldError problems={problems} field="galleryImageUrls" />
-      <div className="maker-gallery-thumbs">
-        {value.coverImageUrl && <div className="maker-gallery-thumb"><img src={value.coverImageUrl} alt="Cover preview" /><span>Cover</span><button type="button" aria-label="Remove cover photo" onClick={() => set("coverImageUrl", "")}><Trash2 size={12} /></button></div>}
-        {value.galleryImageUrls.map((image, index) => <div className="maker-gallery-thumb" key={`${image}-${index}`}><img src={image} alt={`Work sample ${index + 1}`} /><button type="button" aria-label={`Remove work photo ${index + 1}`} onClick={() => set("galleryImageUrls", value.galleryImageUrls.filter((_, itemIndex) => itemIndex !== index))}><Trash2 size={12} /></button></div>)}
+      <div className="maker-photo-grid">
+        {value.coverImageUrl && <figure className="maker-photo-card is-cover"><img src={value.coverImageUrl} alt="Cover preview" /><figcaption>Cover</figcaption>
+          <div className="photo-card-actions">
+            <ImageUploadButton spot="maker-cover" className="photo-action" busy={busy === "cover"} disabled={busy !== null} onFiles={(files) => replacePhoto("cover", 0, files)}>Replace</ImageUploadButton>
+            <button className="photo-action danger" type="button" aria-label="Remove cover photo" onClick={() => set("coverImageUrl", "")}><Trash2 size={13} /> Remove</button>
+          </div></figure>}
+        {value.galleryImageUrls.map((image, index) => <figure className="maker-photo-card" key={`${image}-${index}`}><img src={image} alt={`Work sample ${index + 1}`} /><figcaption>Work photo {index + 1}</figcaption>
+          <div className="photo-card-actions">
+            <button className="photo-action" type="button" aria-label={`Move work photo ${index + 1} earlier`} disabled={index === 0} onClick={() => movePhoto(index, -1)}><ArrowLeft size={13} /></button>
+            <button className="photo-action" type="button" aria-label={`Move work photo ${index + 1} later`} disabled={index === value.galleryImageUrls.length - 1} onClick={() => movePhoto(index, 1)}><ArrowRight size={13} /></button>
+            <button className="photo-action" type="button" onClick={() => makeCover(index)}><Star size={13} /> Make cover</button>
+            <ImageUploadButton spot="maker-gallery" className="photo-action" busy={busy === "gallery"} disabled={busy !== null} onFiles={(files) => replacePhoto("gallery", index, files)}>Replace</ImageUploadButton>
+            <button className="photo-action danger" type="button" aria-label={`Remove work photo ${index + 1}`} onClick={() => set("galleryImageUrls", value.galleryImageUrls.filter((_, itemIndex) => itemIndex !== index))}><Trash2 size={13} /> Remove</button>
+          </div></figure>)}
       </div>
     </div>
   </div>;

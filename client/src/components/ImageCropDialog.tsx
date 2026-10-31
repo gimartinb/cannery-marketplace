@@ -114,7 +114,7 @@ export default function ImageCropDialog({ file, settings, onDone, onCancel, titl
         <DialogTitle>{title ?? "Frame your photo"}</DialogTitle>
         <DialogDescription>Drag the photo to position it and use the zoom buttons. This frame is exactly what shoppers will see.</DialogDescription>
       </DialogHeader>
-      <div ref={frame} className="crop-frame" style={{ aspectRatio: `${settings.aspect}` }} onPointerDown={onPointerDown} onPointerMove={onPointerMove} onPointerUp={() => { drag.current = null; }} onPointerCancel={() => { drag.current = null; }}>
+      <div ref={frame} className="crop-frame" style={{ aspectRatio: `${settings.aspect}`, ["--crop-aspect" as string]: settings.aspect }} onPointerDown={onPointerDown} onPointerMove={onPointerMove} onPointerUp={() => { drag.current = null; }} onPointerCancel={() => { drag.current = null; }}>
         <div className="crop-stage" style={{ width: VIEW_W, height: viewH, transform: `scale(${1 / ratio()})` }}>
           {image && <img src={image.src} alt="" draggable={false} style={{ width: shown.w, height: shown.h, transform: `translate(${offset.x}px, ${offset.y}px)` }} />}
         </div>
