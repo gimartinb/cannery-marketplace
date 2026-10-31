@@ -1648,3 +1648,24 @@ main { min-height: 100svh; }
 .edit-review-form .checkbox-label { display: flex; align-items: center; gap: .5rem; }
 .review-original summary { cursor: pointer; font-size: .78rem; font-weight: 600; color: #6d6247; }
 .review-original p { margin: .4rem 0 0; font-style: italic; font-size: .86rem; }
+/* Follow us band (above the footer) and Follow buttons on maker pages */
+.follow-band { background: var(--moss); color: var(--paper); padding: 2.6rem 0; }
+.follow-band-inner { display: flex; align-items: center; justify-content: space-between; gap: 1.5rem 2.5rem; flex-wrap: wrap; }
+.follow-band h2 { margin: 0; font-size: clamp(1.7rem, 3vw, 2.3rem); color: var(--paper); }
+.follow-band h2 em { color: var(--gold-soft); }
+.follow-band p { margin: .35rem 0 0; color: rgba(255, 253, 248, .82); max-width: 34rem; }
+.follow-buttons { display: flex; flex-wrap: wrap; gap: .7rem; }
+.follow-button { display: inline-flex; align-items: center; gap: .5rem; min-height: 44px; padding: .65rem 1.15rem; border-radius: 999px; background: var(--paper); color: var(--ink); font-size: .78rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; text-decoration: none; border: 1px solid transparent; transition: transform .15s ease, background .15s ease; }
+.follow-button:hover { transform: translateY(-1px); background: var(--gold-soft); }
+.follow-button:focus-visible { outline: 2px solid var(--gold-soft); outline-offset: 3px; }
+.vendor-social-links .follow-button { background: var(--moss); color: var(--paper); }
+.vendor-social-links .follow-button:hover { background: var(--gold); }
+.maker-follow-title { margin: 1.4rem 0 .2rem; font-size: .74rem; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: var(--gold); }
+.social-links-editor .form-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: .7rem; }
+.social-links-editor label { display: grid; gap: .3rem; font-size: .74rem; font-weight: 700; color: #4e5246; }
+.social-links-editor input { width: 100%; padding: .5rem .6rem; border: 1px solid var(--line); background: #fff; font: inherit; font-size: .88rem; font-weight: 400; }
+@media (max-width: 640px) {
+  .follow-band { padding: 2rem 0; }
+  .follow-buttons { width: 100%; }
+  .follow-button { flex: 1 1 100%; justify-content: center; }
+}

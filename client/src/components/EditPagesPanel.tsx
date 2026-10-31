@@ -2,6 +2,7 @@ import { Check, Eye, History, ImageIcon, Loader2, RotateCcw, Save, Search, Send,
 import { useMemo, useState } from "react";
 import AiWriteHelper from "@/components/AiWriteHelper";
 import GalleryPanel from "@/components/GalleryPanel";
+import { MarketplaceSocialEditor } from "@/components/FollowUs";
 import HighlightsPanel from "@/components/HighlightsPanel";
 import ImageUploadButton from "@/components/ImageUploadButton";
 import { siteImageDefaults } from "@/lib/siteImages";
@@ -142,7 +143,7 @@ function ImageSpotEditor({ slot, live, draft, onSaved }: { slot: SiteImageSlotId
 }
 
 // Where images and the photo sections sit among each page's text, in page order.
-type Extra = { kind: "image"; slot: SiteImageSlotId } | { kind: "highlights" } | { kind: "gallery" };
+type Extra = { kind: "image"; slot: SiteImageSlotId } | { kind: "highlights" } | { kind: "gallery" } | { kind: "socials" };
 const EXTRAS_BEFORE: Partial<Record<string, Extra[]>> = { "shared.nav.makers": [{ kind: "image", slot: "logo" }] };
 const EXTRAS_AFTER: Partial<Record<string, Extra[]>> = {
   "home.hero.cardLink": [{ kind: "image", slot: "home-hero" }],
@@ -151,6 +152,7 @@ const EXTRAS_AFTER: Partial<Record<string, Extra[]>> = {
   "about.story.quote": [{ kind: "image", slot: "about-display" }],
   "about.gallery.title": [{ kind: "gallery" }],
   "shared.business.email": [{ kind: "image", slot: "social-sharing" }],
+  "shared.follow.body": [{ kind: "socials" }],
 };
 const IMAGE_PAGE: Record<SiteImageSlotId, SitePageId> = { logo: "shared", "social-sharing": "shared", "home-hero": "home", "marketplace-interior": "home", "about-display": "about" };
 
@@ -181,7 +183,7 @@ export default function EditPagesPanel({ vendors }: { vendors: Vendor[] }) {
     : SITE_TEXT.filter((block) => block.page === pageId);
   const previewPath = search ? "/" : pagePath(pageId);
 
-  const extra = (item: Extra) => item.kind === "image"
+  const extra = (item: Extra) => item.kind === "socials" ? <MarketplaceSocialEditor key="socials" /> : item.kind === "image"
     ? <ImageSpotEditor key={item.slot} slot={item.slot} live={liveById.get(item.slot)} draft={draftById.get(item.slot)} onSaved={refresh} />
     : <div className="page-section-embed" key={item.kind}><p className="page-section-note">{item.kind === "highlights" ? "Home highlights are cards with their own start and end dates. Changes here go live when you save a card." : "Gallery changes go live when you save them."}</p>{item.kind === "highlights" ? <HighlightsPanel vendors={vendors} embedded /> : <GalleryPanel embedded />}</div>;
 

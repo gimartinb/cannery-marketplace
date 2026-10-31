@@ -18,6 +18,7 @@ import { allApprovedReviews, editReview, addOwnerReview, countRecentReviews, cre
 import { ownerReviewSchema, reviewEditSchema, reviewSubmitSchema } from "../shared/reviews";
 import { deleteReviewPhoto } from "./media";
 import { parseStoreHours, storeHoursSchema } from "../shared/storeHours";
+import { marketplaceSocialSchema, parseMarketplaceSocials } from "../shared/marketplaceSocial";
 import { assertFeaturedRoom, featuredOverview, setFeatured, syncFeaturedHistory, trimFeatured } from "./featured";
 import { fixAllListingAddresses, fixListingAddress, redirectFor } from "./listingAddress";
 import { addressMatchesName, suggestedAddress } from "../shared/listingAddress";
@@ -82,7 +83,7 @@ export const publicRouter = router({
     }),
   }),
   settings: router({
-    public: publicProcedure.query(async ({ ctx }) => ({ giftBoxesEnabled: await giftBoxesEnabled(ctx.db) })),
+    public: publicProcedure.query(async ({ ctx }) => ({ giftBoxesEnabled: await giftBoxesEnabled(ctx.db), socials: parseMarketplaceSocials(await getSiteSetting(ctx.db, "marketplace_socials", "")) })),
     // Published site text (only wording the owners changed). Pages also get this in the HTML.
     siteText: publicProcedure.query(({ ctx }) => publishedSiteText(ctx.db)),
     // Store hours, holidays, and special hours (managed in the Store hours tab).
@@ -353,6 +354,7 @@ export const adminRouter = router({
     }),
     fixListingAddress: adminProcedure.input(z.object({ id: z.number().int().positive() })).mutation(async ({ ctx, input }) => ({ fixed: await fixListingAddress(ctx.db, input.id) })),
     fixAllListingAddresses: adminProcedure.mutation(async ({ ctx }) => ({ fixed: await fixAllListingAddresses(ctx.db) })),
+    saveMarketplaceSocials: adminProcedure.input(marketplaceSocialSchema).mutation(async ({ ctx, input }) => { await setSiteSetting(ctx.db, "marketplace_socials", JSON.stringify(input)); return { success: true }; }),
     saveStoreHours: adminProcedure.input(storeHoursSchema).mutation(async ({ ctx, input }) => {
       const ids = new Set(input.specials.map((item) => item.id));
       if (ids.size !== input.specials.length) throw new TRPCError({ code: "BAD_REQUEST", message: "Two holiday entries have the same id. Reload the page and try again." });

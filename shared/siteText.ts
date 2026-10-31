@@ -39,6 +39,8 @@ export const SITE_TEXT: SiteTextBlock[] = [
     ["nav.become", "Menu: Become a vendor", "button", "Become a vendor"],
     ["nav.login", "Menu: Maker login button", "button", "Maker login"],
     ["footer.reviews", "Footer: Reviews link", "button", "Reviews"],
+    ["follow.title", "Follow us band: heading", "heading", "Follow *The Cannery*"],
+    ["follow.body", "Follow us band: text", "item", "New makers, weekend events, and fresh finds, straight to your feed."],
     ["footer.tagline", "Footer: short description", "paragraph", "A dedicated space in Gilroy where local makers and artisans can share their handcrafted work."],
     ["business.addressLine1", "Business address, street", "detail", "7488 Monterey Road"],
     ["business.addressLine2", "Business address, city", "detail", "Gilroy, California 95020"],
@@ -120,6 +122,7 @@ export const SITE_TEXT: SiteTextBlock[] = [
     ["card.link", "Maker card: link", "button", "View profile"],
   ]),
   ...page("profile", [
+    ["follow.title", "Follow the maker: heading", "item", "Follow {business}"],
     ["story.eyebrow", "Maker story: small label", "eyebrow", "Meet the maker"],
     ["story.titleWithName", "Maker story: heading when the maker's name is known", "heading", "Meet *{maker}.*"],
     ["story.title", "Maker story: heading without a name", "heading", "The person behind the *work.*"],
