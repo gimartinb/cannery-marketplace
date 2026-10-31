@@ -1699,3 +1699,15 @@ main { min-height: 100svh; }
 @keyframes follow-card-in { from { transform: translateY(24px); opacity: 0; } to { transform: none; opacity: 1; } }
 @media (max-width: 640px) { .maker-follow-card { right: 1rem; left: 1rem; bottom: 1rem; width: auto; } .maker-follow-buttons { grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); } }
 @media (prefers-reduced-motion: reduce) { .maker-follow-card { animation: none; } }
+/* Slim Follow bar at the top of every page (scrolls away, never covers content) */
+.follow-bar { background: var(--cream); border-bottom: 1px solid var(--line); font-size: .8rem; color: var(--ink); }
+.follow-bar-inner { display: flex; align-items: center; justify-content: center; gap: .5rem 1.1rem; flex-wrap: wrap; padding-block: .4rem; }
+.follow-bar p { margin: 0; display: flex; align-items: baseline; gap: .55rem; }
+.follow-bar strong { font-weight: 700; letter-spacing: .02em; }
+.follow-bar strong em { color: var(--gold); font-style: italic; }
+.follow-bar-body { color: #5b604f; }
+.follow-bar-links { display: flex; gap: .4rem; }
+.follow-bar-links a { display: inline-flex; align-items: center; gap: .3rem; min-height: 30px; padding: .2rem .65rem; border-radius: 999px; background: var(--paper); border: 1px solid var(--line); color: var(--ink); font-weight: 600; font-size: .74rem; text-decoration: none; }
+.follow-bar-links a:hover { border-color: var(--moss); color: var(--moss); }
+@media (max-width: 760px) { .follow-bar-body { display: none; } }
+@media (max-width: 420px) { .follow-bar-links a span { display: none; } .follow-bar-links a { min-width: 34px; justify-content: center; padding: .2rem .5rem; } }

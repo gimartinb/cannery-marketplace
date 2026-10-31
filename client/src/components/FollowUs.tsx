@@ -14,15 +14,15 @@ export function useMarketplaceSocials(): MarketplaceSocialLinks {
 }
 const filled = (links: MarketplaceSocialLinks) => MARKETPLACE_SOCIALS.filter((kind) => links[kind]);
 
-/** "Follow us" band shown above the footer on every page. */
-export function FollowBand() {
+/** Slim "Follow The Cannery" bar at the very top of every page. It scrolls away with the page. */
+export function FollowBar() {
   const links = useMarketplaceSocials();
   const kinds = filled(links);
   if (!kinds.length) return null;
-  return <section className="follow-band" aria-labelledby="follow-band-title"><div className="site-container follow-band-inner">
-    <div><h2 className="display" id="follow-band-title"><Txt k="shared.follow.title" /></h2><p><Txt k="shared.follow.body" /></p></div>
-    <div className="follow-buttons">{kinds.map((kind) => { const Icon = SOCIAL_ICON[kind]; return <a key={kind} className={`follow-button follow-${kind}`} href={links[kind]} target="_blank" rel="noopener noreferrer"><Icon size={17} /> Follow on {SOCIAL_LABEL[kind]}</a>; })}</div>
-  </div></section>;
+  return <div className="follow-bar"><div className="site-container follow-bar-inner">
+    <p><strong><Txt k="shared.follow.title" /></strong><span className="follow-bar-body"><Txt k="shared.follow.body" /></span></p>
+    <div className="follow-bar-links">{kinds.map((kind) => { const Icon = SOCIAL_ICON[kind]; return <a key={kind} href={links[kind]} target="_blank" rel="noopener noreferrer" aria-label={`Follow The Cannery Marketplace on ${SOCIAL_LABEL[kind]}`}><Icon size={14} /><span>{SOCIAL_LABEL[kind]}</span></a>; })}</div>
+  </div></div>;
 }
 
 /** Small icons in the footer. */
@@ -46,7 +46,7 @@ export function MarketplaceSocialEditor() {
     setErrors({}); save.mutate(parsed.data);
   }
   return <form className="secure-admin-card site-text-card social-links-editor" onSubmit={submit}>
-    <div className="site-text-head"><div><strong>Marketplace social links</strong><small>Used by the Follow buttons above the footer and the footer icons. Paste a link or an @handle. Leave one blank to hide it. Saving puts them live right away.</small></div></div>
+    <div className="site-text-head"><div><strong>Marketplace social links</strong><small>Used by the Follow bar at the top of every page and the footer icons. Paste a link or an @handle. Leave one blank to hide it. Saving puts them live right away.</small></div></div>
     <div className="form-grid">{MARKETPLACE_SOCIALS.map((kind) => <label key={kind}>{SOCIAL_LABEL[kind]}<input value={form[kind]} placeholder={kind === "facebook" ? "facebook.com/yourpage" : "@yourhandle"} onChange={(event) => setForm({ ...form, [kind]: event.target.value })} aria-invalid={errors[kind] ? true : undefined} />{errors[kind] && <span className="form-error">{errors[kind]}</span>}</label>)}</div>
     <div className="review-actions"><button className="button-primary compact-button" type="submit" disabled={save.isPending}>{save.isPending ? <Loader2 size={13} className="animate-spin" /> : <Save size={13} />} Save social links</button></div>
   </form>;
