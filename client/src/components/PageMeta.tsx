@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import { useSiteImage } from "@/lib/siteImages";
+import { SITE_URL } from "@shared/site";
 
-const SITE_URL = "https://cannerymarket.com";
 
 type PageMetaProps = {
   title: string;

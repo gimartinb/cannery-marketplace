@@ -7,6 +7,7 @@ import { readableError } from "@/lib/notify";
 import { trpc } from "@/lib/trpc";
 import { APPLICATION_CATEGORIES, APPLICATION_FIELD_ORDER, applicationProblems, EMPTY_APPLICATION, formatApplicationPhone, SALES_CHANNELS, type ApplicationField, type ApplicationValues } from "@shared/application";
 import { Txt } from "@/lib/siteText";
+import { ADMIN_URL } from "@shared/site";
 
 // Each application also goes to the marketplace inbox through FormSubmit (free,
 // already used by the contact form), so Nancy hears about it right away.
@@ -54,7 +55,7 @@ export default function ApplicationForm() {
           Phone: formatApplicationPhone(values),
           "In one sentence": values.tagline.trim(),
           Categories: values.categories.map((item) => (item === "Other" ? `Other: ${values.categoryOther.trim()}` : item)).join(", "),
-          "Review it": `${window.location.origin}/admin`,
+          "Review it": ADMIN_URL,
         }),
       }).catch(() => undefined);
       setResult({ kind: "success", name: values.fullName.trim().split(" ")[0] });

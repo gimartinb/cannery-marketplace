@@ -5,12 +5,13 @@ import { publishedSiteText } from "./siteText";
 import { vendorProfiles } from "../drizzle/schema";
 import { createDb, getSiteSetting, listSiteImages, type Database } from "./db";
 import type { Env } from "./env";
+import { SITE_URL } from "../shared/site";
 
 // Search and social sharing tags are written into the HTML at the edge, so
 // crawlers and link previews (which often do not run JavaScript) see the right
 // title, description, canonical link, image, and structured data for each page.
 
-export const SITE_URL = "https://cannerymarket.com";
+export { SITE_URL };
 export const SITE_NAME = "The Cannery Marketplace";
 const PRODUCTION_HOSTS = new Set(["cannerymarket.com", "www.cannerymarket.com"]);
 const DEFAULT_SOCIAL_IMAGE = "/images/cannery-interior.jpg";

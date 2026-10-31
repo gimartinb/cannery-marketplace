@@ -9,6 +9,7 @@ import { readableError } from "@/lib/notify";
 import { Txt, useOwnerPreview } from "@/lib/siteText";
 import { trpc } from "@/lib/trpc";
 import { BRANDING_OPTIONS, DELIVERY_METHODS, EMPTY_GIFT_REQUEST, GIFT_BUDGETS, GIFT_CATEGORIES, GIFT_REQUEST_FIELD_ORDER, giftRequestProblems, type GiftRequestField, type GiftRequestValues } from "@shared/gifts";
+import { ADMIN_URL } from "@shared/site";
 
 // Same free inbox alert as the contact form and maker application.
 const NOTIFY_ENDPOINT = "https://formsubmit.co/ajax/thecannerymarketplace@gmail.com";
@@ -55,7 +56,7 @@ function GiftRequestForm({ ownerPreview }: { ownerPreview: boolean }) {
           Company: values.company.trim(), Contact: values.contactName.trim(), Email: values.email.trim(), Phone: values.phone.trim() || "Not given",
           Quantity: values.quantity, "Budget per gift": values.budgetPerGift, "Needed by": values.neededBy || "Flexible", Delivery: values.deliveryMethod,
           "Custom box": values.customBox ? "Yes" : "No", Branding: values.branding.join(", "),
-          "Review it": `${window.location.origin}/admin`,
+          "Review it": ADMIN_URL,
         }),
       }).catch(() => undefined);
       setResult({ kind: "success", name: values.contactName.trim().split(" ")[0] });

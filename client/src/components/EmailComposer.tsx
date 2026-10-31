@@ -4,6 +4,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { notifyError, notifySuccess } from "@/lib/notify";
 import { trpc } from "@/lib/trpc";
 import { AUTO_SEND_TEMPLATES, fillTemplate, templateDefault, type AutoSendTemplate, type EmailTemplateId } from "@shared/emailTemplates";
+import { MAKER_PORTAL_URL, SITE_URL } from "@shared/site";
 
 export type EmailRequest = {
   template: EmailTemplateId;
@@ -31,8 +32,7 @@ const mailto = (draft: Draft) => `mailto:${encodeURIComponent(draft.to)}?subject
 
 /** Shared values every template can use. */
 export function commonEmailValues() {
-  const origin = typeof window !== "undefined" ? window.location.origin : "https://cannerymarket.com";
-  return { portalLink: `${origin}/maker-portal`, siteLink: origin };
+  return { portalLink: MAKER_PORTAL_URL, siteLink: SITE_URL };
 }
 
 /**

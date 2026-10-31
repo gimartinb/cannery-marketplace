@@ -6,6 +6,7 @@ import { readableError } from "@/lib/notify";
 import { Txt } from "@/lib/siteText";
 import { trpc } from "@/lib/trpc";
 import { EMPTY_REVIEW, REVIEW_SOURCE_LABEL, reviewProblems, type ReviewField, type ReviewSource, type ReviewValues } from "@shared/reviews";
+import { ADMIN_URL } from "@shared/site";
 
 const NOTIFY_ENDPOINT = "https://formsubmit.co/ajax/thecannerymarketplace@gmail.com";
 const monthYear = (date: Date | string) => new Date(date).toLocaleDateString(undefined, { month: "long", year: "numeric" });
@@ -68,7 +69,7 @@ export function ReviewForm({ slug, makerName, onClose }: { slug: string; makerNa
     setError("");
     try {
       await submit.mutateAsync({ slug, ...values, website2: honey });
-      void fetch(NOTIFY_ENDPOINT, { method: "POST", headers: { "Content-Type": "application/json", Accept: "application/json" }, body: JSON.stringify({ _subject: `New review for ${slug ? makerName : "the marketplace"}: ${values.rating} stars`, _template: "table", Maker: slug ? makerName : "The marketplace itself", Rating: `${values.rating} of 5`, Review: values.body.trim(), From: `${values.reviewerName.trim()}${values.reviewerCity.trim() ? `, ${values.reviewerCity.trim()}` : ""}`, "Approve it": `${window.location.origin}/admin` }) }).catch(() => undefined);
+      void fetch(NOTIFY_ENDPOINT, { method: "POST", headers: { "Content-Type": "application/json", Accept: "application/json" }, body: JSON.stringify({ _subject: `New review for ${slug ? makerName : "the marketplace"}: ${values.rating} stars`, _template: "table", Maker: slug ? makerName : "The marketplace itself", Rating: `${values.rating} of 5`, Review: values.body.trim(), From: `${values.reviewerName.trim()}${values.reviewerCity.trim() ? `, ${values.reviewerCity.trim()}` : ""}`, "Approve it": ADMIN_URL }) }).catch(() => undefined);
       setDone(true);
     } catch (failure) { setError(readableError(failure, "We could not send your review. Please try again.")); }
   }

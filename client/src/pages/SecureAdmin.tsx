@@ -21,6 +21,7 @@ import { EmailComposerProvider, useEmailComposer } from "@/components/EmailCompo
 import EmailsPanel from "@/components/EmailsPanel";
 import StoreHoursPanel from "@/components/StoreHoursPanel";
 import ReviewsPanel from "@/components/ReviewsPanel";
+import { SITE_URL } from "@shared/site";
 
 const tabs = [{ id: "overview", label: "Overview", icon: LayoutDashboard }, { id: "applications", label: "Applications", icon: Inbox }, { id: "review", label: "Review queue", icon: FileCheck2 }, { id: "vendors", label: "Published vendors", icon: UsersRound }, { id: "access", label: "Maker access", icon: UserPlus }, { id: "reviews", label: "Reviews", icon: Star }, { id: "categories", label: "Categories", icon: Tags }, { id: "pages", label: "Edit pages", icon: PanelsTopLeft }, { id: "hours", label: "Store hours", icon: Clock3 }, { id: "emails", label: "Emails", icon: Mail }, { id: "gifts", label: "Gifts and corporate", icon: Gift }, { id: "import", label: "Vendor import", icon: FileSpreadsheet }] as const;
 type Tab = (typeof tabs)[number]["id"];
@@ -75,7 +76,7 @@ function ReviewQueue({ submissions, vendors, onRefresh }: { submissions: any[]; 
   const emailMaker = (item: { id: number; name: string; slug: string; ownerName?: string | null; accountEmail?: string | null; contactEmail: string }, decision: "approved" | "changes_requested" | "rejected", note: string, automatic = false) => compose({ automatic,
     template: decision === "approved" ? "listingApproved" : decision === "rejected" ? "listingRejected" : "listingChanges",
     to: item.accountEmail || item.contactEmail, about: `submission:${item.id}`,
-    values: { firstName: (item.ownerName || "").split(" ")[0] || "there", business: item.name, note, listingLink: `${window.location.origin}/vendors/${item.slug}` },
+    values: { firstName: (item.ownerName || "").split(" ")[0] || "there", business: item.name, note, listingLink: `${SITE_URL}/vendors/${item.slug}` },
   });
   const pending = submissions.filter((item) => item.status === "pending");
   if (!pending.length) return <section className="admin-content"><div className="admin-empty review-empty"><div className="admin-empty-icon"><Check size={19} /></div><h3>No profiles waiting</h3><p>New and updated profiles will appear here after a vendor submits them.</p></div></section>;
