@@ -1,7 +1,7 @@
 import { ArrowRight, CheckCircle2, ImagePlus, Loader2, PenLine, Star, X } from "lucide-react";
 import { useState } from "react";
 import { Link } from "wouter";
-import { fitImageFile } from "@/components/ImageUploadButton";
+import { fitImageFile, normalizeImageFile } from "@/components/ImageUploadButton";
 import { readableError } from "@/lib/notify";
 import { Txt } from "@/lib/siteText";
 import { trpc } from "@/lib/trpc";
@@ -55,7 +55,7 @@ export function ReviewForm({ slug, makerName, onClose }: { slug: string; makerNa
     if (!file) return;
     setUploading(true); setError("");
     try {
-      const fitted = await fitImageFile(file, 1600);
+      const fitted = await fitImageFile(await normalizeImageFile(file), 1600);
       const response = await fetch("/api/review-photo", { method: "POST", headers: { "Content-Type": fitted.type }, body: fitted });
       const body = (await response.json().catch(() => ({}))) as { url?: string; error?: string };
       if (!response.ok || !body.url) throw new Error(body.error || "The photo did not upload. You can still send your review without it.");
@@ -87,7 +87,7 @@ export function ReviewForm({ slug, makerName, onClose }: { slug: string; makerNa
     </div>
     <div className="review-photo-field">
       {values.photoUrl ? <div className="review-photo-chosen"><img src={values.photoUrl} alt="Your photo" /><button className="button-plain compact-button" type="button" onClick={() => set("photoUrl", "")}><X size={13} /> Remove photo</button></div>
-        : <label className="button-plain compact-button upload-button">{uploading ? <Loader2 size={13} className="animate-spin" /> : <ImagePlus size={13} />} Add a photo of your purchase (optional)<input type="file" accept="image/jpeg,image/png,image/webp" hidden disabled={uploading} onChange={(event) => { void addPhoto(event.target.files?.[0]); event.currentTarget.value = ""; }} /></label>}
+        : <label className="button-plain compact-button upload-button">{uploading ? <Loader2 size={13} className="animate-spin" /> : <ImagePlus size={13} />} Add a photo of your purchase (optional)<input type="file" accept="image/*,.heic,.heif" hidden disabled={uploading} onChange={(event) => { void addPhoto(event.target.files?.[0]); event.currentTarget.value = ""; }} /></label>}
     </div>
     {error && <p className="form-error" role="alert">{error}</p>}
     <button className="button-primary" type="submit" disabled={submit.isPending || uploading}>{submit.isPending ? <><Loader2 size={15} className="animate-spin" /> Sending…</> : <>Send my review <ArrowRight size={15} /></>}</button>

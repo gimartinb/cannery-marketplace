@@ -35,6 +35,7 @@ export default function ImageCropDialog({ file, settings, onDone, onCancel, titl
     const url = URL.createObjectURL(file);
     const next = new Image();
     next.onload = () => { setImage(next); setWhole(false); setZoom(1); };
+    next.onerror = () => onCancel();
     next.src = url;
     return () => URL.revokeObjectURL(url);
   }, [file]);

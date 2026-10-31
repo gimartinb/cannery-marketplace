@@ -6,6 +6,39 @@ import { notifyError, notifySuccess } from "@/lib/notify";
 import { checkImageSize, describeRequirement, IMAGE_REQUIREMENTS, MAX_IMAGE_MB, RECOMMENDED_DPI, type ImageSpot } from "@shared/imageRequirements";
 
 export const ACCEPTED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp"];
+// The file picker offers every picture. iPhone HEIC photos and other formats (GIF, AVIF, BMP, TIFF where
+// the browser can open them) are turned into a JPEG here before anything else happens.
+const PICKER_ACCEPT = "image/*,.heic,.heif";
+const isHeic = (file: File) => /image\/hei[cf]/i.test(file.type) || /\.hei[cf]$/i.test(file.name);
+
+/** Turns any picture into a JPEG, PNG, or WebP the site can store. */
+export async function normalizeImageFile(file: File): Promise<File> {
+  if (ACCEPTED_IMAGE_TYPES.includes(file.type)) return file;
+  const base = file.name.replace(/\.[^.]+$/, "") || "photo";
+  if (isHeic(file)) {
+    try {
+      const { default: heic2any } = await import("heic2any");
+      const converted = await heic2any({ blob: file, toType: "image/jpeg", quality: 0.9 });
+      const blob = Array.isArray(converted) ? converted[0] : converted;
+      return new File([blob], `${base}.jpg`, { type: "image/jpeg" });
+    } catch { throw new Error(`${file.name} is an iPhone photo (HEIC) that could not be converted. On the iPhone, set Camera, Formats to Most Compatible, or send it as a screenshot.`); }
+  }
+  if (file.type && !file.type.startsWith("image/")) throw new Error(`${file.name} is not a picture.`);
+  // Other picture formats: redraw as JPEG.
+  const url = URL.createObjectURL(file);
+  try {
+    const image = await new Promise<HTMLImageElement>((resolve, reject) => { const img = new Image(); img.onload = () => resolve(img); img.onerror = () => reject(new Error(`${file.name} could not be opened. Try saving it as a JPEG or PNG first.`)); img.src = url; });
+    const canvas = document.createElement("canvas");
+    canvas.width = image.naturalWidth; canvas.height = image.naturalHeight;
+    const context = canvas.getContext("2d");
+    if (!context) throw new Error(`${file.name} could not be converted.`);
+    context.fillStyle = "#ffffff"; context.fillRect(0, 0, canvas.width, canvas.height);
+    context.drawImage(image, 0, 0);
+    const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, "image/jpeg", 0.9));
+    if (!blob) throw new Error(`${file.name} could not be converted.`);
+    return new File([blob], `${base}.jpg`, { type: "image/jpeg" });
+  } finally { URL.revokeObjectURL(url); }
+}
 const SKIP_KEY = "cannery:image-requirements-seen";
 
 // Remembered per spot, because each spot has its own size.
@@ -30,7 +63,7 @@ export function readImageSize(file: File): Promise<{ width: number; height: numb
 // Photos of any size are resized here, in the browser, before they upload. That is free:
 // nothing runs on Cloudflare, and the smaller files also use less of the free storage.
 const MAX_SOURCE_MB = 40;
-// Below this the photo would look blurry even after resizing, so it is not used.
+// Below this the photo is still used, with a heads up that it may look blurry.
 const SMALLEST_SIDE = 400;
 
 /** Shrinks a large photo to fit the spot and to stay under the upload limit. Keeps PNG for transparency. */
@@ -70,13 +103,13 @@ export async function screenImages(files: File[], spot: ImageSpot) {
   const passed: File[] = [];
   const rule = IMAGE_REQUIREMENTS[spot];
   const maxDimension = Math.max(2400, rule.minWidth, rule.minHeight);
-  for (const file of files) {
-    if (!ACCEPTED_IMAGE_TYPES.includes(file.type)) { notifyError(`${file.name} is not a JPEG, PNG, or WebP image. On an iPhone, share the photo as "Most Compatible" or take a screenshot of it.`, "Photo not added"); continue; }
-    if (file.size > MAX_SOURCE_MB * 1024 * 1024) { notifyError(`${file.name} is larger than ${MAX_SOURCE_MB} MB.`, "Photo not added"); continue; }
+  for (const original of files) {
+    if (original.size > MAX_SOURCE_MB * 1024 * 1024) { notifyError(`${original.name} is larger than ${MAX_SOURCE_MB} MB.`, "Photo not added"); continue; }
     try {
+      const file = await normalizeImageFile(original);
       const { width, height } = await readImageSize(file);
-      if (Math.min(width, height) < SMALLEST_SIDE) { notifyError(`${file.name} is only ${width} x ${height} pixels, too small to look clear. Please use a larger photo.`, "Photo too small"); continue; }
-      if (checkImageSize(spot, width, height)) notifySuccess(`${file.name} is a little small`, { description: "We will enlarge it to fit. It may look slightly soft on big screens." });
+      if (Math.min(width, height) < SMALLEST_SIDE) notifySuccess(`${file.name} is very small (${width} x ${height})`, { description: "We will enlarge it to fit, but it will look blurry. A larger photo will look much better." });
+      else if (checkImageSize(spot, width, height)) notifySuccess(`${file.name} is a little small`, { description: "We will enlarge it to fit. It may look slightly soft on big screens." });
       // Framed spots are resized by the framing step; the others are resized here.
       passed.push(rule.crop ? file : await fitImageFile(file, maxDimension));
     } catch (error) { notifyError(error, "Photo not added"); }
@@ -143,7 +176,7 @@ export default function ImageUploadButton({ spot, onFiles, children, multiple, b
     <button className={className} type="button" onClick={start} disabled={disabled} aria-busy={busy}>
       {busy ? <Loader2 size={14} className="animate-spin" /> : <ImagePlus size={14} />} {children ?? "Upload photo"}
     </button>
-    <input ref={input} type="file" accept={ACCEPTED_IMAGE_TYPES.join(",")} multiple={multiple} hidden onChange={(event) => { void picked(event.target.files); event.currentTarget.value = ""; }} />
+    <input ref={input} type="file" accept={PICKER_ACCEPT} multiple={multiple} hidden onChange={(event) => { void picked(event.target.files); event.currentTarget.value = ""; }} />
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogContent>
         <DialogHeader>
@@ -153,10 +186,10 @@ export default function ImageUploadButton({ spot, onFiles, children, multiple, b
         <ul className="image-requirements">
           <li><CheckCircle2 size={16} /><span><strong>Best:</strong> {describeRequirement(spot)}. Larger photos are resized for you.</span></li>
           {rule.crop ? <li><Crop size={16} /><span><strong>Next step:</strong> {rule.shape}. Drag and zoom so it looks just right.</span></li> : <li><CheckCircle2 size={16} /><span><strong>Shape:</strong> {rule.shape}.</span></li>}
-          <li><CheckCircle2 size={16} /><span><strong>Format:</strong> JPEG, PNG, or WebP, any file size up to {MAX_SOURCE_MB} MB.</span></li>
+          <li><CheckCircle2 size={16} /><span><strong>Format:</strong> any photo, including iPhone photos, up to {MAX_SOURCE_MB} MB.</span></li>
           <li><Info size={16} /><span><strong>Nice to have:</strong> {RECOMMENDED_DPI} DPI, so the same photo also prints well. Screens only use the pixel size above.</span></li>
         </ul>
-        <p className="image-requirements-note">Photos that are a little small are enlarged to fit, and may look slightly soft. Only very small photos (under {SMALLEST_SIDE} pixels on a side) are turned away.</p>
+        <p className="image-requirements-note">Photos that are a little small are enlarged to fit, and may look slightly soft. Very small photos (under {SMALLEST_SIDE} pixels on a side) are still used, but will look blurry.</p>
         <label className="image-requirements-skip"><input type="checkbox" checked={dontShow} onChange={(event) => setDontShow(event.target.checked)} /> Do not show this again for this kind of photo on this device</label>
         <DialogFooter>
           <button className="button-plain" type="button" onClick={() => setOpen(false)}>Cancel</button>
