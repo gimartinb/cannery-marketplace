@@ -8,10 +8,11 @@ import { trpc } from "@/lib/trpc";
 import { APPLICATION_CATEGORIES, APPLICATION_FIELD_ORDER, applicationProblems, EMPTY_APPLICATION, formatApplicationPhone, SALES_CHANNELS, type ApplicationField, type ApplicationValues } from "@shared/application";
 import { Txt } from "@/lib/siteText";
 import { ADMIN_URL } from "@shared/site";
+import { OWNER_NOTIFY_ENDPOINT } from "@shared/site";
 
 // Each application also goes to the marketplace inbox through FormSubmit (free,
 // already used by the contact form), so Nancy hears about it right away.
-const NOTIFY_ENDPOINT = "https://formsubmit.co/ajax/thecannerymarketplace@gmail.com";
+const NOTIFY_ENDPOINT = OWNER_NOTIFY_ENDPOINT;
 
 type Result = { kind: "success"; name: string } | { kind: "error"; message: string } | null;
 const digitsOnly = (value: string) => value.replace(/\D/g, "");

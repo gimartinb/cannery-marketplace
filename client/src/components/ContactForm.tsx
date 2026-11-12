@@ -1,10 +1,11 @@
 import { ArrowRight, CheckCircle2, Loader2, TriangleAlert } from "lucide-react";
 import { useState } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { OWNER_NOTIFY_ENDPOINT } from "@shared/site";
 
 // FormSubmit (free) emails each message to the marketplace inbox. The /ajax/
 // endpoint answers with JSON, so the visitor stays on the page.
-const FORM_ENDPOINT = "https://formsubmit.co/ajax/thecannerymarketplace@gmail.com";
+const FORM_ENDPOINT = OWNER_NOTIFY_ENDPOINT;
 
 export type ContactValues = { fullName: string; email: string; areaCode: string; localNumber: string; message: string };
 export type ContactErrors = Partial<Record<keyof ContactValues | "phone", string>>;

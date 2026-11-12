@@ -10,9 +10,10 @@ import { Txt, useOwnerPreview } from "@/lib/siteText";
 import { trpc } from "@/lib/trpc";
 import { BRANDING_OPTIONS, DELIVERY_METHODS, EMPTY_GIFT_REQUEST, GIFT_BUDGETS, GIFT_CATEGORIES, GIFT_REQUEST_FIELD_ORDER, giftRequestProblems, type GiftRequestField, type GiftRequestValues } from "@shared/gifts";
 import { ADMIN_URL } from "@shared/site";
+import { OWNER_NOTIFY_ENDPOINT } from "@shared/site";
 
 // Same free inbox alert as the contact form and maker application.
-const NOTIFY_ENDPOINT = "https://formsubmit.co/ajax/thecannerymarketplace@gmail.com";
+const NOTIFY_ENDPOINT = OWNER_NOTIFY_ENDPOINT;
 type Result = { kind: "success"; name: string } | { kind: "error"; message: string } | null;
 const tomorrow = () => { const date = new Date(); date.setDate(date.getDate() + 1); return date.toISOString().slice(0, 10); };
 

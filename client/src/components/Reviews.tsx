@@ -7,8 +7,9 @@ import { Txt } from "@/lib/siteText";
 import { trpc } from "@/lib/trpc";
 import { EMPTY_REVIEW, REVIEW_SOURCE_LABEL, reviewProblems, type ReviewField, type ReviewSource, type ReviewValues } from "@shared/reviews";
 import { ADMIN_URL } from "@shared/site";
+import { OWNER_NOTIFY_ENDPOINT } from "@shared/site";
 
-const NOTIFY_ENDPOINT = "https://formsubmit.co/ajax/thecannerymarketplace@gmail.com";
+const NOTIFY_ENDPOINT = OWNER_NOTIFY_ENDPOINT;
 const monthYear = (date: Date | string) => new Date(date).toLocaleDateString(undefined, { month: "long", year: "numeric" });
 
 /** Read only stars, for averages and single reviews. */
