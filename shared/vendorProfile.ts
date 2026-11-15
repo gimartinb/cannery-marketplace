@@ -45,3 +45,23 @@ export type OwnerVendorInput = z.infer<typeof ownerVendorSchema>;
 
 export const reviewDecisionSchema = z.object({ submissionId: z.number().int().positive(), decision: z.enum(["approved", "rejected", "changes_requested"]), note: z.string().trim().max(1200).optional().default(""), category: z.string().trim().min(2).max(100).optional() }).refine((value) => value.decision === "approved" || value.note.length >= 5, { message: "Add a short note when rejecting or requesting changes", path: ["note"] });
 export type VendorProfileInput = z.infer<typeof vendorProfileSchema>;
+
+/**
+ * Owners starting a listing for a maker to finish. Only the business name and the maker's
+ * email are needed; everything else is optional and the maker completes it. It stays a draft
+ * (never public) until the maker sends it for review and an owner approves it.
+ */
+export const startListingSchema = vendorProfileSchema.pick({ ownerBio: true, ownerName: true, websiteUrl: true, instagramUrl: true, facebookUrl: true, tiktokUrl: true, coverImageUrl: true, galleryImageUrls: true }).extend({
+  id: z.number().int().positive().optional(),
+  email: z.string().trim().toLowerCase().email("Enter the maker's email address").max(320),
+  name: z.string().trim().min(2, "Enter the business name").max(140),
+  category: z.string().trim().max(100).default(""),
+  shortBio: z.string().trim().max(800).default(""),
+  contactEmail: z.string().trim().toLowerCase().max(320).refine((value) => !value || z.string().email().safeParse(value).success, "Enter a valid contact email, or leave it blank").default(""),
+});
+export type StartListingInput = z.infer<typeof startListingSchema>;
+
+/** The note the maker sees on a listing the marketplace started for them. */
+export const STARTED_LISTING_NOTE = "We started this listing for you. Check the details, add your photos and story, then click Send for review.";
+/** Added to the welcome email when a listing was started for the maker. */
+export const STARTED_LISTING_EMAIL_NOTE = "We already started your listing with the details we have. Sign in to check it, add anything missing, and click Send for review. It goes live once we approve it.";

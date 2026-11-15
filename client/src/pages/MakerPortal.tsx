@@ -10,7 +10,7 @@ import { clearSignInAttempt, signInJustFailed, signInThroughAccess, signOutOfAcc
 import { ReviewCard, Stars } from "@/components/Reviews";
 
 type Status = "published" | "hidden" | "pending" | "changes_requested" | "rejected" | "draft";
-const STATUS_TEXT: Record<Status, string> = { published: "Published", hidden: "Hidden by the marketplace", pending: "Change waiting for review", changes_requested: "Changes requested", rejected: "Not approved", draft: "Draft" };
+const STATUS_TEXT: Record<Status, string> = { published: "Published", hidden: "Not public right now", pending: "Change waiting for review", changes_requested: "Changes requested", rejected: "Not approved", draft: "Started for you: finish and send for review" };
 
 export default function MakerPortal() {
   const utils = trpc.useUtils();

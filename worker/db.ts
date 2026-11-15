@@ -2,7 +2,7 @@ import { and, asc, desc, eq, gt, inArray, isNull, lte, or, sql, type SQL } from 
 import { drizzle } from "drizzle-orm/d1";
 import { TRPCError } from "@trpc/server";
 import { galleryPhotos, makerApplications, makerInvites, productHighlights, siteImages, siteSettings, vendorAccounts, vendorProfiles, vendorSubmissions } from "../drizzle/schema";
-import type { OwnerVendorInput, VendorProfileInput } from "../shared/vendorProfile";
+import { STARTED_LISTING_NOTE, type OwnerVendorInput, type StartListingInput, type VendorProfileInput } from "../shared/vendorProfile";
 
 export type Database = ReturnType<typeof createDb>;
 export function createDb(d1: D1Database) { return drizzle(d1); }
@@ -444,4 +444,48 @@ export async function deleteVendorProfiles(db: Database, ids: number[]) {
   }
   if (!removed.length) throw new TRPCError({ code: "NOT_FOUND", message: "Those listings were already deleted. Refresh the page." });
   return { deleted: removed.length, listings: removed };
+}
+
+
+/**
+ * Owners start (or update) a listing for a maker to finish. It is saved as a draft on the
+ * maker's account: never public, already filled in when the maker signs in. The maker sends
+ * it for review, and approving it publishes it. Also lets that email sign in.
+ */
+export async function startListingForMaker(db: Database, input: StartListingInput, invitedBy: string) {
+  const email = input.email.toLowerCase();
+  await addMakerInvites(db, [email], invitedBy);
+  await db.insert(vendorAccounts).values({ email }).onConflictDoNothing();
+  const account = (await db.select({ id: vendorAccounts.id }).from(vendorAccounts).where(eq(vendorAccounts.email, email)).limit(1))[0];
+  if (!account) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "The maker account could not be created. Try again." });
+  const values = {
+    accountId: account.id, name: input.name, category: input.category, shortBio: input.shortBio, ownerBio: input.ownerBio || null, ownerName: input.ownerName || null,
+    contactEmail: input.contactEmail || email, websiteUrl: input.websiteUrl || null, instagramUrl: input.instagramUrl || null, facebookUrl: input.facebookUrl || null, tiktokUrl: input.tiktokUrl || null,
+    coverImageUrl: input.coverImageUrl || null, galleryImageUrls: JSON.stringify(input.galleryImageUrls ?? []),
+  };
+  if (input.id) {
+    const current = (await db.select({ status: vendorSubmissions.status, name: vendorSubmissions.name, slug: vendorSubmissions.slug }).from(vendorSubmissions).where(eq(vendorSubmissions.id, input.id)).limit(1))[0];
+    if (!current) throw new TRPCError({ code: "NOT_FOUND", message: "That started listing no longer exists. Refresh the page." });
+    if (current.status !== "draft") throw new TRPCError({ code: "CONFLICT", message: "The maker already sent this listing for review. Check it in the Review queue instead." });
+    const slug = current.name === input.name ? current.slug : await freeSlugFor(db, input.name);
+    await db.update(vendorSubmissions).set({ ...values, slug }).where(eq(vendorSubmissions.id, input.id));
+    return { id: input.id, slug };
+  }
+  const slug = await freeSlugFor(db, input.name);
+  const [row] = await db.insert(vendorSubmissions).values({ ...values, slug, profileId: null, status: "draft", adminNote: STARTED_LISTING_NOTE, reviewedAt: null, featured: false, displayOrder: 100, active: true }).returning({ id: vendorSubmissions.id });
+  return { id: row.id, slug };
+}
+
+/** Listings the marketplace started that the maker has not sent for review yet. */
+export async function listStartedListings(db: Database) {
+  const rows = await db.select({ submission: vendorSubmissions, email: vendorAccounts.email }).from(vendorSubmissions).leftJoin(vendorAccounts, eq(vendorAccounts.id, vendorSubmissions.accountId)).where(eq(vendorSubmissions.status, "draft")).orderBy(desc(vendorSubmissions.updatedAt));
+  // Hide drafts the maker already turned into a pending or published listing.
+  const later = await db.select({ slug: vendorSubmissions.slug, accountId: vendorSubmissions.accountId }).from(vendorSubmissions).where(inArray(vendorSubmissions.status, ["pending", "approved", "changes_requested", "rejected"]));
+  const done = new Set(later.map((row) => `${row.accountId}:${row.slug}`));
+  const published = new Set((await db.select({ slug: vendorProfiles.slug }).from(vendorProfiles)).map((row) => row.slug));
+  return rows.filter((row) => !done.has(`${row.submission.accountId}:${row.submission.slug}`) && !published.has(row.submission.slug)).map((row) => ({ ...deserializeProfile(row.submission), email: row.email ?? "" }));
+}
+
+export async function deleteStartedListing(db: Database, id: number) {
+  await db.delete(vendorSubmissions).where(and(eq(vendorSubmissions.id, id), eq(vendorSubmissions.status, "draft")));
 }

@@ -1,4 +1,4 @@
-import { ownerVendorSchema, reviewDecisionSchema } from "../shared/vendorProfile";
+import { ownerVendorSchema, reviewDecisionSchema, startListingSchema } from "../shared/vendorProfile";
 import { z } from "zod";
 import { SITE_IMAGE_SLOT_IDS } from "../shared/siteImageSlots";
 import { makerSubmissionSchema } from "../shared/makerListing";
@@ -6,7 +6,7 @@ import { APPLICATION_CATEGORIES, applicationSchema, formatApplicationPhone, SALE
 import { TRPCError } from "@trpc/server";
 import { deleteSiteImageObject } from "./media";
 import {
-  bulkImportVendorProfiles, listSiteImages, createVendorSubmission, getPublicVendorProfile, listMakerListings, makerOwnsProfile, freeSlugFor, updateVendorProfileAsOwner, assignListingLogin, bulkUpdateVendorProfiles, deleteVendorProfiles,
+  bulkImportVendorProfiles, startListingForMaker, listStartedListings, deleteStartedListing, listSiteImages, createVendorSubmission, getPublicVendorProfile, listMakerListings, makerOwnsProfile, freeSlugFor, updateVendorProfileAsOwner, assignListingLogin, bulkUpdateVendorProfiles, deleteVendorProfiles,
   APPLICATION_LIMIT_PER_SOURCE_PER_DAY, countRecentApplications, createApplication, getApplication, deleteApplication, listApplications, setApplicationStatus, startListingFromApplication,
   DIRECTORY_PAGE_SIZES, getSiteSetting, listAllVendorProfiles, listFeaturedVendorProfiles, listPublicVendorCategories, listPublicVendorPage, listVendorSubmissions,
   reviewVendorSubmission, setSiteSetting, setVendorActive, addMakerInvites, listMakerInvites, removeMakerInvite,
@@ -228,6 +228,15 @@ export const adminRouter = router({
       await setApplicationStatus(ctx.db, input.id, input.status, input.note);
       return { success: true, email: application.email, listingStarted };
     }),
+    // Listings the owners start for a maker to finish (drafts, never public until approved).
+    startedListings: adminProcedure.query(({ ctx }) => listStartedListings(ctx.db)),
+    startListing: adminProcedure.input(startListingSchema).mutation(({ ctx, input }) => startListingForMaker(ctx.db, input, ctx.email)),
+    startListings: adminProcedure.input(z.object({ listings: z.array(startListingSchema).min(1).max(500) })).mutation(async ({ ctx, input }) => {
+      const started = [];
+      for (const listing of input.listings) started.push({ name: listing.name, email: listing.email, ...(await startListingForMaker(ctx.db, listing, ctx.email)) });
+      return { started };
+    }),
+    deleteStartedListing: adminProcedure.input(z.object({ id: z.number().int().positive() })).mutation(async ({ ctx, input }) => { await deleteStartedListing(ctx.db, input.id); return { success: true }; }),
     deleteApplication: adminProcedure.input(z.object({ id: z.number().int().positive() })).mutation(async ({ ctx, input }) => { await deleteApplication(ctx.db, input.id); return { success: true }; }),
     // Owner support: edit any listing directly. Setting a login email also invites that maker to the portal.
     updateVendor: adminProcedure.input(ownerVendorSchema.extend({ id: z.number().int().positive() })).mutation(async ({ ctx, input }) => {

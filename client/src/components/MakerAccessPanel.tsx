@@ -1,9 +1,12 @@
-import { Copy, Link2, Loader2, Mail, Plus, Trash2, UserPlus, X } from "lucide-react";
+import { Copy, FilePen, Link2, Loader2, Mail, Pencil, Plus, Trash2, UserPlus, X } from "lucide-react";
 import { useState } from "react";
 import { notifyError, notifySuccess } from "@/lib/notify";
 import { welcomeText } from "@/lib/makerEmails";
 import { trpc } from "@/lib/trpc";
 import { useEmailComposer } from "@/components/EmailComposer";
+import { emptyListing, type ListingValues } from "@/components/ListingFields";
+import { EditStartedListing, StartListingFields, toStartInput, type StartedListing } from "@/components/StartListingForm";
+import { STARTED_LISTING_EMAIL_NOTE } from "@shared/vendorProfile";
 
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 type Listing = { id: number; name: string; slug: string; loginEmail: string | null };
@@ -19,7 +22,14 @@ export default function MakerAccessPanel({ vendors, onChanged }: { vendors: List
   const [listingId, setListingId] = useState("");
   const [makerName, setMakerName] = useState("");
   const [adding, setAdding] = useState(false);
-  const refresh = async () => { await Promise.all([utils.adminPortal.makerInvites.invalidate(), onChanged()]); };
+  // What happens with the maker's listing: start one for them (a draft they finish), connect an existing one, or neither.
+  const [mode, setMode] = useState<"start" | "connect" | "none">("start");
+  const [startValues, setStartValues] = useState<ListingValues>(emptyListing);
+  const [editingStarted, setEditingStarted] = useState<number | null>(null);
+  const started = trpc.adminPortal.startedListings.useQuery();
+  const startListing = trpc.adminPortal.startListing.useMutation({ onError: (error) => notifyError(error, "Listing not started") });
+  const removeStarted = trpc.adminPortal.deleteStartedListing.useMutation({ onSuccess: async () => { notifySuccess("Started listing deleted", { description: "The maker can still sign in and create a listing themselves." }); await utils.adminPortal.startedListings.invalidate(); }, onError: (error) => notifyError(error, "Not deleted") });
+  const refresh = async () => { await Promise.all([utils.adminPortal.makerInvites.invalidate(), utils.adminPortal.startedListings.invalidate(), onChanged()]); };
   const add = trpc.adminPortal.addMakerInvites.useMutation({ onError: (error) => notifyError(error, "Emails not added") });
   const assign = trpc.adminPortal.assignListing.useMutation({
     onSuccess: async (row, input) => {
@@ -39,6 +49,19 @@ export default function MakerAccessPanel({ vendors, onChanged }: { vendors: List
     const invalid = entries.filter((value) => !EMAIL.test(value));
     if (!entries.length) { notifyError("Enter at least one email address.", "Nothing to add"); return; }
     if (invalid.length) { notifyError(`These do not look like email addresses: ${invalid.join(", ")}`, "Check the emails"); return; }
+    if (mode === "start") {
+      if (entries.length !== 1) { notifyError("Start a listing for one maker at a time.", "Enter one email"); return; }
+      const prepared = toStartInput(startValues, entries[0]);
+      if (!prepared.ok) { notifyError(prepared.message, "Check the listing"); return; }
+      const done = await startListing.mutateAsync(prepared.input).catch(() => null);
+      if (!done) return;
+      notifySuccess(`Listing started for ${prepared.input.name}`, { description: "It is not public. The maker finishes it and sends it for review; approving it publishes it." });
+      await refresh();
+      compose({ template: "makerWelcome", to: entries[0], about: "maker-access", automatic: true, values: { firstName: makerName.trim().split(" ")[0] || "there", business: prepared.input.name, email: entries[0], note: STARTED_LISTING_EMAIL_NOTE } });
+      setText(""); setMakerName(""); setStartValues(emptyListing); setAdding(false);
+      return;
+    }
+    if (mode === "connect" && !listingId) { notifyError("Choose the listing to connect, or pick another option.", "Choose a listing"); return; }
     if (listingId && entries.length > 1) { notifyError("Connect a listing to one email at a time.", "Pick one email"); return; }
     const result = await add.mutateAsync({ emails: entries }).catch(() => null);
     if (!result) return;
@@ -58,10 +81,26 @@ export default function MakerAccessPanel({ vendors, onChanged }: { vendors: List
       <div className="secure-card-heading"><div><h3>Add new maker</h3><p>They can sign in right away, and the welcome email goes out automatically.</p></div><button className="button-plain compact-button" type="button" onClick={() => setAdding(false)}><X size={13} /> Close</button></div>
       <label>Maker's first name (optional, used in the welcome email)<input value={makerName} maxLength={80} onChange={(event) => setMakerName(event.target.value)} placeholder="Maria" /></label>
       <label>Maker email (or several, one per line)<textarea rows={3} value={text} onChange={(event) => setText(event.target.value)} placeholder={"maker@example.com\nanother.maker@example.com"} /></label>
-      <label>Connect to a listing (optional)<select value={listingId} onChange={(event) => setListingId(event.target.value)}><option value="">No listing yet (the maker can create one)</option>{vendors.map((vendor) => <option key={vendor.id} value={vendor.id}>{vendor.name}{vendor.loginEmail ? ` (now: ${vendor.loginEmail})` : ""}</option>)}</select></label>
-      <div className="review-actions"><button className="button-primary" type="submit" disabled={add.isPending || assign.isPending}>{add.isPending ? <Loader2 size={14} className="animate-spin" /> : <UserPlus size={14} />} Add maker and send welcome</button><button className="button-plain" type="button" onClick={() => { void navigator.clipboard?.writeText(inviteText).then(() => notifySuccess("Invitation message copied", { description: "Paste it into an email or text to the maker." }), () => notifyError("Your browser blocked copying. Select the text and copy it by hand.", "Not copied")); }}><Copy size={14} /> Copy invitation message</button></div>
+      <fieldset className="listing-mode"><legend>Their listing</legend>
+        <label className="radio-label"><input type="radio" name="listing-mode" checked={mode === "start"} onChange={() => setMode("start")} /> <span><strong>Start a listing for them</strong><small>You fill in what you know. They finish it and send it for review. Not public until you approve it.</small></span></label>
+        <label className="radio-label"><input type="radio" name="listing-mode" checked={mode === "connect"} onChange={() => setMode("connect")} /> <span><strong>Connect a listing that is already on the site</strong></span></label>
+        <label className="radio-label"><input type="radio" name="listing-mode" checked={mode === "none"} onChange={() => { setMode("none"); setListingId(""); }} /> <span><strong>Not now</strong><small>They can create their own listing after signing in.</small></span></label>
+      </fieldset>
+      {mode === "connect" && <label>Listing to connect<select value={listingId} onChange={(event) => setListingId(event.target.value)}><option value="">Choose a listing…</option>{vendors.map((vendor) => <option key={vendor.id} value={vendor.id}>{vendor.name}{vendor.loginEmail ? ` (now: ${vendor.loginEmail})` : ""}</option>)}</select></label>}
+      {mode === "start" && <StartListingFields value={startValues} onChange={setStartValues} />}
+      <div className={`review-actions${mode === "start" ? " sticky-save-bar" : ""}`}><button className="button-primary" type="submit" disabled={add.isPending || assign.isPending || startListing.isPending}>{add.isPending || startListing.isPending ? <Loader2 size={14} className="animate-spin" /> : mode === "start" ? <FilePen size={14} /> : <UserPlus size={14} />} {mode === "start" ? "Start listing and send welcome" : "Add maker and send welcome"}</button><button className="button-plain" type="button" onClick={() => { void navigator.clipboard?.writeText(inviteText).then(() => notifySuccess("Invitation message copied", { description: "Paste it into an email or text to the maker." }), () => notifyError("Your browser blocked copying. Select the text and copy it by hand.", "Not copied")); }}><Copy size={14} /> Copy invitation message</button></div>
       {unconnected.length > 0 && <p className="form-hint">{unconnected.length} listing{unconnected.length === 1 ? " has" : "s have"} no login email yet: {unconnected.map((vendor) => vendor.name).join(", ")}.</p>}
     </form>}
+    {(started.data ?? []).length > 0 && <div className="started-listings"><h3>Listings started for makers <small>Waiting for the maker to finish and send for review. Not public.</small></h3>
+      {(started.data ?? []).map((row) => editingStarted === row.id ? <EditStartedListing key={row.id} row={row as StartedListing} onDone={() => setEditingStarted(null)} /> : <div className="secure-admin-card started-listing-row" key={row.id}>
+        <div><strong>{row.name}</strong><small>{row.email} · started {new Date(row.updatedAt).toLocaleDateString()}{row.category ? ` · ${row.category}` : ""}</small></div>
+        <div className="maker-access-actions">
+          <button className="button-plain compact-button" type="button" onClick={() => setEditingStarted(row.id)}><Pencil size={14} /> Edit</button>
+          <button className="button-plain compact-button" type="button" onClick={() => compose({ template: "makerWelcome", to: row.email, about: "maker-access", values: { firstName: (row.ownerName || "").split(" ")[0] || "there", business: row.name, email: row.email, note: STARTED_LISTING_EMAIL_NOTE } })}><Mail size={14} /> Welcome email</button>
+          <button className="danger-button compact-button" type="button" disabled={removeStarted.isPending} onClick={() => { if (window.confirm(`Delete the listing you started for ${row.name}? The maker keeps their login.`)) removeStarted.mutate({ id: row.id }); }}><Trash2 size={14} /> Delete</button>
+        </div>
+      </div>)}
+    </div>}
     <div className="secure-vendor-table maker-access-table">{invites.isLoading ? <div className="admin-empty"><Loader2 className="animate-spin" /></div> : (invites.data || []).length ? (invites.data || []).map((invite) => <div key={invite.email}>
       <span>{invite.email.slice(0, 2).toUpperCase()}</span>
       <div>

@@ -150,13 +150,13 @@ describe("vendor import template versions", () => {
 });
 
 describe("the downloadable template", () => {
-  it("imports its own example row without problems", async () => {
+  it("reads its own example row, and flags it so it is never imported by mistake", async () => {
     const { readFileSync } = await import("node:fs");
     const file = readFileSync(new URL("../client/public/downloads/Vendor-Bulk-Import-Template.xlsx", import.meta.url));
     const preview = readVendorWorkbook(file.buffer.slice(file.byteOffset, file.byteOffset + file.byteLength), []);
     expect(preview.ignoredColumns).toEqual([]);
     expect(preview.rows).toHaveLength(1);
-    expect(preview.rows[0].errors).toEqual([]);
+    expect(preview.rows[0].errors).toEqual(["This is the example row from the template. Delete it before importing."]);
     expect(preview.rows[0].vendor?.instagramUrl).toBe("https://instagram.com/examplemaker");
   });
 });

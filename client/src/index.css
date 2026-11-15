@@ -1711,3 +1711,17 @@ main { min-height: 100svh; }
 .follow-bar-links a:hover { border-color: var(--moss); color: var(--moss); }
 @media (max-width: 760px) { .follow-bar-body { display: none; } }
 @media (max-width: 420px) { .follow-bar-links a span { display: none; } .follow-bar-links a { min-width: 34px; justify-content: center; padding: .2rem .5rem; } }
+/* Starting a listing for a maker */
+.listing-mode { border: 1px solid var(--line); padding: .8rem 1rem; display: grid; gap: .55rem; margin: 0; }
+.listing-mode legend { font-size: .74rem; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; padding: 0 .3rem; }
+.listing-mode .radio-label { display: flex; gap: .6rem; align-items: flex-start; font-weight: 400; cursor: pointer; }
+.listing-mode .radio-label input { margin-top: .25rem; }
+.listing-mode .radio-label span { display: grid; gap: .1rem; }
+.listing-mode small { color: #5b604f; font-size: .8rem; }
+.start-listing-fields { display: grid; gap: .8rem; border-top: 1px solid var(--line); padding-top: 1rem; }
+.started-listings { display: grid; gap: .7rem; margin-bottom: 1.4rem; }
+.started-listings h3 { margin: 0; display: flex; flex-wrap: wrap; align-items: baseline; gap: .6rem; }
+.started-listings h3 small { font-size: .82rem; font-weight: 400; color: #5b604f; }
+.started-listing-row { display: flex; align-items: center; justify-content: space-between; gap: .8rem; flex-wrap: wrap; padding: .9rem 1rem; }
+.started-listing-row > div:first-child { display: grid; gap: .15rem; }
+.started-listing-row small { color: #5b604f; }

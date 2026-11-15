@@ -78,6 +78,7 @@ export function readVendorWorkbook(buffer: ArrayBuffer, existingSlugs: string[])
     };
     const parsed = ownerVendorSchema.safeParse(candidate);
     const errors = parsed.success ? [] : parsed.error.issues.map((issue) => describeIssue(issue as never));
+    if (slug === "example-maker-studio" || loginEmail.toLowerCase() === "maker@example.com") errors.push("This is the example row from the template. Delete it before importing.");
     if (existing.has(slug.toLowerCase())) errors.push(`${name || slug} is already on the site. Remove this row or edit the existing listing.`);
     if (seen.has(slug.toLowerCase())) errors.push(`${name || slug} appears more than once in this file.`);
     seen.add(slug.toLowerCase());
@@ -94,6 +95,18 @@ export function parseVendorWorkbook(buffer: ArrayBuffer, existingSlugs: string[]
 export default function VendorImportPanel({ existingSlugs, onImported }: { existingSlugs: string[]; onImported: () => void }) {
   const [fileName, setFileName] = useState(""); const [rows, setRows] = useState<ImportPreviewRow[]>([]); const [ignored, setIgnored] = useState<string[]>([]); const [confirmed, setConfirmed] = useState(false);
   const [result, setResult] = useState<ImportResult | null>(null);
+  // Publish now (moving existing makers over), or start each listing as a draft its maker finishes.
+  const [asDrafts, setAsDrafts] = useState(true);
+  const [startedResult, setStartedResult] = useState<{ name: string; email: string }[] | null>(null);
+  const utils = trpc.useUtils();
+  const starter = trpc.adminPortal.startListings.useMutation({
+    onSuccess: async (data) => {
+      setStartedResult(data.started); setRows([]); setFileName(""); setConfirmed(false); onImported();
+      await utils.adminPortal.startedListings.invalidate(); await utils.adminPortal.makerInvites.invalidate();
+      notifySuccess(`${data.started.length} listing${data.started.length === 1 ? "" : "s"} started`, { description: "None are public. Send each maker their welcome email from Maker access." });
+    },
+    onError: (error) => notifyError(error, "Import did not finish"),
+  });
   const importer = trpc.adminPortal.bulkImport.useMutation({
     onSuccess: (data) => {
       setResult(data); setRows([]); setFileName(""); setConfirmed(false); onImported();
@@ -101,7 +114,9 @@ export default function VendorImportPanel({ existingSlugs, onImported }: { exist
     },
     onError: (error) => notifyError(error, "Import did not finish. Nothing was added."),
   });
-  const errors = rows.reduce((total, row) => total + row.errors.length, 0);
+  // Started listings need the maker's login email, since the maker is the one who finishes them.
+  const draftErrors = asDrafts ? rows.filter((row) => row.vendor && !row.vendor.loginEmail).length : 0;
+  const errors = rows.reduce((total, row) => total + row.errors.length, 0) + draftErrors;
   async function selectFile(file?: File) {
     if (!file) return;
     setFileName(file.name); setResult(null); setConfirmed(false);
@@ -117,10 +132,20 @@ export default function VendorImportPanel({ existingSlugs, onImported }: { exist
       notifyError("This file could not be read. Save it as an Excel .xlsx file using the template.", "File not read");
     }
   }
-  function confirmImport() { const vendors = rows.flatMap((row) => row.vendor && !row.errors.length ? [row.vendor] : []); if (!confirmed || errors || !vendors.length) return; importer.mutate({ vendors }); }
+  function confirmImport() {
+    const vendors = rows.flatMap((row) => row.vendor && !row.errors.length ? [row.vendor] : []);
+    if (!confirmed || errors || !vendors.length) return;
+    if (!asDrafts) { importer.mutate({ vendors }); return; }
+    starter.mutate({ listings: vendors.map((vendor) => ({ email: vendor.loginEmail, name: vendor.name, category: vendor.category, shortBio: vendor.shortBio, ownerBio: vendor.ownerBio, ownerName: vendor.ownerName, contactEmail: vendor.contactEmail, websiteUrl: vendor.websiteUrl, instagramUrl: vendor.instagramUrl, facebookUrl: vendor.facebookUrl, tiktokUrl: vendor.tiktokUrl, coverImageUrl: vendor.coverImageUrl, galleryImageUrls: vendor.galleryImageUrls })) });
+  }
   return <section className="secure-admin-card"><div className="secure-card-heading"><div><p className="eyebrow">One-time setup tool</p><h2>Bulk vendor import</h2><p>Upload the prepared Excel file, fix any errors, preview the rows, and confirm before anything is added. Any version of the template works. Fill in the optional login_email column to connect each listing to the maker who will edit it, and type social accounts as @handles or links.</p></div><a className="button-plain" href={TEMPLATE_URL} download><Download size={14} /> Download template</a></div>
     {result && <div className="import-result" role="status"><div className="import-summary ready"><Check size={16} /><strong>Import complete</strong><span>{result.imported} maker{result.imported === 1 ? "" : "s"} added and live on the site.{result.invited ? ` ${result.invited} login email${result.invited === 1 ? "" : "s"} added to Maker access.` : ""}</span></div><ul className="import-result-list">{result.makers.map((maker) => <li key={maker.slug}><a href={`/vendors/${maker.slug}`} target="_blank" rel="noreferrer">{maker.name} <ExternalLink size={12} /></a><small>{maker.loginEmail ? `Login: ${maker.loginEmail}` : "No login email. Connect one in Maker access."}</small></li>)}</ul><div className="review-actions"><a className="button-plain" href="/vendors" target="_blank" rel="noreferrer"><ExternalLink size={14} /> View makers page</a><button className="button-plain" type="button" onClick={() => setResult(null)}>Import another file</button></div></div>}
-    {!result && <label className="excel-drop"><FileSpreadsheet size={26} /><strong>{fileName || "Choose a completed .xlsx file"}</strong><span>Maximum 500 vendors. The original file is read in your browser and not retained.</span><input type="file" accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" onChange={(event) => { void selectFile(event.target.files?.[0]); event.currentTarget.value = ""; }} /></label>}
-    {rows.length > 0 && ignored.length > 0 && <p className="form-hint">These columns are not used by this version and were skipped: {ignored.join(", ")}.</p>}{rows.length > 0 && <><div className={`import-summary ${errors ? "has-errors" : "ready"}`}>{errors ? <AlertCircle size={16} /> : <Check size={16} />}<strong>{rows.length} row{rows.length === 1 ? "" : "s"}</strong><span>{errors ? `${errors} problem${errors === 1 ? "" : "s"} must be fixed in the spreadsheet before import. Fix them, save, and choose the file again.` : "Validation passed. Review the preview below."}</span></div><div className="import-preview-table"><table><thead><tr><th>Row</th><th>Vendor</th><th>Category</th><th>Login email</th><th>Status</th></tr></thead><tbody>{rows.map((row) => <tr key={row.row}><td>{row.row}</td><td>{row.vendor?.name || "Not readable"}</td><td>{row.vendor?.category || ""}</td><td>{row.vendor?.loginEmail || "None"}</td><td>{row.errors.length ? <span className="import-errors">{row.errors.join(" ")}</span> : <span className="import-ready">Ready</span>}</td></tr>)}</tbody></table></div><label className="import-confirm"><input type="checkbox" checked={confirmed} onChange={(event) => setConfirmed(event.target.checked)} disabled={Boolean(errors)} /><span>I reviewed the preview and confirm these vendors should be imported as approved profiles.</span></label><button className="button-primary" type="button" disabled={!confirmed || Boolean(errors) || importer.isPending} onClick={confirmImport}><Upload size={14} /> {importer.isPending ? "Importing…" : "Confirm import"}</button></>}
+    {startedResult && <div className="import-result" role="status"><div className="import-summary ready"><Check size={16} /><strong>Listings started</strong><span>{startedResult.length} listing{startedResult.length === 1 ? "" : "s"} started. None are public. Each maker finishes theirs and sends it for review. Send each one their welcome email from Maker access.</span></div><ul className="import-result-list">{startedResult.map((item) => <li key={`${item.email}-${item.name}`}>{item.name}<small>{item.email}</small></li>)}</ul><div className="review-actions"><button className="button-plain" type="button" onClick={() => setStartedResult(null)}>Import another file</button></div></div>}
+    {!result && !startedResult && <fieldset className="listing-mode"><legend>What should the import do?</legend>
+      <label className="radio-label"><input type="radio" name="import-mode" checked={asDrafts} onChange={() => setAsDrafts(true)} /> <span><strong>Start listings for makers to finish</strong><small>Not public. Each maker signs in with their login_email, finishes the listing, and sends it for review. Approving it publishes it.</small></span></label>
+      <label className="radio-label"><input type="radio" name="import-mode" checked={!asDrafts} onChange={() => setAsDrafts(false)} /> <span><strong>Publish now</strong><small>For makers whose listings are already complete. Every row goes live right away.</small></span></label>
+    </fieldset>}
+    {!result && !startedResult && <label className="excel-drop"><FileSpreadsheet size={26} /><strong>{fileName || "Choose a completed .xlsx file"}</strong><span>Maximum 500 vendors. The original file is read in your browser and not retained.</span><input type="file" accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" onChange={(event) => { void selectFile(event.target.files?.[0]); event.currentTarget.value = ""; }} /></label>}
+    {rows.length > 0 && ignored.length > 0 && <p className="form-hint">These columns are not used by this version and were skipped: {ignored.join(", ")}.</p>}{rows.length > 0 && <><div className={`import-summary ${errors ? "has-errors" : "ready"}`}>{errors ? <AlertCircle size={16} /> : <Check size={16} />}<strong>{rows.length} row{rows.length === 1 ? "" : "s"}</strong><span>{errors ? `${errors} problem${errors === 1 ? "" : "s"} must be fixed in the spreadsheet before import. Fix them, save, and choose the file again.` : "Validation passed. Review the preview below."}</span></div><div className="import-preview-table"><table><thead><tr><th>Row</th><th>Vendor</th><th>Category</th><th>Login email</th><th>Status</th></tr></thead><tbody>{rows.map((row) => <tr key={row.row}><td>{row.row}</td><td>{row.vendor?.name || "Not readable"}</td><td>{row.vendor?.category || ""}</td><td>{row.vendor?.loginEmail || "None"}</td><td>{row.errors.length || (asDrafts && row.vendor && !row.vendor.loginEmail) ? <span className="import-errors">{[...row.errors, ...(asDrafts && row.vendor && !row.vendor.loginEmail ? ["Add the maker's login_email so they can finish this listing."] : [])].join(" ")}</span> : <span className="import-ready">Ready</span>}</td></tr>)}</tbody></table></div><label className="import-confirm"><input type="checkbox" checked={confirmed} onChange={(event) => setConfirmed(event.target.checked)} disabled={Boolean(errors)} /><span>{asDrafts ? "I reviewed the preview. Start these listings for the makers to finish (not public)." : "I reviewed the preview and confirm these vendors should go live now as approved profiles."}</span></label><button className="button-primary" type="button" disabled={!confirmed || Boolean(errors) || importer.isPending || starter.isPending} onClick={confirmImport}><Upload size={14} /> {importer.isPending || starter.isPending ? "Importing…" : asDrafts ? "Start these listings" : "Publish now"}</button></>}
   </section>;
 }
