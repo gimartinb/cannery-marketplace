@@ -19,10 +19,10 @@ describe("vendor interest form", () => {
     const problems = applicationProblems({ ...EMPTY_APPLICATION });
     expect(Object.keys(problems).sort()).toEqual(["businessName", "address", "categories", "email", "fullName", "phone", "productDescription", "referredBy", "salesChannels", "tagline"].sort());
   });
-  it("asks for details when Other is chosen", () => {
-    const problems = applicationProblems({ ...complete, categories: ["Other"], salesChannels: ["Other"] });
-    expect(problems.categoryOther).toBeTruthy();
-    expect(problems.salesOther).toBeTruthy();
+  it("accepts Other on its own, and short descriptions as long as they are not empty", () => {
+    const problems = applicationProblems({ ...complete, categories: ["Other"], salesChannels: ["Other"], tagline: "Mugs", productDescription: "Pottery" });
+    expect(problems).toEqual({});
+    expect(applicationProblems({ ...complete, productDescription: "" }).productDescription).toBeTruthy();
   });
   it("checks link sites and US phone numbers", () => {
     expect(applicationProblems({ ...complete, instagramUrl: "https://example.com/me" }).instagramUrl).toMatch(/Instagram/);

@@ -1,11 +1,12 @@
-import { ArrowLeft, Check, Clock, ExternalLink, Eye, History, Loader2, LogOut, Pencil, Plus, Send, ShieldCheck, Store } from "lucide-react";
+import { ArrowLeft, Check, Clock, ExternalLink, Eye, History, Loader2, LogOut, Pencil, Plus, Send, ShieldCheck, Sparkles, Store } from "lucide-react";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useState } from "react";
 import { Link } from "wouter";
 import SiteShell from "@/components/SiteShell";
 import PageMeta from "@/components/PageMeta";
 import ListingFields, { emptyListing, toListingValues, uploadListingPhoto, type ListingValues } from "@/components/ListingFields";
 import { notifyError, notifySuccess } from "@/lib/notify";
-import { LISTING_FIELD_ORDER, listingProblems, REVIEW_TIME_NOTE } from "@shared/makerListing";
+import { LISTING_FIELD_ORDER, listingProblems, listingWarnings, REVIEW_TIME_NOTE } from "@shared/makerListing";
 import { clearSignInAttempt, signInJustFailed, signInThroughAccess, signOutOfAccess, trpc } from "@/lib/trpc";
 import { ReviewCard, Stars } from "@/components/Reviews";
 
@@ -21,6 +22,30 @@ export default function MakerPortal() {
   const aiWriter = trpc.vendorPortal.aiWrite.useMutation();
   const setEditing = (next: { values: ListingValues; title: string } | null) => { if (!next || next.title !== editing?.title) setShowProblems(false); setEditingState(next); };
   const problems = editing ? listingProblems(editing.values) : {};
+  const warnings = editing ? listingWarnings(editing.values) : {};
+  // "Before you send" check for recommended fields that are empty or thin (never blocks sending).
+  const [checking, setChecking] = useState(false);
+  const [drafting, setDrafting] = useState(false);
+
+  /** Drafts the missing descriptions with AI and puts them in the form for the maker to read and edit. */
+  async function draftMissing() {
+    if (!editing) return;
+    setDrafting(true);
+    const values = { ...editing.values };
+    const context = { name: values.name, ownerName: values.ownerName || "", category: values.category === "Other" ? "" : values.category, shortBio: values.shortBio, ownerBio: values.ownerBio || "", title: "" };
+    try {
+      for (const field of ["shortBio", "ownerBio"] as const) {
+        if (!warnings[field]) continue;
+        const current = (values[field] || "").trim();
+        const suggestion = await aiWriter.mutateAsync({ field, mode: current ? "improve" : "draft", text: current, context: { ...context, shortBio: values.shortBio, ownerBio: values.ownerBio || "" } });
+        values[field] = suggestion.suggestion;
+      }
+      setEditingState({ ...editing, values });
+      setChecking(false);
+      notifySuccess("Drafts added", { description: "Read them and change anything that is not quite right, then click Send for review." });
+      window.setTimeout(() => document.getElementById("listing-shortBio")?.scrollIntoView({ behavior: "smooth", block: "center" }), 80);
+    } catch (error) { notifyError(error, "AI could not write it right now"); } finally { setDrafting(false); }
+  }
 
   function send(event: React.FormEvent) {
     event.preventDefault();
@@ -32,6 +57,7 @@ export default function MakerPortal() {
       window.setTimeout(() => document.querySelector<HTMLElement>(".maker-editor-card [aria-invalid='true'], .maker-editor-card .form-error")?.scrollIntoView({ behavior: "smooth", block: "center" }), 50);
       return;
     }
+    if (Object.keys(warnings).length) { setChecking(true); return; }
     submit.mutate(editing.values);
   }
   const submit = trpc.vendorPortal.submit.useMutation({
@@ -76,6 +102,17 @@ export default function MakerPortal() {
         </article>)}</div> : <div className="admin-empty"><h3>No listings are tied to this email yet</h3><p>If you already sell at The Cannery, ask the marketplace to connect your listing to {email}. Or add a new listing and send it for review.</p></div>}
       </div>}
       {!editing && <MakerPortalReviews />}
+      <Dialog open={checking} onOpenChange={(open) => { if (!drafting) setChecking(open); }}>
+        <DialogContent className="send-check-dialog">
+          <DialogHeader><DialogTitle>Before you send</DialogTitle><DialogDescription>These help shoppers get to know you. Listings without them are usually sent back, but you can still send it now.</DialogDescription></DialogHeader>
+          <ul>{warnings.shortBio && <li><strong>Short description:</strong> {editing?.values.shortBio.trim() ? "a little short" : "empty"}</li>}{warnings.ownerBio && <li><strong>About the maker:</strong> {(editing?.values.ownerBio || "").trim() ? "a little short" : "empty"}</li>}</ul>
+          <DialogFooter className="send-check-actions">
+            <button className="button-primary" type="button" disabled={drafting} onClick={() => void draftMissing()}>{drafting ? <Loader2 size={14} className="animate-spin" /> : <Sparkles size={14} />} {drafting ? "Writing…" : "Write it for me with AI"}</button>
+            <button className="button-plain" type="button" disabled={drafting || submit.isPending} onClick={() => { setChecking(false); if (editing) submit.mutate(editing.values); }}><Send size={14} /> Send anyway</button>
+            <button className="button-plain" type="button" disabled={drafting} onClick={() => setChecking(false)}>Go back</button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
       {editing && <div className="maker-portal-grid"><form className="maker-editor-card" noValidate onSubmit={send}>
         <div className="portal-card-heading"><div><p className="eyebrow">{editing.values.profileId ? "Update your listing" : "New listing"}</p><h2>{editing.title}</h2></div><button className="button-plain compact-button" type="button" onClick={() => setEditing(null)}><ArrowLeft size={13} /> All listings</button></div>
         <ListingFields value={editing.values} signedInEmail={email} aiWrite={async (request) => (await aiWriter.mutateAsync(request)).suggestion} problems={showProblems ? problems : undefined} onChange={(values) => setEditingState({ ...editing, values })} upload={(file) => uploadListingPhoto("/api/vendor/upload", file)} />

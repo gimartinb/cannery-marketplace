@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { listingProblems, makerSubmissionSchema } from "../shared/makerListing";
+import { listingProblems, listingWarnings, makerSubmissionSchema } from "../shared/makerListing";
 import { checkImageSize } from "../shared/imageRequirements";
 import { describeIssues } from "../shared/friendlyErrors";
 import { ownerVendorSchema } from "../shared/vendorProfile";
@@ -34,14 +34,18 @@ describe("maker listing rules", () => {
     expect(listingProblems(complete)).toEqual({});
     expect(makerSubmissionSchema.safeParse(complete).success).toBe(true);
   });
-  it("requires every field except the website and social links", () => {
-    const problems = listingProblems({ ...complete, ownerName: "Gilbert", category: "Other", ownerBio: "", instagramUrl: "", coverImageUrl: "", galleryImageUrls: [] });
-    expect(Object.keys(problems).sort()).toEqual(["category", "coverImageUrl", "galleryImageUrls", "ownerBio", "ownerName"]);
+  it("requires the name, maker, category, email and photos; descriptions only warn", () => {
+    const problems = listingProblems({ ...complete, ownerName: "Gilbert", category: "", shortBio: "", ownerBio: "", instagramUrl: "", coverImageUrl: "", galleryImageUrls: [] });
+    expect(Object.keys(problems).sort()).toEqual(["category", "coverImageUrl", "galleryImageUrls", "ownerName"]);
+    expect(listingWarnings({ shortBio: "", ownerBio: "" })).toEqual({ shortBio: expect.stringMatching(/sent back/), ownerBio: expect.stringMatching(/sent back/) });
+    expect(listingWarnings({ shortBio: complete.shortBio, ownerBio: complete.ownerBio })).toEqual({});
+    expect(makerSubmissionSchema.safeParse({ ...complete, shortBio: "", ownerBio: "" }).success).toBe(true);
     expect(makerSubmissionSchema.safeParse({ ...complete, instagramUrl: "" }).success).toBe(true);
   });
-  it("accepts a maker's own category typed after choosing Other", () => {
-    expect(listingProblems({ ...complete, category: "Leather Goods" })).toEqual({});
-    expect(listingProblems({ ...complete, category: "x" }).category).toMatch(/between 3 and 40/);
+  it("accepts Other alone, or whatever the maker typed after choosing Other", () => {
+    expect(listingProblems({ ...complete, category: "Other" })).toEqual({});
+    expect(listingProblems({ ...complete, category: "3d printing." })).toEqual({});
+    expect(listingProblems({ ...complete, category: "x".repeat(61) }).category).toMatch(/under 60/);
   });
   it("rejects a social link on the wrong site", () => {
     expect(listingProblems({ ...complete, instagramUrl: "https://example.com/me" }).instagramUrl).toMatch(/Instagram/);

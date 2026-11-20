@@ -105,13 +105,13 @@ export default function ApplicationForm() {
 
       <fieldset className="application-section" aria-describedby={shown.categories ? "apply-categories-error" : undefined}><legend>What category of product do you best fit under? Select all that apply. *</legend>
         <div className="choice-grid">{APPLICATION_CATEGORIES.map((item) => <label className="choice" key={item}><input type="checkbox" checked={values.categories.includes(item)} onChange={() => toggle("categories", item)} /> {item}</label>)}</div>
-        {values.categories.includes("Other") && <div className="form-field"><label htmlFor="apply-categoryOther">Your other category *</label><input id="apply-categoryOther" maxLength={80} value={values.categoryOther} onChange={(event) => set("categoryOther", event.target.value)} {...invalid("categoryOther")} />{error("categoryOther")}</div>}
+        {values.categories.includes("Other") && <div className="form-field"><label htmlFor="apply-categoryOther">What else do you make? (optional)</label><input id="apply-categoryOther" maxLength={80} value={values.categoryOther} onChange={(event) => set("categoryOther", event.target.value)} {...invalid("categoryOther")} />{error("categoryOther")}</div>}
         {error("categories")}
       </fieldset>
 
       <fieldset className="application-section" aria-describedby={shown.salesChannels ? "apply-salesChannels-error" : undefined}><legend>Where do you currently sell your products? Select all that apply. *</legend>
         <div className="choice-grid">{SALES_CHANNELS.map((item) => <label className="choice" key={item}><input type="checkbox" checked={values.salesChannels.includes(item)} onChange={() => toggle("salesChannels", item)} /> {item}</label>)}</div>
-        {values.salesChannels.includes("Other") && <div className="form-field"><label htmlFor="apply-salesOther">Where else do you sell? *</label><input id="apply-salesOther" maxLength={120} value={values.salesOther} onChange={(event) => set("salesOther", event.target.value)} {...invalid("salesOther")} />{error("salesOther")}</div>}
+        {values.salesChannels.includes("Other") && <div className="form-field"><label htmlFor="apply-salesOther">Where else do you sell? (optional)</label><input id="apply-salesOther" maxLength={120} value={values.salesOther} onChange={(event) => set("salesOther", event.target.value)} {...invalid("salesOther")} />{error("salesOther")}</div>}
         {error("salesChannels")}
       </fieldset>
 

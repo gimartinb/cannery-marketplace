@@ -1725,3 +1725,12 @@ main { min-height: 100svh; }
 .started-listing-row { display: flex; align-items: center; justify-content: space-between; gap: .8rem; flex-wrap: wrap; padding: .9rem 1rem; }
 .started-listing-row > div:first-child { display: grid; gap: .15rem; }
 .started-listing-row small { color: #5b604f; }
+/* Recommended (not required) listing fields */
+.recommended-tag { margin-left: .4rem; padding: .1rem .45rem; border-radius: 999px; background: var(--cream); color: #6d6247; font-size: .62rem; letter-spacing: .08em; vertical-align: middle; }
+.form-warning { display: block; margin-top: .3rem; color: #8a5a00; font-size: .8rem; font-weight: 500; }
+.category-other-input { margin-top: .5rem; }
+.send-check-dialog ul { margin: .2rem 0 0; padding-left: 1.1rem; display: grid; gap: .3rem; }
+.send-check-actions { display: flex; flex-wrap: wrap; gap: .6rem; }
+label > .recommended-tag { justify-self: start; width: fit-content; display: inline-block; }
+label > small.form-warning, .form-warning { color: #8a5a00; }
+.maker-editor-card label small.form-warning, .start-listing-fields label small.form-warning { font-size: .78rem; font-weight: 600; color: #8a5a00; }

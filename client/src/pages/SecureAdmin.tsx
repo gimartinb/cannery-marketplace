@@ -60,7 +60,7 @@ function ReviewQueue({ submissions, vendors, onRefresh }: { submissions: any[]; 
     onSuccess: async (_result, input) => {
       const item = submissions.find((entry) => entry.id === input.submissionId);
       // Keeping a maker's own category adds it to the list for everyone.
-      if (input.decision === "approved" && item && !input.category && !isListedCategory(item.category, categoryList)) { await adopt.mutateAsync({ name: item.category }).catch(() => null); await utils.directory.makerCategories.invalidate(); }
+      if (input.decision === "approved" && item && !input.category && item.category !== "Other" && !isListedCategory(item.category, categoryList)) { await adopt.mutateAsync({ name: item.category }).catch(() => null); await utils.directory.makerCategories.invalidate(); }
       if (input.decision === "approved") notifySuccess(`${item?.name ?? "Listing"} approved and published`, { link: item ? { label: "View listing", href: `/vendors/${item.slug}` } : undefined });
       else notifySuccess(input.decision === "rejected" ? "Submission rejected" : "Changes requested", { description: "The maker also sees your note in their maker space. Check and send the email." });
       // A maker's first published listing gets the approval email automatically (switch in the Emails tab).

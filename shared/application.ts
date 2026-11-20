@@ -96,12 +96,10 @@ export function applicationProblems(values: ApplicationValues): ApplicationProbl
 
   const tagline = text(values.tagline);
   if (!tagline) problems.tagline = "Describe your business in one short sentence.";
-  else if (tagline.length < 10) problems.tagline = "Add a little more (at least 10 characters).";
   else if (tagline.length > 160) problems.tagline = "Keep it to one short sentence (160 characters or less).";
 
   const product = text(values.productDescription);
   if (!product) problems.productDescription = "Tell us about your product.";
-  else if (product.length < 20) problems.productDescription = `Add a little more detail (at least 20 characters, you have ${product.length}).`;
   else if (product.length > 1500) problems.productDescription = "Keep this under 1,500 characters.";
 
   const name = text(values.fullName);
@@ -127,12 +125,11 @@ export function applicationProblems(values: ApplicationValues): ApplicationProbl
 
   const categories = values.categories.filter((item) => (APPLICATION_CATEGORIES as readonly string[]).includes(item));
   if (!categories.length) problems.categories = "Choose at least one category.";
-  else if (categories.includes("Other") && text(values.categoryOther).length < 2) problems.categoryOther = "Tell us your other category.";
+  // "Other" is enough on its own; what they type next to it is optional.
   else if (text(values.categoryOther).length > 80) problems.categoryOther = "Keep this under 80 characters.";
 
   const channels = values.salesChannels.filter((item) => (SALES_CHANNELS as readonly string[]).includes(item));
   if (!channels.length) problems.salesChannels = "Choose at least one place you sell today.";
-  else if (channels.includes("Other") && text(values.salesOther).length < 2) problems.salesOther = "Tell us where else you sell.";
   else if (text(values.salesOther).length > 120) problems.salesOther = "Keep this under 120 characters.";
 
   return problems;

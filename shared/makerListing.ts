@@ -46,21 +46,15 @@ export function listingProblems(values: VendorProfileInput): ListingProblems {
   else if (owner.split(" ").length < 2) problems.ownerName = "Enter a first and last name.";
   else if (!/^[\p{L}][\p{L}' .-]*[\p{L}.]$/u.test(owner)) problems.ownerName = "Use letters, spaces, apostrophes, periods, or hyphens.";
 
-  // A maker can pick a category from the list, or choose Other and type their own (the owner approves it).
+  // Any category works, including Other (with or without what they make typed in).
+  // The owners settle the final category when they approve the listing.
   const category = values.category.trim();
-  if (!category || category === "Other") problems.category = category === "Other" ? "Type your category in the box." : "Choose a category.";
-  else if (!isListedCategory(category) && (category.length < 3 || category.length > 40)) problems.category = "Keep your own category between 3 and 40 characters.";
-  else if (!isListedCategory(category) && !/^[\p{L}][\p{L}0-9 &',.-]*$/u.test(category)) problems.category = "Use letters, numbers, spaces, and & for your category.";
+  if (!category) problems.category = "Choose a category, or choose Other.";
+  else if (category.length > 60) problems.category = "Keep what you make under 60 characters.";
 
-  const short = values.shortBio.trim();
-  if (!short) problems.shortBio = "Write a short description of what you make.";
-  else if (short.length < 20) problems.shortBio = `Add a little more detail (at least 20 characters, you have ${short.length}).`;
-  else if (short.length > 800) problems.shortBio = "Keep the short description under 800 characters.";
-
-  const about = (values.ownerBio || "").trim();
-  if (!about) problems.ownerBio = "Tell shoppers about the maker behind the work.";
-  else if (about.length < 40) problems.ownerBio = `Add a little more detail (at least 40 characters, you have ${about.length}).`;
-  else if (about.length > 1800) problems.ownerBio = "Keep this under 1,800 characters.";
+  // Descriptions are recommended, not required: see listingWarnings. Only the length limit blocks.
+  if (values.shortBio.trim().length > 800) problems.shortBio = "Keep the short description under 800 characters.";
+  if ((values.ownerBio || "").trim().length > 1800) problems.ownerBio = "Keep this under 1,800 characters.";
 
   const email = values.contactEmail.trim();
   if (!email) problems.contactEmail = "Enter the email shoppers can contact you at.";
@@ -76,6 +70,22 @@ export function listingProblems(values: VendorProfileInput): ListingProblems {
   if (!values.coverImageUrl) problems.coverImageUrl = "Add a cover photo.";
   if (!values.galleryImageUrls.length) problems.galleryImageUrls = "Add at least one photo of your work.";
   return problems;
+}
+
+/**
+ * Recommended fields that are empty or thin. They never block sending; the maker is told
+ * the listing will likely be sent back and is offered AI help to write them.
+ */
+export type ListingWarnings = Partial<Record<"shortBio" | "ownerBio", string>>;
+export function listingWarnings(values: { shortBio: string; ownerBio?: string | null }): ListingWarnings {
+  const warnings: ListingWarnings = {};
+  const short = values.shortBio.trim().length;
+  if (!short) warnings.shortBio = "Add a short description. Listings without one are usually sent back.";
+  else if (short < 20) warnings.shortBio = "A sentence or two more will help shoppers, and short ones are often sent back.";
+  const about = (values.ownerBio || "").trim().length;
+  if (!about) warnings.ownerBio = "Tell shoppers about the maker. Listings without this are usually sent back.";
+  else if (about < 40) warnings.ownerBio = "A little more about the maker will help shoppers, and short ones are often sent back.";
+  return warnings;
 }
 
 export const LISTING_FIELD_ORDER: ListingField[] = ["name", "ownerName", "category", "shortBio", "ownerBio", "contactEmail", "websiteUrl", "instagramUrl", "facebookUrl", "tiktokUrl", "social", "coverImageUrl", "galleryImageUrls"];

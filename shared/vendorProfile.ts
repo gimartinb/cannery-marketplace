@@ -21,7 +21,7 @@ export const vendorProfileSchema = z.object({
   name: z.string().trim().min(2).max(140),
   slug: z.string().trim().regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/).max(160).optional(),
   category: z.string().trim().min(2).max(100).transform(currentCategory),
-  shortBio: z.string().trim().min(20).max(800),
+  shortBio: z.string().trim().max(800).default(""),
   ownerBio: z.string().trim().max(1800).optional().default(""),
   ownerName: z.string().trim().max(120).optional().default(""),
   contactEmail: z.string().trim().email().max(320),
