@@ -104,8 +104,8 @@ export default function MakerPortal() {
       {!editing && <MakerPortalReviews />}
       <Dialog open={checking} onOpenChange={(open) => { if (!drafting) setChecking(open); }}>
         <DialogContent className="send-check-dialog">
-          <DialogHeader><DialogTitle>Before you send</DialogTitle><DialogDescription>These help shoppers get to know you. Listings without them are usually sent back, but you can still send it now.</DialogDescription></DialogHeader>
-          <ul>{warnings.shortBio && <li><strong>Short description:</strong> {editing?.values.shortBio.trim() ? "a little short" : "empty"}</li>}{warnings.ownerBio && <li><strong>About the maker:</strong> {(editing?.values.ownerBio || "").trim() ? "a little short" : "empty"}</li>}</ul>
+          <DialogHeader><DialogTitle>Before you send</DialogTitle><DialogDescription>Listings without a description and an About the maker section most likely will not be approved. You can still send it now, or let AI write a first draft for you to check.</DialogDescription></DialogHeader>
+          <ul>{warnings.shortBio && <li><strong>Short description:</strong> empty</li>}{warnings.ownerBio && <li><strong>About the maker:</strong> empty</li>}</ul>
           <DialogFooter className="send-check-actions">
             <button className="button-primary" type="button" disabled={drafting} onClick={() => void draftMissing()}>{drafting ? <Loader2 size={14} className="animate-spin" /> : <Sparkles size={14} />} {drafting ? "Writing…" : "Write it for me with AI"}</button>
             <button className="button-plain" type="button" disabled={drafting || submit.isPending} onClick={() => { setChecking(false); if (editing) submit.mutate(editing.values); }}><Send size={14} /> Send anyway</button>

@@ -79,12 +79,9 @@ export function listingProblems(values: VendorProfileInput): ListingProblems {
 export type ListingWarnings = Partial<Record<"shortBio" | "ownerBio", string>>;
 export function listingWarnings(values: { shortBio: string; ownerBio?: string | null }): ListingWarnings {
   const warnings: ListingWarnings = {};
-  const short = values.shortBio.trim().length;
-  if (!short) warnings.shortBio = "Add a short description. Listings without one are usually sent back.";
-  else if (short < 20) warnings.shortBio = "A sentence or two more will help shoppers, and short ones are often sent back.";
-  const about = (values.ownerBio || "").trim().length;
-  if (!about) warnings.ownerBio = "Tell shoppers about the maker. Listings without this are usually sent back.";
-  else if (about < 40) warnings.ownerBio = "A little more about the maker will help shoppers, and short ones are often sent back.";
+  // Only empty fields get a reminder; any length is fine.
+  if (!values.shortBio.trim()) warnings.shortBio = "Add a short description. Listings without one most likely will not be approved.";
+  if (!(values.ownerBio || "").trim()) warnings.ownerBio = "Tell shoppers about the maker. Listings without this most likely will not be approved.";
   return warnings;
 }
 

@@ -37,7 +37,8 @@ describe("maker listing rules", () => {
   it("requires the name, maker, category, email and photos; descriptions only warn", () => {
     const problems = listingProblems({ ...complete, ownerName: "Gilbert", category: "", shortBio: "", ownerBio: "", instagramUrl: "", coverImageUrl: "", galleryImageUrls: [] });
     expect(Object.keys(problems).sort()).toEqual(["category", "coverImageUrl", "galleryImageUrls", "ownerName"]);
-    expect(listingWarnings({ shortBio: "", ownerBio: "" })).toEqual({ shortBio: expect.stringMatching(/sent back/), ownerBio: expect.stringMatching(/sent back/) });
+    expect(listingWarnings({ shortBio: "", ownerBio: "" })).toEqual({ shortBio: expect.stringMatching(/not be approved/), ownerBio: expect.stringMatching(/not be approved/) });
+    expect(listingWarnings({ shortBio: "Mugs", ownerBio: "Me" })).toEqual({});
     expect(listingWarnings({ shortBio: complete.shortBio, ownerBio: complete.ownerBio })).toEqual({});
     expect(makerSubmissionSchema.safeParse({ ...complete, shortBio: "", ownerBio: "" }).success).toBe(true);
     expect(makerSubmissionSchema.safeParse({ ...complete, instagramUrl: "" }).success).toBe(true);
